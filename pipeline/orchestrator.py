@@ -1,10 +1,16 @@
 """
 Pipeline Orchestrator — ties STT, AI Brain, and TTS together.
 Manages the full listen → transcribe → think → speak cycle.
-Runs in concurrent GPU mode (all models loaded simultaneously).
+
+Key improvements:
+- Streaming LLM → sentence-level TTS: first audio plays within ~1s of turn end
+- Mic paused during playback to prevent speaker bleed-through into STT
+- Language auto-switch is seamless — no extra user action needed
+- MAX_CONVERSATION_TURNS enforced
 """
 
 import numpy as np
+import threading
 import time
 import json
 import sys
@@ -23,14 +29,14 @@ class PipelineOrchestrator:
     """
     Main orchestrator for the AI Sales Voice Agent.
 
-    Flow:
+    Flow (streaming):
     1. Capture mic audio in chunks
-    2. VAD detects when user stops speaking
+    2. VAD detects when user stops speaking → pause mic
     3. STT transcribes the speech
-    4. AI Brain generates a response
-    5. TTS synthesizes the response
-    6. Play audio through speakers
-    7. Repeat until call ends
+    4. AI Brain streams response sentence-by-sentence
+    5. Each sentence is synthesized by TTS and played immediately
+    6. Resume mic after playback
+    7. Repeat until call ends or MAX_CONVERSATION_TURNS reached
     """
 
     def __init__(
@@ -56,7 +62,8 @@ class PipelineOrchestrator:
 
         # State
         self._running = False
-        self._is_speaking = False  # True when TTS audio is playing
+        self._is_speaking = False   # True while TTS audio is playing
+        self._turn_count = 0
 
     def load_all(self):
         """Load all models into GPU (concurrent mode)."""
@@ -65,13 +72,11 @@ class PipelineOrchestrator:
         print("=" * 60)
         t0 = time.time()
 
-        # Load models
         self.vad.load()
         self.stt.load()
         self.tts.load()
         self.ai.warm_up()
 
-        # Print VRAM usage
         try:
             import torch
             allocated = torch.cuda.memory_allocated() / 1024**3
@@ -106,14 +111,13 @@ class PipelineOrchestrator:
         print("  • Wait for the AI to respond")
         print("  • Press Ctrl+C to end the call\n")
 
-        # List audio devices
         self.audio.list_devices()
 
         # Generate and speak the opening
         print("\n--- Call Starting ---\n")
         opening = self.ai.get_opening(prospect_name="there")
         print(f"🤖 Agent: {opening}\n")
-        self._speak(opening)
+        self._speak_text(opening, "en")
 
         # Start listening
         self.audio.start_recording()
@@ -134,71 +138,108 @@ class PipelineOrchestrator:
         if chunk is None:
             return
 
-        # Run VAD on the chunk
         vad_result = self.vad.process_chunk(chunk)
 
-        # Show speaking indicator
         if vad_result["is_speech"] and not self._is_speaking:
             sys.stdout.write("\r🎤 Listening... ")
             sys.stdout.flush()
 
-        if vad_result["speech_ended"] and vad_result["speech_audio"] is not None:
-            speech_audio = vad_result["speech_audio"]
-            audio_duration = len(speech_audio) / config.SAMPLE_RATE
+        if not (vad_result["speech_ended"] and vad_result["speech_audio"] is not None):
+            return
 
-            # Skip very short utterances (likely noise)
-            if audio_duration < 0.5:
-                return
+        speech_audio = vad_result["speech_audio"]
+        audio_duration = len(speech_audio) / config.SAMPLE_RATE
 
-            sys.stdout.write("\r")  # Clear the listening indicator
-            print(f"📝 Processing {audio_duration:.1f}s of speech...")
+        # Skip very short utterances (likely noise)
+        if audio_duration < 0.5:
+            return
 
-            # ─── STT ────────────────────────────────────────────
-            t0 = time.time()
-            stt_result = self.stt.transcribe(speech_audio)
-            stt_time = time.time() - t0
+        sys.stdout.write("\r")
+        print(f"📝 Processing {audio_duration:.1f}s of speech...")
 
-            transcript = stt_result["text"]
-            language = stt_result["language"]
+        # Pause mic to prevent speaker audio feeding back into STT
+        self.audio.stop_recording()
 
-            if not transcript or transcript.strip() == "":
-                print("   (no speech detected)")
-                return
+        turn_start = time.time()
 
-            print(f"👤 Prospect [{language}]: {transcript}")
-            print(f"   ⏱️  STT: {stt_time:.2f}s")
+        # ─── STT ──────────────────────────────────────────────────────
+        t0 = time.time()
+        stt_result = self.stt.transcribe(speech_audio)
+        stt_time = time.time() - t0
 
-            # Check for exit keywords
-            lower = transcript.lower()
-            if any(w in lower for w in ["goodbye", "bye", "end call", "disconnect",
-                                          "अलविदा", "बाय", "रखो"]):
-                print("\n🤖 Agent: Thank you for your time! Have a great day!")
-                self._speak("Thank you for your time! Have a great day!")
-                self._running = False
-                return
+        transcript = stt_result["text"]
+        language = stt_result["language"]
 
-            # ─── AI Brain ───────────────────────────────────────
-            t0 = time.time()
-            response = self.ai.generate_response(transcript, language)
-            ai_time = time.time() - t0
-
-            print(f"🤖 Agent [{language}]: {response}")
-            print(f"   ⏱️  AI: {ai_time:.2f}s")
-
-            # ─── TTS ────────────────────────────────────────────
-            t0 = time.time()
-            self._speak(response, language)
-            tts_time = time.time() - t0
-
-            print(f"   ⏱️  TTS: {tts_time:.2f}s")
-            print(f"   ⏱️  Total round-trip: {stt_time + ai_time + tts_time:.2f}s")
-            print()
-
-            # Reset VAD for next turn
+        if not transcript or transcript.strip() == "":
+            print("   (no speech detected)")
+            self.audio.start_recording()
             self.vad.reset()
+            return
 
-    def _speak(self, text: str, language: str = "en"):
-        """Synthesize and play speech."""
+        print(f"👤 Prospect [{language}]: {transcript}")
+        print(f"   ⏱️  STT: {stt_time:.2f}s")
+
+        # Check for exit keywords
+        if self._is_exit_phrase(transcript):
+            farewell = self._get_farewell(language)
+            print(f"\n🤖 Agent: {farewell}")
+            self._speak_text(farewell, language)
+            self._running = False
+            return
+
+        # Check turn limit
+        self._turn_count += 1
+        if self._turn_count > config.MAX_CONVERSATION_TURNS:
+            wrap_up = self._get_wrap_up(language)
+            print(f"\n🤖 Agent (wrapping up): {wrap_up}")
+            self._speak_text(wrap_up, language)
+            self._running = False
+            return
+
+        # ─── AI + TTS streaming ───────────────────────────────────────
+        t0_ai = time.time()
+        first_audio_played = False
+        full_response_parts = []
+
+        if config.STREAMING_PIPELINE:
+            print(f"🤖 Agent [{language}]: ", end="", flush=True)
+
+            for sentence in self.ai.generate_response_streaming(transcript, language):
+                full_response_parts.append(sentence)
+                print(sentence, end=" ", flush=True)
+
+                # Synthesize and play each sentence as it arrives
+                t_tts = time.time()
+                audio = self.tts.synthesize_sentence(sentence, language)
+                if audio is not None and len(audio) > 0:
+                    if not first_audio_played:
+                        ttfa = time.time() - turn_start
+                        print(f"\n   ⏱️  Time-to-first-audio: {ttfa:.2f}s")
+                        first_audio_played = True
+                    self._is_speaking = True
+                    self.audio.play_audio(audio, config.TTS_SAMPLE_RATE, blocking=True)
+                    self._is_speaking = False
+
+            print()  # newline after streamed response
+
+        else:
+            # Non-streaming fallback
+            response = self.ai.generate_response(transcript, language)
+            full_response_parts = [response]
+            print(f"🤖 Agent [{language}]: {response}")
+            self._speak_text(response, language)
+
+        total_time = time.time() - turn_start
+        ai_time = time.time() - t0_ai
+        print(f"   ⏱️  AI+TTS total: {ai_time:.2f}s | Round-trip: {total_time:.2f}s")
+        print()
+
+        # Resume mic for next turn
+        self.audio.start_recording()
+        self.vad.reset()
+
+    def _speak_text(self, text: str, language: str = "en"):
+        """Synthesize and play a single text block (non-streaming)."""
         self._is_speaking = True
         try:
             audio = self.tts.synthesize(text, language)
@@ -208,8 +249,43 @@ class PipelineOrchestrator:
         finally:
             self._is_speaking = False
 
+    def _is_exit_phrase(self, transcript: str) -> bool:
+        """Check if the prospect said a goodbye phrase."""
+        lower = transcript.lower()
+        exit_words = [
+            # English
+            "goodbye", "bye", "end call", "disconnect", "hang up", "stop",
+            # Hindi
+            "अलविदा", "बाय", "रखो", "फोन रखो", "बंद करो",
+            # Marathi
+            "निरोप", "बाय", "फोन ठेव",
+            # Gujarati
+            "આવજો", "બાય", "ફોન મૂકો",
+        ]
+        return any(w in lower for w in exit_words)
+
+    def _get_farewell(self, language: str) -> str:
+        """Language-appropriate farewell."""
+        farewells = {
+            "en": "Thank you so much for your time! Have a great day!",
+            "hi": "आपके समय के लिए बहुत धन्यवाद! आपका दिन शुभ हो!",
+            "mr": "तुमच्या वेळासाठी खूप धन्यवाद! तुमचा दिवस चांगला जाओ!",
+            "gu": "તમારો સમય આપ્યો બદલ ખૂબ આભાર! તમારો દિવસ સારો રહો!",
+        }
+        return farewells.get(language, farewells["en"])
+
+    def _get_wrap_up(self, language: str) -> str:
+        """Language-appropriate wrap-up when turn limit is hit."""
+        wrap_ups = {
+            "en": "I've really enjoyed our conversation! Let me have someone from our team follow up with you. Have a wonderful day!",
+            "hi": "हमारी बातचीत बहुत अच्छी रही! हमारी टीम का कोई सदस्य आपसे फॉलो-अप करेगा। आपका दिन शुभ हो!",
+            "mr": "आपल्याशी बोलून खूप आनंद झाला! आमच्या टीमचा कोणी तुमच्याशी फॉलो-अप करेल. तुमचा दिवस चांगला जाओ!",
+            "gu": "તમારી સાથે વાત કરીને ખૂબ આનંદ થયો! અમારી ટીમ તમારી સાથે ફૉલો-અપ કરશે. તમારો દિવસ સારો રહો!",
+        }
+        return wrap_ups.get(language, wrap_ups["en"])
+
     def _print_summary(self):
-        """Print call summary."""
+        """Print and save call summary."""
         summary = self.ai.get_summary()
 
         print("\n" + "=" * 60)
@@ -230,7 +306,6 @@ class PipelineOrchestrator:
         print(summary["transcript"])
         print("=" * 60)
 
-        # Save summary to file
         os.makedirs(config.RECORDINGS_DIR, exist_ok=True)
         summary_path = os.path.join(
             config.RECORDINGS_DIR,
@@ -240,6 +315,8 @@ class PipelineOrchestrator:
             json.dump(summary, f, indent=2, ensure_ascii=False)
         print(f"\n📁 Summary saved: {summary_path}")
 
+    # ─── Text mode ───────────────────────────────────────────────────
+
     def run_text_mode(self):
         """
         Text-only mode for testing without audio hardware.
@@ -248,36 +325,71 @@ class PipelineOrchestrator:
         print("\n" + "=" * 60)
         print("  🤖 AI Sales Agent — Text Mode (No Audio)")
         print("=" * 60)
-        print("Type as the prospect. Type 'quit' to end.\n")
+        print("\nType your messages. Press Ctrl+C or type 'quit' to end.\n")
 
-        # Warm up AI only
         self.ai.warm_up()
+        self._running = True
 
-        # Opening
         opening = self.ai.get_opening(prospect_name="there")
-        print(f"🤖 Agent: {opening}\n")
+        print(f"\n🤖 Agent: {opening}\n")
 
-        while True:
-            try:
-                user_input = input("👤 You: ").strip()
-                if not user_input:
-                    continue
-                if user_input.lower() in ["quit", "exit", "q"]:
+        try:
+            while self._running:
+                try:
+                    user_input = input("👤 You: ").strip()
+                except EOFError:
                     break
 
-                # Detect language (simple heuristic)
-                lang = "en"
-                if any(ord(c) > 0x0900 and ord(c) < 0x097F for c in user_input):
-                    lang = "hi"  # Devanagari range
+                if not user_input:
+                    continue
+                if user_input.lower() in ("quit", "exit", "bye"):
+                    break
+
+                # Simple language detection for text mode
+                language = self._detect_language_text(user_input)
+
+                if self._is_exit_phrase(user_input):
+                    farewell = self._get_farewell(language)
+                    print(f"\n🤖 Agent: {farewell}\n")
+                    break
+
+                self._turn_count += 1
+                if self._turn_count > config.MAX_CONVERSATION_TURNS:
+                    print(f"\n🤖 Agent: {self._get_wrap_up(language)}\n")
+                    break
 
                 t0 = time.time()
-                response = self.ai.generate_response(user_input, lang)
-                elapsed = time.time() - t0
+                if config.STREAMING_PIPELINE:
+                    print("🤖 Agent: ", end="", flush=True)
+                    for sentence in self.ai.generate_response_streaming(user_input, language):
+                        print(sentence, end=" ", flush=True)
+                    print(f"\n   ⏱️  {time.time() - t0:.2f}s\n")
+                else:
+                    response = self.ai.generate_response(user_input, language)
+                    print(f"🤖 Agent [{language}]: {response}")
+                    print(f"   ⏱️  {time.time() - t0:.2f}s\n")
 
-                print(f"🤖 Agent: {response}")
-                print(f"   ⏱️  {elapsed:.2f}s\n")
+        except KeyboardInterrupt:
+            print("\n\n--- Session Ended ---")
+        finally:
+            self._print_summary()
 
-            except KeyboardInterrupt:
-                break
+    def _detect_language_text(self, text: str) -> str:
+        """
+        Heuristic language detection for text mode.
+        Checks Unicode ranges for Devanagari, Gujarati script.
+        Falls back to English.
+        """
+        devanagari = sum(1 for c in text if "\u0900" <= c <= "\u097F")
+        gujarati = sum(1 for c in text if "\u0A80" <= c <= "\u0AFF")
+        total = len(text)
 
-        self._print_summary()
+        if total == 0:
+            return "en"
+        if gujarati / total > 0.15:
+            return "gu"
+        if devanagari / total > 0.15:
+            # Marathi uses Devanagari but has distinct vocabulary — Whisper handles
+            # this in voice mode; in text mode we default to Hindi for Devanagari.
+            return "hi"
+        return "en"

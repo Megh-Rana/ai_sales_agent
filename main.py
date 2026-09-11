@@ -18,6 +18,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import config
 from pipeline.orchestrator import PipelineOrchestrator
 
 
@@ -48,19 +49,28 @@ def main():
         help="Campaign goal"
     )
     parser.add_argument(
-        "--speaker-wav", type=str,
-        default=None,
-        help="Path to speaker reference WAV for voice cloning"
+        "--gender", type=str, default="male", choices=["male", "female"],
+        help="TTS voice gender (default: male)"
+    )
+    parser.add_argument(
+        "--no-stream", action="store_true",
+        help="Disable streaming pipeline (synthesize full response before playing)"
     )
 
     args = parser.parse_args()
 
+    # Apply flag overrides to config before pipeline starts
+    if args.no_stream:
+        config.STREAMING_PIPELINE = False
+
     print("\n🚀 AI Sales Voice Agent")
-    print(f"   Company:  {args.company}")
-    print(f"   Services: {args.services}")
-    print(f"   Agent:    {args.agent}")
-    print(f"   Goal:     {args.goal}")
-    print(f"   Mode:     {'Text' if args.text else 'Voice'}")
+    print(f"   Company:   {args.company}")
+    print(f"   Services:  {args.services}")
+    print(f"   Agent:     {args.agent}")
+    print(f"   Goal:      {args.goal}")
+    print(f"   Mode:      {'Text' if args.text else 'Voice'}")
+    print(f"   Streaming: {'Off' if args.no_stream else 'On'}")
+    print(f"   Model:     {config.OLLAMA_MODEL}")
 
     pipeline = PipelineOrchestrator(
         company_info=f"{args.company} — a leading technology solutions provider in India",
@@ -70,8 +80,7 @@ def main():
         company_name=args.company,
     )
 
-    if args.speaker_wav:
-        pipeline.tts.set_speaker_wav(args.speaker_wav)
+    pipeline.tts.set_gender(args.gender)
 
     if args.text:
         pipeline.run_text_mode()

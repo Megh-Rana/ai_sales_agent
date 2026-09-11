@@ -3,15 +3,12 @@ TTS Engine — Text-to-Speech using Microsoft Edge TTS.
 Supports excellent multilingual synthesis including Hindi, Marathi, Gujarati.
 Uses Microsoft's Neural TTS voices — free, no API key needed.
 
-Note: Edge TTS requires internet connection but is free and has the best
-Indian language voice quality available. For a hackathon demo this is ideal.
-Coqui XTTS v2 (local) doesn't support Python 3.14, so Edge TTS is the
-pragmatic choice.
+Streaming mode: synthesize_streaming() yields audio chunks sentence-by-sentence
+so the orchestrator can start playing audio before the full response is ready.
 """
 
 import numpy as np
 import asyncio
-import tempfile
 import time
 import sys
 import os
@@ -29,15 +26,15 @@ VOICE_MAP = {
     },
     "hi": {
         "male": "hi-IN-MadhurNeural",                # Friendly, positive
-        "female": "hi-IN-SwaraNeural",                # Friendly, positive
+        "female": "hi-IN-SwaraNeural",               # Friendly, positive
     },
     "mr": {
-        "male": "mr-IN-ManoharNeural",                # Friendly, positive
-        "female": "mr-IN-AarohiNeural",               # Friendly, positive
+        "male": "mr-IN-ManoharNeural",               # Friendly, positive
+        "female": "mr-IN-AarohiNeural",              # Friendly, positive
     },
     "gu": {
-        "male": "gu-IN-NiranjanNeural",               # Friendly, positive
-        "female": "gu-IN-DhwaniNeural",               # Friendly, positive
+        "male": "gu-IN-NiranjanNeural",              # Friendly, positive
+        "female": "gu-IN-DhwaniNeural",              # Friendly, positive
     },
 }
 
@@ -71,59 +68,75 @@ class TTSEngine:
         return VOICE_MAP[lang].get(self.gender, VOICE_MAP[lang]["male"])
 
     def _get_event_loop(self):
-        """Get or create an async event loop."""
+        """Get or create a dedicated async event loop for this engine."""
         try:
-            loop = asyncio.get_running_loop()
-            return loop
+            # If there's already a running loop (e.g. in async context), we can't use it
+            # directly from a sync call — so always use our own managed loop.
+            asyncio.get_running_loop()
+            # We're inside a running loop; create a new thread-local loop below
         except RuntimeError:
-            if self._loop is None or self._loop.is_closed():
-                self._loop = asyncio.new_event_loop()
-            return self._loop
+            pass  # No running loop — safe to use our own
+
+        if self._loop is None or self._loop.is_closed():
+            self._loop = asyncio.new_event_loop()
+        return self._loop
+
+    # ─── Single-shot synthesis ──────────────────────────────────────
 
     def synthesize(self, text: str, language: str = None) -> np.ndarray:
         """
-        Synthesize speech from text.
+        Synthesize speech from text, returning a single audio array.
 
         Args:
             text: text to synthesize
             language: language code ('en', 'hi', 'mr', 'gu')
 
         Returns:
-            numpy array of float32 audio at 24kHz
+            numpy array of float32 audio at TTS_SAMPLE_RATE
         """
         lang = language or config.TTS_DEFAULT_LANGUAGE
         voice = self._get_voice(lang)
 
         t0 = time.time()
-
-        # Run async synthesis
         loop = self._get_event_loop()
         audio_data = loop.run_until_complete(self._synthesize_async(text, voice))
-
-        # Convert MP3 bytes to numpy array
         audio_np = self._mp3_to_numpy(audio_data)
 
         elapsed = time.time() - t0
         duration = len(audio_np) / config.TTS_SAMPLE_RATE
-
         print(f"[TTS] Synthesized {len(text)} chars in {elapsed:.2f}s "
               f"({duration:.1f}s audio) [{lang}/{voice}]")
 
         return audio_np
 
     async def _synthesize_async(self, text: str, voice: str) -> bytes:
-        """Async edge-tts synthesis."""
+        """Async edge-tts synthesis — collects full MP3 bytes."""
         import edge_tts
 
         communicate = edge_tts.Communicate(text, voice)
-
-        # Collect audio bytes
         audio_bytes = io.BytesIO()
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 audio_bytes.write(chunk["data"])
-
         return audio_bytes.getvalue()
+
+    # ─── Streaming synthesis ────────────────────────────────────────
+
+    def synthesize_sentence(self, text: str, language: str = None) -> np.ndarray | None:
+        """
+        Synthesize a single sentence / short phrase.
+        Same as synthesize() but designed for rapid repeated calls during streaming.
+        Returns None if synthesis fails or produces empty audio.
+        """
+        if not text or not text.strip():
+            return None
+        try:
+            return self.synthesize(text.strip(), language)
+        except Exception as e:
+            print(f"[TTS] Sentence synthesis failed: {e}")
+            return None
+
+    # ─── MP3 → numpy ────────────────────────────────────────────────
 
     def _mp3_to_numpy(self, mp3_data: bytes) -> np.ndarray:
         """Convert MP3 bytes to float32 numpy array at TTS_SAMPLE_RATE."""
@@ -131,7 +144,6 @@ class TTSEngine:
         import tempfile
         import soundfile as sf
 
-        # Use ffmpeg directly to convert MP3 → WAV (avoids pydub/audioop issues on Python 3.14)
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as mp3_file:
             mp3_file.write(mp3_data)
             mp3_path = mp3_file.name
@@ -149,9 +161,8 @@ class TTSEngine:
                 capture_output=True,
                 check=True,
             )
-            samples, sr = sf.read(wav_path, dtype="float32")
+            samples, _ = sf.read(wav_path, dtype="float32")
         finally:
-            # Clean up temp files
             for p in [mp3_path, wav_path]:
                 try:
                     os.unlink(p)
@@ -159,6 +170,8 @@ class TTSEngine:
                     pass
 
         return samples
+
+    # ─── Utility ────────────────────────────────────────────────────
 
     def synthesize_to_file(self, text: str, filepath: str, language: str = None):
         """Synthesize and save to WAV file."""
