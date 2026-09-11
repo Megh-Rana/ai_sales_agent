@@ -1,0 +1,22 @@
+{
+  "duration_seconds": 39.1,
+  "total_turns": 1,
+  "language": "en",
+  "lead_info": {
+    "name": null,
+    "company": null,
+    "interest_level": "unknown",
+    "objections": [],
+    "callback_requested": false,
+    "meeting_scheduled": false
+  },
+  "bant_score": {
+    "budget": false,
+    "authority": false,
+    "need": false,
+    "timeline": false,
+    "score": 0,
+    "max_score": 4
+  },
+  "transcript": "Sales Agent: Hello! Am I speaking with there? Hi, this is Alex calling from TechSolutions India. I hope I'm not catching you at a bad time. I'm reaching out because Schedule a product demo to show how our IT solutions can streamline their operations. Do you have a quick minute to chat?"
+}
