@@ -11,6 +11,7 @@ Key improvements:
 
 import numpy as np
 import threading
+import queue
 import time
 import json
 import sys
@@ -134,7 +135,7 @@ class PipelineOrchestrator:
 
     def _conversation_loop(self):
         """Single iteration of the listen-process-respond loop."""
-        chunk = self.audio.get_audio_chunk(timeout=0.5)
+        chunk = self.audio.get_audio_chunk(timeout=0.3)
         if chunk is None:
             return
 
@@ -157,8 +158,8 @@ class PipelineOrchestrator:
         sys.stdout.write("\r")
         print(f"📝 Processing {audio_duration:.1f}s of speech...")
 
-        # Pause mic to prevent speaker audio feeding back into STT
-        self.audio.stop_recording()
+        # Pause mic (NOT destroy) to prevent speaker bleed-through into STT
+        self.audio.pause_recording()
 
         turn_start = time.time()
 
@@ -172,7 +173,7 @@ class PipelineOrchestrator:
 
         if not transcript or transcript.strip() == "":
             print("   (no speech detected)")
-            self.audio.start_recording()
+            self.audio.resume_recording()
             self.vad.reset()
             return
 
@@ -196,38 +197,76 @@ class PipelineOrchestrator:
             self._running = False
             return
 
-        # ─── AI + TTS streaming ───────────────────────────────────────
+        # ─── AI + TTS streaming with gapless playback ─────────────────
         t0_ai = time.time()
-        first_audio_played = False
-        full_response_parts = []
 
-        if config.STREAMING_PIPELINE:
-            print(f"🤖 Agent [{language}]: ", end="", flush=True)
+        try:
+            if config.STREAMING_PIPELINE:
+                print(f"🤖 Agent [{language}]: ", end="", flush=True)
 
-            for sentence in self.ai.generate_response_streaming(transcript, language):
-                full_response_parts.append(sentence)
-                print(sentence, end=" ", flush=True)
+                # Shared queue between TTS (producer) and playback (consumer)
+                DONE = object()
+                audio_q = queue.Queue()
+                ttfa_logged = [False]
 
-                # Synthesize and play each sentence as it arrives
-                t_tts = time.time()
-                audio = self.tts.synthesize_sentence(sentence, language)
-                if audio is not None and len(audio) > 0:
-                    if not first_audio_played:
-                        ttfa = time.time() - turn_start
-                        print(f"\n   ⏱️  Time-to-first-audio: {ttfa:.2f}s")
-                        first_audio_played = True
-                    self._is_speaking = True
-                    self.audio.play_audio(audio, config.TTS_SAMPLE_RATE, blocking=True)
+                def gapless_player():
+                    """Drain audio queue via a single sd.OutputStream.
+                    One continuous stream — no gaps between chunks."""
+                    import sounddevice as sd
+                    sr = config.TTS_SAMPLE_RATE
+                    with sd.OutputStream(samplerate=sr, channels=1, dtype="float32") as stream:
+                        while True:
+                            try:
+                                chunk = audio_q.get(timeout=15.0)
+                            except queue.Empty:
+                                print("[Audio] Playback timeout")
+                                break
+                            if chunk is DONE:
+                                break
+                            if chunk is None or len(chunk) == 0:
+                                continue
+
+                            if not ttfa_logged[0]:
+                                print(f"\n   ⏱️  Time-to-first-audio: {time.time() - turn_start:.2f}s")
+                                ttfa_logged[0] = True
+
+                            self._is_speaking = True
+
+                            # Normalize
+                            max_val = np.abs(chunk).max()
+                            if max_val > 1.0:
+                                chunk = chunk / max_val
+
+                            # Single write — smooth, no slicing
+                            stream.write(chunk.reshape(-1, 1))
+
                     self._is_speaking = False
 
-            print()  # newline after streamed response
+                playback_thread = threading.Thread(target=gapless_player, daemon=True)
+                playback_thread.start()
 
-        else:
-            # Non-streaming fallback
-            response = self.ai.generate_response(transcript, language)
-            full_response_parts = [response]
-            print(f"🤖 Agent [{language}]: {response}")
-            self._speak_text(response, language)
+                # Feed sentences from LLM → TTS → audio_q
+                sentence_gen = self.ai.generate_response_streaming(transcript, language)
+                self.tts.synthesize_streaming_turn(
+                    sentence_gen,
+                    language=language,
+                    audio_queue=audio_q,
+                    done_sentinel=DONE,
+                )
+
+                # Wait for playback to finish
+                playback_thread.join(timeout=30.0)
+                print()  # newline after streamed response
+
+            else:
+                # Non-streaming fallback
+                response = self.ai.generate_response(transcript, language)
+                print(f"🤖 Agent [{language}]: {response}")
+                self._speak_text(response, language)
+
+        except Exception as e:
+            print(f"\n[Pipeline] Error during AI+TTS turn: {e}")
+            self._is_speaking = False
 
         total_time = time.time() - turn_start
         ai_time = time.time() - t0_ai
@@ -235,7 +274,7 @@ class PipelineOrchestrator:
         print()
 
         # Resume mic for next turn
-        self.audio.start_recording()
+        self.audio.resume_recording()
         self.vad.reset()
 
     def _speak_text(self, text: str, language: str = "en"):

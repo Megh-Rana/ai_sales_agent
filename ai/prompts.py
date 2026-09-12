@@ -53,6 +53,13 @@ SALES_AGENT_SYSTEM_PROMPT_HI = """आप एक पेशेवर AI सेल�
 8. कभी भी जबरदस्ती न करें
 9. कुछ न पता हो तो कहें कि टीम फॉलो-अप करेगी
 
+**बहुत ज़रूरी — भाषा शैली:**
+- रोज़मर्रा की बोलचाल वाली हिंदी बोलें — किताबी या औपचारिक हिंदी बिल्कुल नहीं
+- जैसे लोग असल में फ़ोन पर बात करते हैं, वैसे बोलें
+- Business शब्द English में रख सकते हैं — meeting, demo, budget, solution, team, service, product, company
+- "हम आपकी सहायता हेतु उपलब्ध हैं" जैसा मत बोलें — "हम आपकी help कर सकते हैं" बोलें
+- छोटे, सीधे वाक्य बोलें। लंबे complex वाक्य मत बनाएं।
+
 **महत्वपूर्ण: आपके जवाब TTS द्वारा बोले जाएंगे। बातचीत जैसा और स्वाभाविक रखें। कोई बुलेट पॉइंट, मार्कडाउन, या XML टैग नहीं। सीधे बोलकर जवाब दें।**
 """
 
@@ -132,10 +139,10 @@ SALES_AGENT_SYSTEM_PROMPT_MULTILINGUAL = """You are a professional AI sales agen
 # ─── Opening Scripts ─────────────────────────────────────────────────
 
 OPENING_SCRIPT = {
-    "en": "Hello! This is {agent_name} calling from {company_name}. I hope I'm not catching you at a bad time. I wanted to quickly share how we help businesses like yours with {reason}. Do you have a quick minute to chat?",
-    "hi": "नमस्ते! मैं {agent_name} बोल रहा हूँ {company_name} की तरफ से। मुझे उम्मीद है कि यह सही समय है। मैं आपसे {reason} के बारे में बात करना चाहता था। क्या आपके पास एक मिनट है?",
-    "mr": "नमस्कार! मी {agent_name} बोलतोय {company_name} कडून। मला आशा आहे की हा योग्य वेळ आहे. मला {reason} बद्दल थोडं बोलायचं होतं. तुमच्याकडे एक मिनिट आहे का?",
-    "gu": "નમસ્તે! હું {agent_name} બોલું છું {company_name} તરફથી. મને આશા છે કે આ સારો સમય છે. હું {reason} વિશે વાત કરવા ઇચ્છતો હતો. શું તમારી પાસે એક મિનિટ છે?",
+    "en": "Hi, this is {agent_name} from {company_name}. Do you have a quick minute?",
+    "hi": "नमस्ते, मैं {agent_name}, {company_name} से बोल रहा हूँ। एक मिनट है आपके पास?",
+    "mr": "नमस्कार, मी {agent_name}, {company_name} कडून बोलतोय. एक मिनिट आहे का?",
+    "gu": "નમસ્તે, હું {agent_name}, {company_name} તરફથી. એક મિનિટ છે?",
 }
 
 # ─── Qualification Questions ─────────────────────────────────────────

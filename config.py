@@ -4,6 +4,9 @@ Tuned for RTX 5050 Laptop GPU (8GB VRAM).
 """
 
 import os
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env from project root
 
 # ─── Paths ──────────────────────────────────────────────────────────
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -16,8 +19,8 @@ SAMPLE_RATE = 16000          # 16kHz for STT input
 TTS_SAMPLE_RATE = 24000      # 24kHz for Edge TTS output
 CHANNELS = 1                 # Mono
 DTYPE = "int16"              # PCM16
-CHUNK_DURATION_S = 0.5       # 500ms audio chunks for streaming
-SILENCE_THRESHOLD_S = 0.8    # Seconds of silence before considering turn complete (was 1.5s)
+CHUNK_DURATION_S = 0.3       # 300ms audio chunks — more responsive VAD
+SILENCE_THRESHOLD_S = 0.6    # Seconds of silence before considering turn complete
 VAD_THRESHOLD = 0.5          # Silero VAD confidence threshold
 
 # ─── STT (faster-whisper) ───────────────────────────────────────────
@@ -28,8 +31,24 @@ STT_BEAM_SIZE = 1            # 1 = greedy decoding, much faster for conversation
 STT_LANGUAGE = None          # None = auto-detect language
 STT_VAD_FILTER = True        # Use built-in VAD filter
 
-# ─── TTS (Edge TTS — Microsoft Neural) ──────────────────────────────
+# ─── TTS (Sarvam Bulbul v3) ─────────────────────────────────────────
+SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "")
+SARVAM_WS_URL = "wss://api.sarvam.ai/text-to-speech/ws"
+
 TTS_DEFAULT_LANGUAGE = "en"
+
+# Speaker voice — pick one from the 30+ Sarvam voices.
+# Good sales agent options: Shubh (warm male), Ishita (clear female),
+# Kabir (confident male), Priya (friendly female)
+TTS_SPEAKER = "ishita"
+
+# Sarvam language codes — maps our internal codes to BCP-47
+SARVAM_LANG_MAP = {
+    "en": "en-IN",
+    "hi": "hi-IN",
+    "mr": "mr-IN",
+    "gu": "gu-IN",
+}
 
 # ─── LLM (Ollama) ───────────────────────────────────────────────────
 # Recommended models (in order of preference for conversational latency):
@@ -37,10 +56,11 @@ TTS_DEFAULT_LANGUAGE = "en"
 #   - llama3.2:3b-instruct    (~2GB VRAM, fast, excellent for conversation)
 #   - qwen2.5:7b-instruct     (~4.5GB VRAM, slower but higher quality)
 #   - qwen2.5-coder:7b-instruct  (original — functional but overkill for sales)
-OLLAMA_MODEL = "qwen2.5:3b-instruct"
+# OLLAMA_MODEL = "qwen2.5:3b-instruct"
+OLLAMA_MODEL = "deepseek-r1:8b"
 OLLAMA_HOST = "http://localhost:11434"
 OLLAMA_TEMPERATURE = 0.7
-OLLAMA_NUM_CTX = 4096        # Context window
+OLLAMA_NUM_CTX = 2048        # Context window — 2K is plenty for short sales calls
 OLLAMA_NUM_GPU = 99          # All layers on GPU
 
 # ─── Streaming Pipeline ──────────────────────────────────────────────
@@ -52,7 +72,7 @@ STREAMING_PIPELINE = True
 # Minimum characters before flushing a partial sentence to TTS.
 # Lower = more responsive but more TTS requests; higher = fewer requests but
 # waits longer before playing the first chunk.
-STREAM_MIN_CHARS = 60
+STREAM_MIN_CHARS = 40
 
 # ─── Language Support ────────────────────────────────────────────────
 SUPPORTED_LANGUAGES = {
@@ -64,4 +84,4 @@ SUPPORTED_LANGUAGES = {
 
 # ─── Pipeline ────────────────────────────────────────────────────────
 MAX_CONVERSATION_TURNS = 20
-MAX_RESPONSE_TOKENS = 256    # Reduced from 512 — 1-3 sentence responses don't need more
+MAX_RESPONSE_TOKENS = 150    # Short responses for conversational pace — 1-3 sentences

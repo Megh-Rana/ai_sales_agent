@@ -1,192 +1,230 @@
 """
-TTS Engine — Text-to-Speech using Microsoft Edge TTS.
-Supports excellent multilingual synthesis including Hindi, Marathi, Gujarati.
-Uses Microsoft's Neural TTS voices — free, no API key needed.
+TTS Engine — Sarvam Bulbul v3 via official sarvamai SDK.
 
-Streaming mode: synthesize_streaming() yields audio chunks sentence-by-sentence
-so the orchestrator can start playing audio before the full response is ready.
+Single-shot (opening line, fallbacks):
+  Uses REST client.text_to_speech.convert() — simple, one call.
+
+Streaming turn (main pipeline):
+  Uses REST per-sentence with a background LLM reader thread.
+  The WebSocket approach was abandoned because the Sarvam WS closes after
+  a few seconds of idle time, and the LLM can take 1-4s to produce the
+  first token — causing the WS to close before any text is sent.
+
+  Instead, sentences are synthesized via REST individually.  A background
+  thread reads sentences from the LLM generator so LLM generation and
+  TTS synthesis overlap.
+
+Supports: en-IN, hi-IN, mr-IN, gu-IN
 """
 
 import numpy as np
-import asyncio
+import base64
 import time
+import threading
+import queue
 import sys
 import os
-import io
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 
 
-# Voice mappings — professional sales agent voices for each language
-VOICE_MAP = {
-    "en": {
-        "male": "en-US-BrianMultilingualNeural",    # Approachable, casual, sincere
-        "female": "en-US-EmmaMultilingualNeural",     # Cheerful, clear, conversational
-    },
-    "hi": {
-        "male": "hi-IN-MadhurNeural",                # Friendly, positive
-        "female": "hi-IN-SwaraNeural",               # Friendly, positive
-    },
-    "mr": {
-        "male": "mr-IN-ManoharNeural",               # Friendly, positive
-        "female": "mr-IN-AarohiNeural",              # Friendly, positive
-    },
-    "gu": {
-        "male": "gu-IN-NiranjanNeural",              # Friendly, positive
-        "female": "gu-IN-DhwaniNeural",              # Friendly, positive
-    },
-}
-
-
 class TTSEngine:
-    """Edge TTS based text-to-speech engine."""
+    """Sarvam Bulbul v3 TTS engine."""
 
     def __init__(self, gender: str = "male"):
-        """
-        Args:
-            gender: "male" or "female" — selects the voice gender for all languages
-        """
         self.gender = gender
-        self._loaded = True  # Edge TTS doesn't need model loading
-        self._loop = None
+        self.speaker = config.TTS_SPEAKER
+        self._loaded = False
+        self._client = None
+
+    def _get_client(self):
+        if self._client is None:
+            from sarvamai import SarvamAI
+            self._client = SarvamAI(api_subscription_key=config.SARVAM_API_KEY)
+        return self._client
+
+    # ─── Lifecycle ──────────────────────────────────────────────────
 
     def load(self):
-        """No-op for Edge TTS (no model to load, uses API)."""
-        print(f"[TTS] Edge TTS ready (gender: {self.gender})")
-        print(f"[TTS] Voices: EN={self._get_voice('en')}, HI={self._get_voice('hi')}, "
-              f"MR={self._get_voice('mr')}, GU={self._get_voice('gu')}")
+        if not config.SARVAM_API_KEY:
+            raise RuntimeError("[TTS] SARVAM_API_KEY not set — add it to .env")
+        self._get_client()   # validates key exists
+        print(f"[TTS] Sarvam Bulbul v3 ready — speaker: {self.speaker}")
         self._loaded = True
 
     def unload(self):
-        """No-op for Edge TTS."""
         pass
 
-    def _get_voice(self, language: str) -> str:
-        """Get the voice name for a language and gender."""
-        lang = language if language in VOICE_MAP else "en"
-        return VOICE_MAP[lang].get(self.gender, VOICE_MAP[lang]["male"])
+    def set_speaker(self, speaker: str):
+        self.speaker = speaker
+        print(f"[TTS] Speaker → {speaker}")
 
-    def _get_event_loop(self):
-        """Get or create a dedicated async event loop for this engine."""
-        try:
-            # If there's already a running loop (e.g. in async context), we can't use it
-            # directly from a sync call — so always use our own managed loop.
-            asyncio.get_running_loop()
-            # We're inside a running loop; create a new thread-local loop below
-        except RuntimeError:
-            pass  # No running loop — safe to use our own
+    def set_gender(self, gender: str):
+        mapping = {"male": "kabir", "female": "ishita"}
+        if gender in mapping:
+            self.set_speaker(mapping[gender])
+        self.gender = gender
 
-        if self._loop is None or self._loop.is_closed():
-            self._loop = asyncio.new_event_loop()
-        return self._loop
-
-    # ─── Single-shot synthesis ──────────────────────────────────────
+    # ─── Single-shot synthesis (REST) ───────────────────────────────
 
     def synthesize(self, text: str, language: str = None) -> np.ndarray:
-        """
-        Synthesize speech from text, returning a single audio array.
+        """Synthesize full text via REST. Returns float32 numpy array."""
+        if not text or not text.strip():
+            return np.array([], dtype=np.float32)
 
-        Args:
-            text: text to synthesize
-            language: language code ('en', 'hi', 'mr', 'gu')
-
-        Returns:
-            numpy array of float32 audio at TTS_SAMPLE_RATE
-        """
-        lang = language or config.TTS_DEFAULT_LANGUAGE
-        voice = self._get_voice(lang)
-
+        lang_code = self._lang_code(language)
         t0 = time.time()
-        loop = self._get_event_loop()
-        audio_data = loop.run_until_complete(self._synthesize_async(text, voice))
-        audio_np = self._mp3_to_numpy(audio_data)
+
+        try:
+            client = self._get_client()
+            response = client.text_to_speech.convert(
+                model="bulbul:v3",
+                text=text.strip(),
+                language_code=lang_code,
+                speaker=self.speaker,
+                speech_sample_rate=config.TTS_SAMPLE_RATE,
+            )
+            # response.audios is a list of base64-encoded WAV strings
+            audio = self._b64_to_numpy(response.audios[0])
+        except Exception as e:
+            print(f"[TTS] REST synthesis error: {e}")
+            return np.array([], dtype=np.float32)
 
         elapsed = time.time() - t0
-        duration = len(audio_np) / config.TTS_SAMPLE_RATE
-        print(f"[TTS] Synthesized {len(text)} chars in {elapsed:.2f}s "
-              f"({duration:.1f}s audio) [{lang}/{voice}]")
-
-        return audio_np
-
-    async def _synthesize_async(self, text: str, voice: str) -> bytes:
-        """Async edge-tts synthesis — collects full MP3 bytes."""
-        import edge_tts
-
-        communicate = edge_tts.Communicate(text, voice)
-        audio_bytes = io.BytesIO()
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                audio_bytes.write(chunk["data"])
-        return audio_bytes.getvalue()
-
-    # ─── Streaming synthesis ────────────────────────────────────────
+        duration = len(audio) / config.TTS_SAMPLE_RATE
+        print(f"[TTS] {len(text)} chars → {duration:.1f}s audio in {elapsed:.2f}s "
+              f"[{lang_code}/{self.speaker}]")
+        return audio
 
     def synthesize_sentence(self, text: str, language: str = None) -> np.ndarray | None:
-        """
-        Synthesize a single sentence / short phrase.
-        Same as synthesize() but designed for rapid repeated calls during streaming.
-        Returns None if synthesis fails or produces empty audio.
-        """
+        """Synthesize a single sentence. Returns None on failure."""
         if not text or not text.strip():
             return None
-        try:
-            return self.synthesize(text.strip(), language)
-        except Exception as e:
-            print(f"[TTS] Sentence synthesis failed: {e}")
-            return None
+        result = self.synthesize(text.strip(), language)
+        return result if len(result) > 0 else None
 
-    # ─── MP3 → numpy ────────────────────────────────────────────────
+    # ─── Streaming synthesis (REST per-sentence) ────────────────────
 
-    def _mp3_to_numpy(self, mp3_data: bytes) -> np.ndarray:
-        """Convert MP3 bytes to float32 numpy array at TTS_SAMPLE_RATE."""
-        import subprocess
-        import tempfile
-        import soundfile as sf
+    def synthesize_streaming_turn(
+        self,
+        sentence_gen,
+        language: str = None,
+        audio_queue: queue.Queue = None,
+        done_sentinel=None,
+    ):
+        """
+        Synthesize sentences from sentence_gen via REST API, pushing audio
+        chunks to audio_queue for gapless playback by the caller.
 
-        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as mp3_file:
-            mp3_file.write(mp3_data)
-            mp3_path = mp3_file.name
+        Three-stage concurrent pipeline:
+          1. LLM reader thread: reads sentences from generator → sentence_q
+          2. Main thread: reads sentences → submits to ThreadPoolExecutor → future_q
+          3. Drainer thread: waits on futures (in order) → pushes audio to audio_queue
 
-        wav_path = mp3_path.replace(".mp3", ".wav")
-        try:
-            subprocess.run(
-                [
-                    "ffmpeg", "-y", "-i", mp3_path,
-                    "-ar", str(config.TTS_SAMPLE_RATE),
-                    "-ac", "1",
-                    "-f", "wav",
-                    wav_path,
-                ],
-                capture_output=True,
-                check=True,
-            )
-            samples, _ = sf.read(wav_path, dtype="float32")
-        finally:
-            for p in [mp3_path, wav_path]:
+        The ThreadPoolExecutor(max_workers=2) ensures the next sentence is
+        already being synthesized while the current one plays, eliminating
+        the dead gap between sentences.
+        """
+        if audio_queue is None:
+            raise ValueError("audio_queue is required for streaming TTS")
+
+        from concurrent.futures import ThreadPoolExecutor
+
+        sentence_q = queue.Queue()
+        future_q = queue.Queue()  # ordered queue of futures for the drainer
+        SENTENCES_DONE = object()
+        FUTURES_DONE = object()
+
+        t0 = time.time()
+
+        def llm_reader():
+            """Read sentences from LLM generator → sentence queue."""
+            try:
+                for sentence in sentence_gen:
+                    if sentence and sentence.strip():
+                        print(sentence, end=" ", flush=True)
+                        sentence_q.put(sentence.strip())
+            except Exception as e:
+                print(f"\n[TTS] LLM reader error: {e}")
+            sentence_q.put(SENTENCES_DONE)
+
+        def drainer():
+            """Wait on futures in order → push audio to playback queue."""
+            first = True
+            while True:
+                item = future_q.get()
+                if item is FUTURES_DONE:
+                    break
                 try:
-                    os.unlink(p)
-                except OSError:
-                    pass
+                    audio = item.result(timeout=30.0)
+                    if audio is not None and len(audio) > 0:
+                        if first:
+                            print(f"\n[TTS] First chunk in {time.time()-t0:.2f}s")
+                            first = False
+                        audio_queue.put(audio)
+                except Exception as e:
+                    print(f"\n[TTS] Sentence synthesis error: {e}")
+            audio_queue.put(done_sentinel)
 
+        # Start background threads
+        reader_thread = threading.Thread(target=llm_reader, daemon=True)
+        reader_thread.start()
+
+        drainer_thread = threading.Thread(target=drainer, daemon=True)
+        drainer_thread.start()
+
+        # Submit sentences to thread pool as they arrive from the LLM.
+        # max_workers=2: while sentence N is synthesizing, sentence N+1 starts too.
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="tts") as pool:
+            while True:
+                try:
+                    item = sentence_q.get(timeout=30.0)
+                except queue.Empty:
+                    print("\n[TTS] Timeout waiting for sentence from LLM")
+                    break
+
+                if item is SENTENCES_DONE:
+                    break
+
+                future = pool.submit(self.synthesize_sentence, item, language)
+                future_q.put(future)
+
+        # Signal drainer that all futures have been submitted
+        future_q.put(FUTURES_DONE)
+        drainer_thread.join(timeout=60.0)
+        reader_thread.join(timeout=5.0)
+
+    # ─── Audio conversion ────────────────────────────────────────────
+
+    def _b64_to_numpy(self, b64_audio: str) -> np.ndarray:
+        """Decode base64 WAV/PCM from REST response to float32 numpy array."""
+        import io, soundfile as sf
+        raw = base64.b64decode(b64_audio)
+        # Sarvam REST returns a WAV file — soundfile handles it cleanly
+        audio, _ = sf.read(io.BytesIO(raw), dtype="float32")
+        if audio.ndim > 1:
+            audio = audio.mean(axis=1)
+        return audio
+
+    def _pcm_to_numpy(self, raw: bytes) -> np.ndarray:
+        """Convert raw LINEAR16 PCM bytes to float32 numpy array."""
+        samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32)
+        samples /= 32768.0
         return samples
 
-    # ─── Utility ────────────────────────────────────────────────────
+    # ─── Helpers ─────────────────────────────────────────────────────
+
+    def _lang_code(self, language: str | None) -> str:
+        lang = language or config.TTS_DEFAULT_LANGUAGE
+        return config.SARVAM_LANG_MAP.get(lang, "en-IN")
 
     def synthesize_to_file(self, text: str, filepath: str, language: str = None):
-        """Synthesize and save to WAV file."""
         import soundfile as sf
-
         audio = self.synthesize(text, language)
         os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
         sf.write(filepath, audio, config.TTS_SAMPLE_RATE)
         print(f"[TTS] Saved to {filepath}")
-
-    def set_gender(self, gender: str):
-        """Switch between male/female voice."""
-        if gender in ("male", "female"):
-            self.gender = gender
-            print(f"[TTS] Voice gender set to: {gender}")
 
     @property
     def is_loaded(self) -> bool:

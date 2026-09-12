@@ -111,6 +111,7 @@ class AIBrain:
         client.chat(
             model=config.OLLAMA_MODEL,
             messages=[{"role": "user", "content": "Hello"}],
+            keep_alive=-1,  # Never unload — prevents cold-start on subsequent calls
             options={"num_predict": 1, "num_gpu": config.OLLAMA_NUM_GPU},
         )
         self._model_warmed = True
@@ -155,6 +156,7 @@ class AIBrain:
             response = client.chat(
                 model=config.OLLAMA_MODEL,
                 messages=messages,
+                keep_alive=-1,
                 options={
                     "temperature": config.OLLAMA_TEMPERATURE,
                     "num_predict": config.MAX_RESPONSE_TOKENS,
@@ -218,6 +220,7 @@ class AIBrain:
                 model=config.OLLAMA_MODEL,
                 messages=messages,
                 stream=True,
+                keep_alive=-1,
                 options={
                     "temperature": config.OLLAMA_TEMPERATURE,
                     "num_predict": config.MAX_RESPONSE_TOKENS,
