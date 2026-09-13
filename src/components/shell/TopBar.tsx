@@ -20,7 +20,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 
   return (
-    <header className="h-16 bg-surface border-b border-border-strong px-4 sm:px-6 flex items-center justify-between gap-3 sticky top-0 z-20 shrink-0 select-none">
+    <header className="h-16 bg-surface border-b border-border-strong px-4 sm:px-6 flex items-center justify-between gap-3 sticky top-0 z-50 shrink-0 select-none">
       {/* Left: Mobile Menu Trigger + Breadcrumbs */}
       <div className="flex items-center gap-3 min-w-0">
         <button

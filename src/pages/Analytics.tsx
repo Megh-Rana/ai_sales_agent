@@ -15,6 +15,7 @@ import { AnalyticsSkeleton } from '../components/analytics/AnalyticsSkeleton';
 import { AnalyticsEmptyState } from '../components/analytics/AnalyticsEmptyState';
 import { AnalyticsErrorState } from '../components/analytics/AnalyticsErrorState';
 import { Sparkles, Activity, Compass, Layers } from 'lucide-react';
+import { ScrollProgress, AnimatedCardChart } from '../components/ui/21st';
 
 export const Analytics: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRangePreset>('30d');
@@ -48,6 +49,9 @@ export const Analytics: React.FC = () => {
 
   return (
     <div className="space-y-8 select-none pb-16">
+      {/* 21st.dev Scroll Progress Indicator */}
+      <ScrollProgress color="#2563EB" />
+
       {/* SECTION 1: ANALYTICS HEADER & CONTROLS */}
       <AnalyticsHeader
         dateRange={dateRange}
@@ -97,6 +101,26 @@ export const Analytics: React.FC = () => {
                 Touchpoint Efficiency & Conversation Conversion
               </h2>
             </div>
+
+            {/* 21st.dev Animated Card Chart */}
+            <AnimatedCardChart
+              title="Autonomous Voice Qualification Trend"
+              subtitle="Daily volume of connected AI calls and qualified prospect conversions"
+              type="area"
+              color="#3B82F6"
+              height={160}
+              data={[
+                { label: 'Mon', value: 34 },
+                { label: 'Tue', value: 48 },
+                { label: 'Wed', value: 62, highlight: true },
+                { label: 'Thu', value: 55 },
+                { label: 'Fri', value: 78, highlight: true },
+                { label: 'Sat', value: 40 },
+                { label: 'Sun', value: 68 },
+              ]}
+              valuePrefix=""
+              valueSuffix=" Calls"
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <CallPerformanceCard data={currentDataset.callPerformance} />

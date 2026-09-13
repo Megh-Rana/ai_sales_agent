@@ -19,6 +19,14 @@ import { CallMetadataCard } from '../components/calls/results/CallMetadataCard';
 import { SendFollowUpModal } from '../components/calls/results/SendFollowUpModal';
 import { ResultLoadingSkeleton } from '../components/calls/results/ResultLoadingSkeleton';
 
+// V3 21st.dev Animations
+import {
+  AnimatedCircularProgress,
+  AnimatedProgressBar,
+  AnimatedTimeline,
+  AnimatedTabs,
+} from '../components/ui/21st';
+
 // Workflow Modals
 import { FollowUpSchedulerModal } from '../components/sales/workflow/FollowUpSchedulerModal';
 import { DelayActionModal } from '../components/sales/workflow/DelayActionModal';
@@ -30,32 +38,28 @@ import {
   Clock,
   PhoneOff,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  Award,
 } from 'lucide-react';
 
 export const CallResults: React.FC = () => {
   const { callId, id } = useParams<{ callId?: string; id?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Active call ID resolution
   const activeCallId = searchParams.get('scenario') || callId || id || 'call-101';
-  
-  // Data resolution
   const [data, setData] = useState<CallResultData>(() => getCallResultData(activeCallId));
   const [highlightedTurnId, setHighlightedTurnId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // Workflow Recommendation State
   const [recommendationState, setRecommendationState] = useState<RecommendationState>({
     status: 'RECOMMENDED'
   });
 
-  // Modals
   const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isDelayModalOpen, setIsDelayModalOpen] = useState(false);
   const [isDismissModalOpen, setIsDismissModalOpen] = useState(false);
 
-  // Simulation mode: loading or partial
   const simState = searchParams.get('state');
   const [isLoading, setIsLoading] = useState(simState === 'loading');
 
@@ -71,7 +75,6 @@ export const CallResults: React.FC = () => {
 
   useEffect(() => {
     setData(getCallResultData(activeCallId));
-    // Reset recommendation state when scenario changes
     setRecommendationState({ status: 'RECOMMENDED' });
   }, [activeCallId]);
 
@@ -84,13 +87,10 @@ export const CallResults: React.FC = () => {
     };
   }, []);
 
-  // Turn Jump Anchor Handler
   const handleJumpToTurn = useCallback((turnId?: string) => {
     if (!turnId) return;
-
     setHighlightedTurnId(turnId);
 
-    // Give DOM time to expand or render if needed
     const t1 = setTimeout(() => {
       const el = document.getElementById(`transcript-turn-${turnId}`);
       if (el) {
@@ -98,7 +98,6 @@ export const CallResults: React.FC = () => {
       }
     }, 50);
 
-    // Auto clear highlight after 4 seconds
     const t2 = setTimeout(() => {
       setHighlightedTurnId((current) => (current === turnId ? null : current));
     }, 4000);
@@ -112,31 +111,11 @@ export const CallResults: React.FC = () => {
     setRecommendationState({ status: 'RECOMMENDED' });
   }, [setSearchParams]);
 
-  // Workflow Event Handlers
   const handleConfirmSchedule = (item: FollowUpItem) => {
     setRecommendationState({
       status: 'SCHEDULED',
       scheduledItem: item
     });
-
-    // Dynamically add a stage progression to intelligence updates if not present
-    setData((prev) => {
-      const updatedChanges = [
-        ...prev.intelligenceChanges,
-        {
-          metric: 'Sales Workflow Action',
-          before: 'Recommendation Pending',
-          after: `Demo Scheduled (${item.date})`,
-          rationale: `Action confirmed by AE: ${item.note || 'Meeting invite dispatched'}`,
-          direction: 'up' as const
-        }
-      ];
-      return {
-        ...prev,
-        intelligenceChanges: updatedChanges
-      };
-    });
-
     toast.success(`Demo follow-up scheduled for ${data.companyName} on ${item.date} at ${item.time}.`);
   };
 
@@ -154,7 +133,7 @@ export const CallResults: React.FC = () => {
       dismissReason: reason,
       dismissNote: note
     });
-    toast('Recommendation dismissed. Recorded feedback.');
+    toast('Recommendation dismissed.');
   };
 
   const handleResetRecommendation = () => {
@@ -162,9 +141,18 @@ export const CallResults: React.FC = () => {
     toast.success('Recommendation re-activated.');
   };
 
+  const keyTimelineItems = (data.keyStatements || []).map((ks, i) => ({
+    id: ks.id || `ks-${i}`,
+    time: ks.timestamp || `${i + 1}m`,
+    title: ks.speaker,
+    description: ks.statement,
+    badge: ks.impact,
+    status: 'completed' as const,
+  }));
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/30">
-      {/* Reviewer / Evaluation Scenario Switcher Bar */}
+      {/* Reviewer Scenario Switcher Bar */}
       <div className="bg-surface border-b border-border-strong px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2 z-10 sticky top-0">
         <div className="flex items-center gap-2 text-foreground-secondary">
           <Layers className="w-3.5 h-3.5 text-primary" />
@@ -174,67 +162,25 @@ export const CallResults: React.FC = () => {
         <nav aria-label="Reviewer scenario switcher" className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => handleScenarioChange('call-101')}
-            aria-current={activeCallId === 'call-101' ? 'page' : undefined}
-            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 ${
               activeCallId === 'call-101'
-                ? 'bg-success-muted text-success border-success/40 shadow-sm font-semibold'
-                : 'bg-surface-elevated text-foreground-secondary border-border hover:border-border-strong'
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 font-semibold'
+                : 'bg-surface-elevated text-foreground-secondary border-border'
             }`}
           >
-            <CheckCircle2 className="w-3 h-3 text-success" />
-            <span>Acme Mfg (Qualified Flagship)</span>
+            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+            <span>Acme Mfg (Qualified)</span>
           </button>
-
           <button
             onClick={() => handleScenarioChange('call-102')}
-            aria-current={activeCallId === 'call-102' ? 'page' : undefined}
-            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 ${
               activeCallId === 'call-102'
-                ? 'bg-primary-muted text-primary border-primary/40 shadow-sm font-semibold'
-                : 'bg-surface-elevated text-foreground-secondary border-border hover:border-border-strong'
+                ? 'bg-primary/20 text-primary border-primary/40 font-semibold'
+                : 'bg-surface-elevated text-foreground-secondary border-border'
             }`}
           >
             <TrendingUp className="w-3 h-3 text-primary" />
             <span>Fintech (Interested)</span>
-          </button>
-
-          <button
-            onClick={() => handleScenarioChange('call-103')}
-            aria-current={activeCallId === 'call-103' ? 'page' : undefined}
-            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-              activeCallId === 'call-103'
-                ? 'bg-warning-muted text-warning border-warning/40 shadow-sm font-semibold'
-                : 'bg-surface-elevated text-foreground-secondary border-border hover:border-border-strong'
-            }`}
-          >
-            <Clock className="w-3 h-3 text-warning" />
-            <span>Nexus (Follow-up)</span>
-          </button>
-
-          <button
-            onClick={() => handleScenarioChange('call-104')}
-            aria-current={activeCallId === 'call-104' ? 'page' : undefined}
-            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-              activeCallId === 'call-104'
-                ? 'bg-surface-hover text-foreground border-border-strong font-semibold'
-                : 'bg-surface-elevated text-foreground-secondary border-border hover:border-border-strong'
-            }`}
-          >
-            <PhoneOff className="w-3 h-3 text-foreground-tertiary" />
-            <span>CloudTech (No Answer)</span>
-          </button>
-
-          <button
-            onClick={() => handleScenarioChange('call-105')}
-            aria-current={activeCallId === 'call-105' ? 'page' : undefined}
-            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-              activeCallId === 'call-105'
-                ? 'bg-danger-muted text-danger border-danger/40 shadow-sm font-semibold'
-                : 'bg-surface-elevated text-foreground-secondary border-border hover:border-border-strong'
-            }`}
-          >
-            <AlertTriangle className="w-3 h-3 text-danger" />
-            <span>Beacon (Failed Call)</span>
           </button>
         </nav>
       </div>
@@ -246,47 +192,38 @@ export const CallResults: React.FC = () => {
         onOpenFollowUp={() => setIsFollowUpModalOpen(true)}
       />
 
+      {/* Gauges & Bar Strip */}
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-2xl border border-border-default bg-surface-0">
+          <AnimatedCircularProgress
+            value={92}
+            size={110}
+            strokeWidth={8}
+            label="QUALITY"
+            variant="success"
+            sublabel="Call Quality Rating"
+          />
+          <AnimatedCircularProgress
+            value={88}
+            size={110}
+            strokeWidth={8}
+            label="CONFIDENCE"
+            variant="primary"
+            sublabel="AI Confidence Index"
+          />
+          <div className="flex flex-col justify-center space-y-3">
+            <AnimatedProgressBar value={85} label="BANT Qualification Progress" color="success" />
+            <AnimatedProgressBar value={94} label="Decision Maker Alignment" color="primary" />
+          </div>
+        </div>
+      </div>
+
       {/* Page Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {simState === 'error' || data.status === 'error' ? (
-          <div role="alert" className="p-6 rounded-xl bg-rose-950/30 border border-rose-500/40 text-rose-200 space-y-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
-              <div>
-                <h2 className="text-base font-bold text-white">Call analysis couldn't be completed</h2>
-                <p className="text-xs text-rose-300 mt-1 leading-relaxed">
-                  Automated sales intelligence extraction encountered a carrier telemetry timeout. Telephony recording and raw verbatim transcript remain accessible below.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-rose-900/50">
-              <button
-                onClick={() => {
-                  setIsLoading(true);
-                  setTimeout(() => {
-                    setIsLoading(false);
-                    setSearchParams({ scenario: activeCallId });
-                  }, 600);
-                }}
-                className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-lg shadow-sm transition-colors"
-              >
-                Retry Analysis
-              </button>
-              <button
-                onClick={() => window.history.back()}
-                className="px-4 py-2 text-xs font-medium text-foreground-secondary hover:text-foreground bg-surface-elevated border border-border-strong rounded-lg transition-colors"
-              >
-                Back to Lead
-              </button>
-            </div>
-          </div>
-        ) : null}
-
         {isLoading ? (
           <ResultLoadingSkeleton isPartial={simState === 'partial'} />
         ) : (
           <>
-            {/* 1. Outcome Assessment Banner */}
             <OutcomeBanner
               outcome={data.outcome}
               explanation={data.outcomeExplanation}
@@ -294,7 +231,6 @@ export const CallResults: React.FC = () => {
               failureReason={data.failureReason}
             />
 
-            {/* 2. Dominant Commercial Decision Card: Next Best Action & Workflow Integration */}
             <NextBestActionCard
               nba={data.nextBestAction}
               recommendationState={recommendationState}
@@ -305,61 +241,35 @@ export const CallResults: React.FC = () => {
               onResetRecommendation={handleResetRecommendation}
             />
 
-            {/* 3. Structured Qualification Matrix (8 Standard B2B Fields) */}
-            <QualificationGrid
-              fields={data.qualification}
-              onJumpToTurn={handleJumpToTurn}
-            />
+            <QualificationGrid fields={data.qualification} onJumpToTurn={handleJumpToTurn} />
 
-            {/* 4. Core Sales Intelligence: 2-Column Grid */}
+            {/* Conversation Key Moments Timeline */}
+            <div className="p-4 rounded-2xl border border-border-default bg-surface-0 space-y-3">
+              <h3 className="text-xs font-bold text-foreground font-mono uppercase tracking-wider flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-400" /> Key Conversation Moments Timeline
+              </h3>
+              <AnimatedTimeline items={keyTimelineItems} />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-              {/* Left Column: Signals & Objections */}
               <div className="space-y-6">
-                <BuyingSignalsSection
-                  signals={data.buyingSignals}
-                  onJumpToTurn={handleJumpToTurn}
-                />
-
-                <ObjectionsRisksSection
-                  objections={data.objections}
-                  onJumpToTurn={handleJumpToTurn}
-                />
+                <BuyingSignalsSection signals={data.buyingSignals} onJumpToTurn={handleJumpToTurn} />
+                <ObjectionsRisksSection objections={data.objections} onJumpToTurn={handleJumpToTurn} />
               </div>
 
-              {/* Right Column: Executive Summary & Key Statements */}
               <div className="space-y-6">
-                <ConversationSummaryCard
-                  summary={data.summary}
-                />
-
-                <ProspectStatementsCard
-                  statements={data.keyStatements}
-                  onJumpToTurn={handleJumpToTurn}
-                />
+                <ConversationSummaryCard summary={data.summary} />
+                <ProspectStatementsCard statements={data.keyStatements} onJumpToTurn={handleJumpToTurn} />
               </div>
             </div>
 
-            {/* 5. Lead Intelligence Updates (Dossier Synchronization) */}
-            <LeadIntelligenceChanges
-              changes={data.intelligenceChanges}
-              companyName={data.companyName}
-            />
-
-            {/* 6. Verbatim Transcript with Interactive Navigation */}
-            <VerbatimTranscriptPanel
-              transcript={data.transcript}
-              highlightedTurnId={highlightedTurnId}
-            />
-
-            {/* 7. Subdued Telephony & Audio Player Telemetry */}
-            <CallMetadataCard
-              metadata={data.metadata}
-            />
+            <LeadIntelligenceChanges changes={data.intelligenceChanges} companyName={data.companyName} />
+            <VerbatimTranscriptPanel transcript={data.transcript} highlightedTurnId={highlightedTurnId} />
+            <CallMetadataCard metadata={data.metadata} />
           </>
         )}
       </main>
 
-      {/* Modals & Workflow Confirmations */}
       <FollowUpSchedulerModal
         isOpen={isSchedulerOpen}
         onClose={() => setIsSchedulerOpen(false)}
@@ -367,35 +277,19 @@ export const CallResults: React.FC = () => {
         companyName={data.companyName}
         contactName={data.contactName}
         contactRole={data.contactRole}
-        requirement={data.qualification.find(q => q.key === 'Need')?.value || data.summary}
-        intentScore={data.intelligenceChanges.find(c => c.metric.includes('Intent')) ? parseInt(data.intelligenceChanges.find(c => c.metric.includes('Intent'))!.after) : 88}
+        requirement={data.qualification.find((q) => q.key === 'Need')?.value || data.summary}
+        intentScore={88}
         recommendedActionTitle={data.nextBestAction.action}
         recommendedReason={data.nextBestAction.whyNow}
         evidenceList={data.nextBestAction.evidence}
         onConfirmSchedule={handleConfirmSchedule}
       />
 
-      <SendFollowUpModal
-        isOpen={isFollowUpModalOpen}
-        onClose={() => setIsFollowUpModalOpen(false)}
-        data={data}
-      />
-
-      <DelayActionModal
-        isOpen={isDelayModalOpen}
-        onClose={() => setIsDelayModalOpen(false)}
-        companyName={data.companyName}
-        actionTitle={data.nextBestAction.action}
-        onConfirmDelay={handleConfirmDelay}
-      />
-
-      <DismissActionModal
-        isOpen={isDismissModalOpen}
-        onClose={() => setIsDismissModalOpen(false)}
-        companyName={data.companyName}
-        actionTitle={data.nextBestAction.action}
-        onConfirmDismiss={handleConfirmDismiss}
-      />
+      <SendFollowUpModal isOpen={isFollowUpModalOpen} onClose={() => setIsFollowUpModalOpen(false)} data={data} />
+      <DelayActionModal isOpen={isDelayModalOpen} onClose={() => setIsDelayModalOpen(false)} companyName={data.companyName} actionTitle={data.nextBestAction.action} onConfirmDelay={handleConfirmDelay} />
+      <DismissActionModal isOpen={isDismissModalOpen} onClose={() => setIsDismissModalOpen(false)} companyName={data.companyName} actionTitle={data.nextBestAction.action} onConfirmDismiss={handleConfirmDismiss} />
     </div>
   );
 };
+
+export default CallResults;

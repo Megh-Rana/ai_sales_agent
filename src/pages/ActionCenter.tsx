@@ -16,7 +16,17 @@ import { LiveSignalFeedCard } from '../components/actions/LiveSignalFeedCard';
 import { ActionCenterSkeleton } from '../components/actions/ActionCenterSkeleton';
 import { ActionCenterEmptyState } from '../components/actions/ActionCenterEmptyState';
 import { ActionCenterErrorState } from '../components/actions/ActionCenterErrorState';
-import { Target, Zap, Clock, ShieldAlert } from 'lucide-react';
+
+// V3 21st.dev Animations
+import {
+  AnimatedCircularProgress,
+  AnimatedProgressBar,
+  AnimatedNumberTransition,
+  AnimatedBadge,
+  AnimatedStepper,
+} from '../components/ui/21st';
+
+import { Target, Zap, Clock, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export const ActionCenter: React.FC = () => {
   const [activePriority, setActivePriority] = useState<'ALL' | ActionPriorityLevel>('ALL');
@@ -25,7 +35,6 @@ export const ActionCenter: React.FC = () => {
   const [viewState, setViewState] = useState<'normal' | 'loading' | 'empty' | 'error'>('normal');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Filter actions dynamically based on priority and category
   const filteredActions = useMemo(() => {
     return actionsList.filter((item) => {
       if (item.status === 'dismissed') return false;
@@ -68,7 +77,7 @@ export const ActionCenter: React.FC = () => {
 
   return (
     <div className="space-y-8 select-none pb-16">
-      {/* SECTION 1: HEADER & FILTERS */}
+      {/* HEADER */}
       <ActionCenterHeader
         activePriority={activePriority}
         onPriorityChange={setActivePriority}
@@ -80,34 +89,52 @@ export const ActionCenter: React.FC = () => {
         isRefreshing={isRefreshing}
       />
 
-      {/* VIEW STATE 1: LOADING */}
+      {/* QUALIFICATION WORKFLOW STEPPER BAR */}
+      <div className="p-4 rounded-2xl border border-border-default bg-surface-0 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
+        <div className="w-full md:w-2/3">
+          <AnimatedStepper
+            steps={[
+              { id: '1', label: 'DETECT' },
+              { id: '2', label: 'ENRICH' },
+              { id: '3', label: 'QUALIFY' },
+              { id: '4', label: 'EXECUTE' },
+              { id: '5', label: 'CLOSE' },
+            ]}
+            currentStepIndex={3}
+          />
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <AnimatedCircularProgress
+            value={89}
+            size={70}
+            strokeWidth={6}
+            label="READY"
+            variant="success"
+          />
+          <div className="text-left font-mono">
+            <span className="text-[10px] text-foreground-tertiary uppercase block">QUEUE VALUE</span>
+            <AnimatedNumberTransition value={9.7} prefix="₹" suffix="L" decimals={1} className="text-lg text-emerald-400 font-bold" />
+          </div>
+        </div>
+      </div>
+
       {viewState === 'loading' && <ActionCenterSkeleton />}
+      {viewState === 'empty' && <ActionCenterEmptyState onResetFilter={handleResetFilter} />}
+      {viewState === 'error' && <ActionCenterErrorState onRetry={() => setViewState('normal')} />}
 
-      {/* VIEW STATE 2: EMPTY */}
-      {viewState === 'empty' && (
-        <ActionCenterEmptyState onResetFilter={handleResetFilter} />
-      )}
-
-      {/* VIEW STATE 3: ERROR */}
-      {viewState === 'error' && (
-        <ActionCenterErrorState onRetry={() => setViewState('normal')} />
-      )}
-
-      {/* VIEW STATE 4: NORMAL WORKSPACE */}
       {viewState === 'normal' && (
         <main className="space-y-8 animate-fade-in">
-          {/* EXECUTIVE ACTION SUMMARY COUNTERS */}
           <ActionSummaryGrid summary={mockActionSummary} />
 
-          {/* PRIMARY NEXT BEST ACTIONS QUEUE */}
           <section aria-label="Priority Next Best Actions" className="space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-2.5">
               <div className="flex items-center space-x-2">
                 <div className="p-1 rounded bg-primary-muted text-primary border border-primary/30">
-                  <Target className="w-4 h-4" aria-hidden="true" />
+                  <Target className="w-4 h-4" />
                 </div>
-                <h2 className="text-sm font-bold text-foreground tracking-tight uppercase font-mono">
-                  Priority Next Best Actions Queue ({filteredActions.length})
+                <h2 className="text-sm font-bold text-foreground tracking-tight uppercase font-mono flex items-center gap-2">
+                  <span>Priority Next Best Actions Queue ({filteredActions.length})</span>
+                  <AnimatedBadge label="HIGH URGENCY" variant="urgent" pulse />
                 </h2>
               </div>
               <span className="text-xs text-foreground-secondary font-mono">
@@ -131,7 +158,6 @@ export const ActionCenter: React.FC = () => {
             )}
           </section>
 
-          {/* DUAL WORKSPACE: STALLEDS & FOLLOW-UPS */}
           <section aria-label="Stalled Deals and Follow-up Dispatch Queue" className="space-y-4 pt-2">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <StalledOpportunitiesCard deals={mockStalledDeals} />
@@ -139,7 +165,6 @@ export const ActionCenter: React.FC = () => {
             </div>
           </section>
 
-          {/* LIVE SIGNAL STREAM */}
           <section aria-label="Real-time Buying Signal Stream" className="space-y-4 pt-2">
             <LiveSignalFeedCard signals={mockLiveSignals} />
           </section>

@@ -12,6 +12,7 @@ import {
 import { CallSession } from '../../types/calls';
 import { AIStatus } from '../ai/AIStatus';
 import { AIState } from '../../types/sales';
+import { AnimatedTextCycle } from '../ui/21st';
 
 export interface CallHeaderProps {
   session: CallSession;
@@ -101,6 +102,18 @@ export const CallHeader: React.FC<CallHeaderProps> = ({
               <span className="text-foreground-tertiary">·</span>
               <span className="font-mono text-foreground-tertiary">{session.contactPhone}</span>
             </div>
+
+            {/* 21st.dev Animated Status Cycle */}
+            <AnimatedTextCycle
+              phrases={[
+                'AI is researching target company context...',
+                'AI is analyzing buying intent signals...',
+                'AI is preparing personalized executive pitch...',
+                'AI is conducting BANT qualification...',
+                'AI Sales Agent session active.',
+              ]}
+              className="mt-1"
+            />
           </div>
         </div>
 

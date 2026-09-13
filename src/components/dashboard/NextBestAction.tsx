@@ -3,6 +3,7 @@ import { ArrowRight, PhoneCall, FileText, Zap, Clock, Building2, User } from 'lu
 import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { NextBestActionData } from '../../data/dashboard';
+import { SpotlightCard, AnimatedTooltip, HoverGlowButton } from '../ui/21st';
 
 export interface NextBestActionHeroProps {
   data: NextBestActionData;
@@ -38,8 +39,9 @@ export const NextBestAction: React.FC<NextBestActionHeroProps> = ({
   };
 
   return (
-    <div
-      className={`bg-surface-0 border border-signal-high/30 rounded-xl p-5 sm:p-6 shadow-sm relative overflow-hidden transition-all ${className}`}
+    <SpotlightCard
+      spotlightColor="rgba(245, 158, 11, 0.15)"
+      className={`border-signal-high/40 p-5 sm:p-6 shadow-sm relative overflow-hidden transition-all ${className}`}
     >
       {/* Left accent priority stripe */}
       <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-signal-high" />
@@ -68,9 +70,11 @@ export const NextBestAction: React.FC<NextBestActionHeroProps> = ({
               <Building2 className="w-5 h-5 text-primary shrink-0" />
               <span>{data.companyName}</span>
             </button>
-            <span className="px-2 py-0.5 rounded-md font-mono font-bold text-xs bg-signal-high-muted text-signal-high border border-signal-high/40 shrink-0">
-              {data.intentScore} Intent (+{data.scoreDelta} 24h)
-            </span>
+            <AnimatedTooltip score={data.intentScore}>
+              <span className="px-2 py-0.5 rounded-md font-mono font-bold text-xs bg-signal-high-muted text-signal-high border border-signal-high/40 shrink-0 cursor-pointer">
+                {data.intentScore} Intent (+{data.scoreDelta} 24h)
+              </span>
+            </AnimatedTooltip>
             <span className="text-foreground-tertiary">·</span>
             <div className="flex items-center gap-1.5 text-body text-foreground-secondary">
               <User className="w-3.5 h-3.5 text-foreground-tertiary" />
@@ -134,6 +138,6 @@ export const NextBestAction: React.FC<NextBestActionHeroProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </SpotlightCard>
   );
 };

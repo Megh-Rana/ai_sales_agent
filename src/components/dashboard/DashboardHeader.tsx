@@ -1,7 +1,8 @@
 import React from 'react';
-import { Compass, RefreshCw, Zap, SlidersHorizontal } from 'lucide-react';
+import { Compass } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { AnimatedBadge, AnimatedStatusIndicator } from '../ui/21st';
 
 export interface DashboardHeaderProps {
   workspaceName: string;
@@ -36,12 +37,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       <div className="space-y-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-h1 font-bold text-foreground tracking-tight">Sales Workspace</h1>
-          <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-primary-muted text-primary border border-primary/30">
-            {workspaceName} · {division}
-          </span>
+          <AnimatedBadge label={`${workspaceName} · ${division}`} variant="hot" />
+          <AnimatedStatusIndicator status={isScanning ? 'thinking' : 'ready'} />
         </div>
         <p className="text-body text-foreground-secondary flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-signal-high shrink-0 animate-pulse" />
           <span className="truncate">{shiftBriefing}</span>
         </p>
       </div>
@@ -80,3 +79,5 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     </div>
   );
 };
+
+export default DashboardHeader;

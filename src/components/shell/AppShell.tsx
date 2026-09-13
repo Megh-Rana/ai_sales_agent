@@ -6,6 +6,7 @@ import { GlobalSearch } from './GlobalSearch';
 import { MobileNavigation } from './MobileNavigation';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { PageContainer } from './PageContainer';
+import { SpotlightCursor, AnimatedDock } from '../ui/21st';
 
 export interface AppShellProps {
   children: React.ReactNode;
@@ -117,6 +118,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* Keyboard Shortcuts Help Modal */}
       <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+      {/* 21st.dev Ambient Spotlight Cursor & Quick Dock */}
+      <SpotlightCursor />
+      <AnimatedDock />
     </div>
   );
 };

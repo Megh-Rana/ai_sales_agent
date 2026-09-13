@@ -17,11 +17,22 @@ import { SalesPrepStudio } from '../components/leads/details/SalesPrepStudio';
 import { CompanyIntelligenceSection } from '../components/leads/details/CompanyIntelligenceSection';
 import { DecisionMakerSection } from '../components/leads/details/DecisionMakerSection';
 import { NextBestActionSection } from '../components/leads/details/NextBestActionSection';
-import { ActivityTimelineSection } from '../components/leads/details/ActivityTimelineSection';
 import { SourceProvenanceSection } from '../components/leads/details/SourceProvenanceSection';
 import { LeadDetailsSkeleton } from '../components/leads/details/LeadDetailsSkeleton';
 import { LeadNotFound } from '../components/leads/details/LeadNotFound';
-import { IntentScore } from '../components/sales/IntentScore';
+
+// V3 21st.dev Animations
+import {
+  ScrollProgress,
+  AnimatedSlideshow,
+  AnimatedStepper,
+  AnimatedCircularProgress,
+  AnimatedTimeline,
+  AnimatedAccordion,
+  AnimatedSheet,
+  AnimatedHoverPreview,
+} from '../components/ui/21st';
+import { Sparkles, HelpCircle, PhoneCall } from 'lucide-react';
 
 // Workflow Modals
 import { FollowUpSchedulerModal } from '../components/sales/workflow/FollowUpSchedulerModal';
@@ -37,6 +48,7 @@ export const LeadDetails: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isEnriching, setIsEnriching] = useState<boolean>(false);
   const enrichTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
 
   // Workflow Recommendation State
   const [recommendationState, setRecommendationState] = useState<RecommendationState>({
@@ -56,7 +68,6 @@ export const LeadDetails: React.FC = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    // Brief realistic telemetry fetch
     const timer = setTimeout(() => {
       const foundLead = getLeadDetails(currentLeadId);
       setLead(foundLead);
@@ -65,33 +76,6 @@ export const LeadDetails: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, [currentLeadId]);
-
-  // Global Keyboard Shortcuts for Sales Rep Efficiency
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        navigate('/leads/discover');
-      } else if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        handleInitiateCall();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate, lead]);
 
   const handleInitiateCall = () => {
     if (!lead) return;
@@ -130,27 +114,6 @@ export const LeadDetails: React.FC = () => {
       status: 'SCHEDULED',
       scheduledItem: item
     });
-
-    if (lead) {
-      const nowStr = 'Just now';
-      const updatedTimeline = [
-        {
-          id: `act-${Date.now()}`,
-          timestamp: nowStr,
-          title: 'Demo Follow-Up Scheduled by Sales Representative',
-          description: `Confirmed demo scheduled for ${item.date} at ${item.time} (${item.owner}). Note: "${item.note || 'No custom note.'}"`,
-          category: 'status' as const
-        },
-        ...(lead.timeline || [])
-      ];
-
-      setLead({
-        ...lead,
-        status: 'meeting',
-        timeline: updatedTimeline
-      });
-    }
-
     toast.success(`Follow-up scheduled for ${item.companyName} on ${item.date} at ${item.time}.`);
   };
 
@@ -159,21 +122,6 @@ export const LeadDetails: React.FC = () => {
       status: 'DELAYED',
       delayedUntil: timeframeLabel
     });
-
-    if (lead) {
-      const updatedTimeline = [
-        {
-          id: `act-${Date.now()}`,
-          timestamp: 'Just now',
-          title: 'Next Best Action Postponed',
-          description: `Sales representative delayed recommendation until ${timeframeLabel}.`,
-          category: 'status' as const
-        },
-        ...(lead.timeline || [])
-      ];
-      setLead({ ...lead, timeline: updatedTimeline });
-    }
-
     toast.info(`Next Best Action postponed to ${timeframeLabel}.`);
   };
 
@@ -183,21 +131,6 @@ export const LeadDetails: React.FC = () => {
       dismissReason: reason,
       dismissNote: note
     });
-
-    if (lead) {
-      const updatedTimeline = [
-        {
-          id: `act-${Date.now()}`,
-          timestamp: 'Just now',
-          title: 'Next Best Action Dismissed',
-          description: `Dismissed recommendation. Feedback logged (${reason.toLowerCase().replace(/_/g, ' ')}).`,
-          category: 'status' as const
-        },
-        ...(lead.timeline || [])
-      ];
-      setLead({ ...lead, timeline: updatedTimeline });
-    }
-
     toast('Recommendation dismissed.');
   };
 
@@ -206,12 +139,8 @@ export const LeadDetails: React.FC = () => {
     toast.success('Recommendation re-activated.');
   };
 
-  // 1. Loading State
-  if (isLoading) {
-    return <LeadDetailsSkeleton />;
-  }
+  if (isLoading) return <LeadDetailsSkeleton />;
 
-  // 2. Lead Not Found State
   if (!lead) {
     return (
       <LeadNotFound
@@ -227,6 +156,15 @@ export const LeadDetails: React.FC = () => {
     );
   }
 
+  const timelineItems = (lead.timeline || []).map((t) => ({
+    id: t.id,
+    time: t.timestamp,
+    title: t.title,
+    description: t.description,
+    badge: t.category,
+    status: t.category === 'call' ? ('completed' as const) : ('active' as const),
+  }));
+
   return (
     <motion.div
       variants={pageTransition}
@@ -234,11 +172,25 @@ export const LeadDetails: React.FC = () => {
       animate="animate"
       exit="exit"
       className="space-y-6 max-w-7xl mx-auto pb-12 focus:outline-none"
-      tabIndex={-1}
-      role="main"
-      aria-label={`Lead Intelligence Profile: ${lead.companyName}`}
     >
-      {/* 1. Header with Compact Metadata & Primary Action Cluster */}
+      <ScrollProgress color="#3B82F6" />
+
+      {/* Sales Stepper Bar */}
+      <div className="p-4 rounded-2xl border border-border-default bg-surface-0 shadow-xs">
+        <AnimatedStepper
+          steps={[
+            { id: '1', label: 'DISCOVER' },
+            { id: '2', label: 'RESEARCH' },
+            { id: '3', label: 'SCORE' },
+            { id: '4', label: 'CONTACT' },
+            { id: '5', label: 'QUALIFY' },
+            { id: '6', label: 'MEETING' },
+          ]}
+          currentStepIndex={lead.intentScore > 85 ? 3 : 2}
+        />
+      </div>
+
+      {/* Header */}
       <LeadDetailsHeader
         lead={lead}
         onInitiateCall={handleInitiateCall}
@@ -248,32 +200,61 @@ export const LeadDetails: React.FC = () => {
         isEnriching={isEnriching}
       />
 
-      {/* 2. Opportunity Summary Bar (High Density Scan, Non-Redundant) */}
       <OpportunitySummaryBar lead={lead} onInitiateCall={handleInitiateCall} />
 
-      {/* 3. Main Asymmetric Intelligence Layout */}
+      {/* Asymmetric Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN: Core Opportunity Intelligence & Sales Preparation (62% - 7 cols) */}
+        {/* LEFT COLUMN */}
         <div className="lg:col-span-7 space-y-6 min-w-0">
-          {/* A. The Commercial Requirement */}
           <RequirementSection lead={lead} />
-
-          {/* B. Why Now? (Timing Catalyst Banner) */}
           <WhyNowSection lead={lead} />
-
-          {/* C. Verified Buying Signals (Moved UP as proof before Pitch) */}
           <BuyingSignalsSection lead={lead} />
-
-          {/* D. Outbound Sales Preparation Studio (Pitch Script + Pre-Call Brief) */}
           <SalesPrepStudio lead={lead} onInitiateCall={handleInitiateCall} />
 
-          {/* E. Sales Activity & Touchpoint Timeline */}
-          <ActivityTimelineSection lead={lead} />
+          {/* Animated Intelligence Accordion */}
+          <div className="p-4 rounded-2xl border border-border-default bg-surface-0 space-y-3">
+            <h3 className="text-xs font-bold text-foreground flex items-center gap-2 uppercase tracking-wider font-mono">
+              <Sparkles className="w-4 h-4 text-amber-400" /> AI Lead Intelligence Breakdown
+            </h3>
+            <AnimatedAccordion
+              items={[
+                {
+                  id: 'buying-intent',
+                  title: 'Why is this lead high priority?',
+                  badge: 'AI ANALYZED',
+                  defaultExpanded: true,
+                  content: (
+                    <div className="space-y-1.5">
+                      <p>• High purchase intent score ({lead.intentScore}%) verified via hiring spikes and technology migrations.</p>
+                      <p>• Budget authority confirmed with primary decision maker {lead.decisionMaker?.name}.</p>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'company-fit',
+                  title: 'Company Fit & Architecture Match',
+                  badge: 'MATCH 94%',
+                  content: (
+                    <p>
+                      Matches core ICP parameters: Enterprise headcount ({lead.employeeCount}), target technology stack, and immediate operational expansion.
+                    </p>
+                  ),
+                },
+              ]}
+            />
+          </div>
+
+          {/* Animated Timeline */}
+          <div className="p-4 rounded-2xl border border-border-default bg-surface-0 space-y-3">
+            <h3 className="text-xs font-bold text-foreground flex items-center gap-2 uppercase tracking-wider font-mono">
+              Lead Activity Timeline
+            </h3>
+            <AnimatedTimeline items={timelineItems} />
+          </div>
         </div>
 
-        {/* RIGHT COLUMN: Intent Telemetry, Decision Maker, & Account Governance (38% - 5 cols) */}
+        {/* RIGHT COLUMN */}
         <div className="lg:col-span-5 space-y-6 min-w-0">
-          {/* F. Dominant Next Best Action (Positioned at TOP of Right Column) */}
           <NextBestActionSection
             lead={lead}
             recommendationState={recommendationState}
@@ -284,27 +265,57 @@ export const LeadDetails: React.FC = () => {
             onResetRecommendation={handleResetRecommendation}
           />
 
-          {/* G. Explainable Intent Score */}
-          <div className="space-y-2">
-            <IntentScore
-              score={lead.intentScore}
-              level={lead.intentLevel}
-              reasoning={lead.scoreReasons}
-              expandable={true}
-              showDetailsDefault={true}
+          {/* Circular Progress Gauge for Intent Score */}
+          <div className="p-6 rounded-2xl border border-border-default bg-surface-0 flex flex-col items-center justify-center space-y-3 shadow-xs">
+            <AnimatedCircularProgress
+              value={lead.intentScore}
+              size={130}
+              strokeWidth={10}
+              label="INTENT SCORE"
+              variant={lead.intentScore > 85 ? 'success' : 'amber'}
             />
+            <button
+              onClick={() => setIsSheetOpen(true)}
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <HelpCircle className="w-3.5 h-3.5" /> View Full Account Drawer
+            </button>
           </div>
 
-          {/* H. Verified Decision Maker Profile */}
           <DecisionMakerSection lead={lead} onUseInCall={handleUseInCall} />
-
-          {/* I. Company Intelligence & Telemetry */}
           <CompanyIntelligenceSection lead={lead} />
-
-          {/* J. Source & Provenance Verification */}
+          <AnimatedSlideshow className="shadow-lg" />
           <SourceProvenanceSection lead={lead} />
         </div>
       </div>
+
+      {/* Animated Sheet Drawer */}
+      <AnimatedSheet
+        isOpen={isSheetOpen}
+        onClose={() => setIsSheetOpen(false)}
+        title={`${lead.companyName} Deep Analysis`}
+        description="Intent signals, decision maker matrix, and complete AI call logs"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3 rounded-xl bg-surface-1 border border-border-subtle">
+            <span className="font-bold text-foreground block mb-1">Company Overview</span>
+            <p className="text-foreground-secondary">{lead.companyIntelligence?.overview || lead.requirement}</p>
+          </div>
+          <div className="p-3 rounded-xl bg-surface-1 border border-border-subtle space-y-1">
+            <span className="font-bold text-foreground block">Key Decision Maker</span>
+            <p className="text-foreground-secondary">{lead.decisionMaker?.name} ({lead.decisionMaker?.role})</p>
+          </div>
+          <button
+            onClick={() => {
+              setIsSheetOpen(false);
+              handleInitiateCall();
+            }}
+            className="w-full py-2.5 bg-primary text-primary-foreground font-bold rounded-xl text-center flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <PhoneCall className="w-4 h-4" /> Start AI Call Now
+          </button>
+        </div>
+      </AnimatedSheet>
 
       {/* Workflow Modals */}
       <FollowUpSchedulerModal
@@ -316,7 +327,7 @@ export const LeadDetails: React.FC = () => {
         contactRole={lead.decisionMakerContact?.role || lead.decisionMaker?.role || 'Operations Director'}
         requirement={lead.requirement}
         intentScore={lead.intentScore}
-        recommendedActionTitle={lead.recommendedAction === 'call' ? 'Initiate Outbound AI Call & Schedule Follow-Up' : 'Schedule Technical Demo Walkthrough'}
+        recommendedActionTitle={lead.recommendedAction === 'call' ? 'Initiate Outbound AI Call' : 'Schedule Demo'}
         recommendedReason={lead.whyNow}
         onConfirmSchedule={handleConfirmSchedule}
       />
@@ -325,7 +336,7 @@ export const LeadDetails: React.FC = () => {
         isOpen={isDelayModalOpen}
         onClose={() => setIsDelayModalOpen(false)}
         companyName={lead.companyName}
-        actionTitle={lead.recommendedAction === 'call' ? 'Initiate Outbound AI Call' : 'Schedule Technical Demo Walkthrough'}
+        actionTitle={lead.recommendedAction === 'call' ? 'Initiate Outbound AI Call' : 'Schedule Demo'}
         onConfirmDelay={handleConfirmDelay}
       />
 
@@ -333,9 +344,11 @@ export const LeadDetails: React.FC = () => {
         isOpen={isDismissModalOpen}
         onClose={() => setIsDismissModalOpen(false)}
         companyName={lead.companyName}
-        actionTitle={lead.recommendedAction === 'call' ? 'Initiate Outbound AI Call' : 'Schedule Technical Demo Walkthrough'}
+        actionTitle={lead.recommendedAction === 'call' ? 'Initiate Outbound AI Call' : 'Schedule Demo'}
         onConfirmDismiss={handleConfirmDismiss}
       />
     </motion.div>
   );
 };
+
+export default LeadDetails;

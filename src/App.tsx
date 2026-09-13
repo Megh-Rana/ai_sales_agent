@@ -24,6 +24,8 @@ import { Toaster } from 'sonner';
 
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 
+import { LandingPage } from './pages/LandingPage';
+
 function AppContent() {
   const { theme } = useTheme();
   return (
@@ -31,6 +33,8 @@ function AppContent() {
       <Toaster richColors position="bottom-right" theme={theme} closeButton />
       <Routes>
         {/* PUBLIC ROUTES */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/landing" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 

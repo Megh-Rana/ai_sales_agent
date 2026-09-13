@@ -46,14 +46,14 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenShortcuts }) => {
       <AnimatePresence>
         {isOpen && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+            <div className="fixed inset-0 z-50" onClick={() => setIsOpen(false)} />
 
             <motion.div
               initial={{ opacity: 0, y: 6, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, scale: 0.98 }}
               transition={{ duration: 0.15 }}
-              className="absolute right-0 top-full mt-2 z-50 w-56 bg-surface border border-border-strong rounded-xl shadow-2xl p-1.5 space-y-1"
+              className="absolute right-0 top-full mt-2 z-[60] w-60 bg-surface-elevated border border-border-strong rounded-xl shadow-2xl p-1.5 space-y-1"
             >
               {/* User Header */}
               <div className="px-3 py-2 border-b border-border mb-1">
