@@ -1,0 +1,62 @@
+import React from 'react';
+import { ArrowUpRight, Zap, Target, PhoneCall, DollarSign } from 'lucide-react';
+import { PipelineSnapshotMetric } from '../../data/dashboard';
+
+export interface PipelineSnapshotProps {
+  metrics: PipelineSnapshotMetric[];
+  className?: string;
+}
+
+export const PipelineSnapshot: React.FC<PipelineSnapshotProps> = ({ metrics, className = '' }) => {
+  const getMetricIcon = (id: string) => {
+    if (id.includes('signals')) return <Zap className="w-4 h-4 text-signal-high" />;
+    if (id.includes('high-intent')) return <Target className="w-4 h-4 text-signal-high" />;
+    if (id.includes('calls')) return <PhoneCall className="w-4 h-4 text-primary" />;
+    return <DollarSign className="w-4 h-4 text-signal-qualified" />;
+  };
+
+  return (
+    <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3.5 ${className}`}>
+      {metrics.map((metric) => (
+        <div
+          key={metric.id}
+          className={`p-4 rounded-xl border transition-all duration-150 relative overflow-hidden group ${
+            metric.isAccent
+              ? 'bg-surface-0 border-signal-high/30 shadow-xs'
+              : 'bg-surface-0 border-border-default hover:border-border-hover/60'
+          }`}
+        >
+          {/* Subtle top indicator bar on accented metric */}
+          {metric.isAccent && (
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-signal-high" />
+          )}
+
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-caption font-medium text-foreground-secondary truncate">
+              {metric.label}
+            </span>
+            <span className="p-1 rounded bg-surface-1 text-foreground-tertiary shrink-0">
+              {getMetricIcon(metric.id)}
+            </span>
+          </div>
+
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="text-metric font-bold text-foreground tracking-tight">
+              {metric.value}
+            </span>
+            {metric.trendValue && (
+              <span className="inline-flex items-center text-[11px] font-medium text-signal-qualified">
+                <ArrowUpRight className="w-3 h-3 shrink-0" />
+                <span>{metric.trendValue}</span>
+              </span>
+            )}
+          </div>
+
+          <div className="text-[11px] text-foreground-tertiary truncate">
+            {metric.context}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};

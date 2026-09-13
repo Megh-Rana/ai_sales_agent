@@ -1,0 +1,243 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Default Theme (Dark Mode) */
+  :root,
+  .dark,
+  [data-theme='dark'] {
+    color-scheme: dark;
+
+    /* Base Surfaces */
+    --background: #0B0E14;        /* Very dark neutral charcoal */
+    --surface: #12161F;           /* Primary card / panel background */
+    --surface-elevated: #1A202C;  /* Elevated panel / hover / container */
+    --surface-muted: #151924;     /* Secondary / muted card backdrop */
+    --surface-hover: #222A3A;     /* Hover state for interactive items */
+    --surface-highlight: #2C364A; /* Active highlight surface */
+
+    /* Borders */
+    --border: #1E2638;            /* Subtle structural border */
+    --border-strong: #2B354C;     /* Standard component border */
+    --border-hover: #3B82F6;      /* Hover / Focus border */
+    --border-accent: #2563EB;     /* Accent border indicator */
+
+    /* Text & Legibility */
+    --text-primary: #F8FAFC;      /* High contrast legibility off-white */
+    --text-secondary: #94A3B8;    /* Slate muted body text */
+    --text-muted: #64748B;        /* De-emphasized labels & metadata */
+    --text-disabled: #475569;     /* Disabled text state */
+    --text-inverse: #090D16;      /* Text on high-light backgrounds */
+
+    /* Primary Brand Action (Restrained Enterprise Blue) */
+    --primary: #2563EB;
+    --primary-hover: #3B82F6;
+    --primary-active: #1D4ED8;
+    --primary-foreground: #FFFFFF;
+    --primary-muted: #172554;
+
+    /* Accent & Signals */
+    --accent: #0D9488;
+    --accent-foreground: #FFFFFF;
+
+    /* Success (Emerald Green) */
+    --success: #10B981;
+    --success-foreground: #FFFFFF;
+    --success-muted: #064E3B;
+
+    /* Warning / High Intent (Amber) */
+    --warning: #F59E0B;
+    --warning-foreground: #FFFFFF;
+    --warning-muted: #451A03;
+
+    /* Danger / Urgent (Crimson Red) */
+    --danger: #EF4444;
+    --danger-foreground: #FFFFFF;
+    --danger-muted: #450A0A;
+
+    /* Information / Neutral Action */
+    --info: #3B82F6;
+    --info-foreground: #FFFFFF;
+    --info-muted: #1E293B;
+
+    /* Backward Compatibility Aliases */
+    --bg-app: var(--background);
+    --bg-surface-0: var(--surface);
+    --bg-surface-1: var(--surface-elevated);
+    --bg-surface-2: var(--surface-hover);
+    --bg-surface-3: var(--surface-highlight);
+    --border-subtle: var(--border);
+    --border-default: var(--border-strong);
+    --border-focus: var(--border-hover);
+    --accent-primary: var(--primary);
+    --signal-high: var(--warning);
+    --signal-qualified: var(--success);
+    --signal-urgent: var(--danger);
+  }
+
+  /* Light / Day Mode (Subtle Neutral Off-White / Soft Paper Workspace) */
+  .light,
+  [data-theme='light'] {
+    color-scheme: light;
+
+    /* Base Surfaces - Neutral Paper Workspace (NOT yellow, beige, or blinding white) */
+    --background: #F4F3F0;        /* Soft neutral paper workspace */
+    --surface: #FFFFFF;           /* Crisp clean white surface */
+    --surface-elevated: #F9F9F8;  /* Elevated panel surface */
+    --surface-muted: #EBEAE6;     /* Secondary muted background */
+    --surface-hover: #E4E3DD;     /* Interactive hover surface */
+    --surface-highlight: #DDDCD6; /* Active selection surface */
+
+    /* Borders */
+    --border: #E2E0D8;            /* Soft neutral border */
+    --border-strong: #CBD5E1;     /* High-contrast structure border */
+    --border-hover: #1D4ED8;      /* Primary focus border */
+    --border-accent: #2563EB;     /* Accent border */
+
+    /* Text & Legibility */
+    --text-primary: #0F172A;      /* Deep slate charcoal (high contrast) */
+    --text-secondary: #475569;    /* Muted slate text */
+    --text-muted: #64748B;        /* Secondary metadata label */
+    --text-disabled: #94A3B8;     /* Disabled text state */
+    --text-inverse: #F8FAFC;      /* Text on dark backgrounds */
+
+    /* Primary Brand Action */
+    --primary: #1D4ED8;
+    --primary-hover: #2563EB;
+    --primary-active: #1E40AF;
+    --primary-foreground: #FFFFFF;
+    --primary-muted: #EFF6FF;
+
+    /* Accent & Signals */
+    --accent: #0F766E;
+    --accent-foreground: #FFFFFF;
+
+    /* Success (Emerald Green) */
+    --success: #059669;
+    --success-foreground: #FFFFFF;
+    --success-muted: #ECFDF5;
+
+    /* Warning / High Intent (Amber) */
+    --warning: #D97706;
+    --warning-foreground: #FFFFFF;
+    --warning-muted: #FFFBEB;
+
+    /* Danger / Urgent (Crimson Red) */
+    --danger: #DC2626;
+    --danger-foreground: #FFFFFF;
+    --danger-muted: #FEF2F2;
+
+    /* Information / Neutral Action */
+    --info: #2563EB;
+    --info-foreground: #FFFFFF;
+    --info-muted: #EFF6FF;
+
+    /* Backward Compatibility Aliases */
+    --bg-app: var(--background);
+    --bg-surface-0: var(--surface);
+    --bg-surface-1: var(--surface-elevated);
+    --bg-surface-2: var(--surface-hover);
+    --bg-surface-3: var(--surface-highlight);
+    --border-subtle: var(--border);
+    --border-default: var(--border-strong);
+    --border-focus: var(--border-hover);
+    --accent-primary: var(--primary);
+    --signal-high: var(--warning);
+    --signal-qualified: var(--success);
+    --signal-urgent: var(--danger);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+
+  /* Theme-aware smooth scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+  }
+}
+
+@layer utilities {
+  .text-display {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .text-h1 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .text-h2 {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .text-h3 {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .text-h4 {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .text-body {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  .text-body-medium {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .text-small {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+  }
+
+  .text-caption {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 400;
+    color: var(--text-muted);
+  }
+
+  .text-metric {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
