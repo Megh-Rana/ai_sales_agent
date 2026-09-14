@@ -40,76 +40,77 @@ export const NextBestAction: React.FC<NextBestActionHeroProps> = ({
 
   return (
     <SpotlightCard
-      spotlightColor="rgba(245, 158, 11, 0.15)"
-      className={`border-signal-high/40 p-5 sm:p-6 shadow-sm relative overflow-hidden transition-all ${className}`}
+      spotlightColor="rgba(255, 175, 204, 0.12)"
+      className={`border-babyPink/30 p-4 sm:p-5 shadow-sm relative overflow-hidden transition-all ${className}`}
     >
       {/* Left accent priority stripe */}
-      <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-signal-high" />
+      <div className="absolute top-0 left-0 bottom-0 w-1 bg-babyPink" />
 
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pl-2">
-        {/* Left Information Stack */}
-        <div className="space-y-2.5 max-w-3xl">
-          {/* Priority Meta Tag */}
+      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 pl-3">
+        {/* Left Information Stack - Cleaner hierarchy */}
+        <div className="space-y-3 max-w-3xl flex-1">
+          {/* Priority Meta Tag - Simplified */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono font-bold uppercase bg-signal-high-muted text-signal-high border border-signal-high/30">
-              <Zap className="w-3 h-3" />
-              Priority 1 · Next Best Action
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-babyPink/10 text-babyPink border border-babyPink/30">
+              <Zap className="w-3.5 h-3.5" />
+              PRIORITY 1
             </span>
-            <span className="text-caption font-mono text-foreground-tertiary flex items-center gap-1">
+            <span className="text-xs font-mono text-foreground-tertiary flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              Signal detected {data.signalDiscoveredAt} ({data.signalPlatform})
+              {data.signalDiscoveredAt}
             </span>
           </div>
 
-          {/* Target Account & Contact */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          {/* Target Account & Contact - Better spacing */}
+          <div className="space-y-2">
             <button
               onClick={handlePreview}
-              className="text-h2 font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2 text-left"
+              className="text-xl font-bold text-foreground hover:text-thistle transition-colors flex items-center gap-2.5 text-left"
             >
-              <Building2 className="w-5 h-5 text-primary shrink-0" />
+              <Building2 className="w-5 h-5 text-thistle shrink-0" />
               <span>{data.companyName}</span>
             </button>
-            <AnimatedTooltip score={data.intentScore}>
-              <span className="px-2 py-0.5 rounded-md font-mono font-bold text-xs bg-signal-high-muted text-signal-high border border-signal-high/40 shrink-0 cursor-pointer">
-                {data.intentScore} Intent (+{data.scoreDelta} 24h)
+            
+            <div className="flex flex-wrap items-center gap-2">
+              <AnimatedTooltip score={data.intentScore}>
+                <span className="px-2.5 py-1 rounded-lg font-mono font-bold text-xs bg-babyPink/15 text-babyPink border border-babyPink/40 shrink-0 cursor-pointer">
+                  {data.intentScore} Intent
+                </span>
+              </AnimatedTooltip>
+              
+              <div className="flex items-center gap-1.5 text-sm text-foreground-secondary">
+                <User className="w-3.5 h-3.5 text-foreground-tertiary" />
+                <span className="font-semibold text-foreground">{data.contactName}</span>
+                <span className="text-foreground-tertiary">• {data.contactRole}</span>
+              </div>
+              
+              <span className="text-xs font-mono text-success font-bold bg-success/10 px-2.5 py-1 rounded-lg border border-success/30">
+                {data.estimatedValue}
               </span>
-            </AnimatedTooltip>
-            <span className="text-foreground-tertiary">·</span>
-            <div className="flex items-center gap-1.5 text-body text-foreground-secondary">
-              <User className="w-3.5 h-3.5 text-foreground-tertiary" />
-              <span className="font-semibold text-foreground">{data.contactName}</span>
-              <span className="text-foreground-tertiary">({data.contactRole})</span>
             </div>
-            <span className="text-foreground-tertiary">·</span>
-            <span className="text-caption font-mono text-signal-qualified font-semibold bg-signal-qualified-muted px-2 py-0.5 rounded border border-signal-qualified/30">
-              {data.estimatedValue}
-            </span>
           </div>
 
-          {/* Trigger Context ("The Why Now") */}
-          <div className="text-body text-foreground-secondary leading-relaxed bg-surface-1/60 p-3.5 rounded-lg border border-border-subtle space-y-2">
+          {/* Trigger Context ("The Why Now") - Cleaner design */}
+          <div className="text-sm text-foreground leading-relaxed bg-icyBlue/5 p-3.5 rounded-xl border border-icyBlue/20 space-y-2">
             <div>
-              <span className="font-semibold text-foreground">Why Now: </span>
-              {data.urgentReason}
+              <span className="font-bold text-icyBlue text-xs uppercase tracking-wide">Why Now: </span>
+              <span className="text-foreground-secondary">{data.urgentReason}</span>
             </div>
             {data.suggestedOpeningHook && (
-              <div className="pt-2 border-t border-border-subtle/60 text-caption text-foreground-secondary flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="italic">
-                  <span className="font-semibold text-primary not-italic">Recommended Hook: </span>
-                  "{data.suggestedOpeningHook}"
-                </div>
+              <div className="pt-2 border-t border-icyBlue/20 text-xs text-foreground-secondary">
+                <span className="font-semibold text-thistle">Hook: </span>
+                <span className="italic">"{data.suggestedOpeningHook}"</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right Dominant Action Group */}
-        <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-2.5 shrink-0 pl-2 lg:pl-0">
+        {/* Right Dominant Action Group - Better alignment */}
+        <div className="flex flex-col items-stretch gap-2.5 shrink-0 min-w-[200px]">
           <Button
             variant="primary"
             size="md"
-            className="justify-center shadow-md font-semibold"
+            className="justify-center shadow-sm font-bold bg-thistle hover:bg-thistle/90 text-white"
             leftIcon={<PhoneCall className="w-4 h-4" />}
             rightIcon={<ArrowRight className="w-4 h-4" />}
             onClick={handleDispatch}
@@ -117,25 +118,15 @@ export const NextBestAction: React.FC<NextBestActionHeroProps> = ({
             {data.primaryActionLabel}
           </Button>
 
-          <div className="flex items-center justify-between sm:justify-end gap-2 w-full">
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon={<FileText className="w-3.5 h-3.5" />}
-              onClick={handlePreview}
-            >
-              Review Pitch Brief
-            </Button>
-            {onSnooze && (
-              <button
-                type="button"
-                onClick={() => onSnooze(data.opportunityId)}
-                className="text-[11px] text-foreground-tertiary hover:text-foreground transition-colors px-2 py-1"
-              >
-                Snooze 2h
-              </button>
-            )}
-          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<FileText className="w-3.5 h-3.5" />}
+            onClick={handlePreview}
+            className="text-xs"
+          >
+            Review Brief
+          </Button>
         </div>
       </div>
     </SpotlightCard>

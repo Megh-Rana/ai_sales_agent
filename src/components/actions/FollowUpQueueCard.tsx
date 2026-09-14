@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarClock, ArrowRight } from 'lucide-react';
+import { useI18n } from '../../i18n/i18nContext';
 
 export const FollowUpQueueCard: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const items = [
     {
@@ -39,62 +41,62 @@ export const FollowUpQueueCard: React.FC = () => {
   ];
 
   return (
-    <div className="bg-surface border border-border-strong rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
+    <div className="bg-surface border border-pastelPetal/20 rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full hover:border-pastelPetal/40 transition-colors">
       <div>
         {/* Card Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2.5">
-            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
+            <div className="p-1.5 rounded-lg bg-pastelPetal/10 text-pastelPetal border border-pastelPetal/30">
               <CalendarClock className="w-4 h-4" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-foreground">Follow-up Dispatch Queue</h2>
+              <h2 className="text-base font-semibold text-foreground">{t.actions.followUpQueue.title}</h2>
               <p className="text-xs text-foreground-secondary">
-                Pending touchpoints & scheduled task cadences
+                {t.actions.followUpQueue.subtitle}
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono font-medium text-warning bg-warning-muted px-2.5 py-1 rounded-md border border-warning/30">
-            3 Due
+          <span className="text-xs font-mono font-semibold text-foreground bg-pastelPetal/20 px-2.5 py-1 rounded-md border border-pastelPetal/40">
+            3 {t.actions.followUpQueue.due}
           </span>
         </div>
 
         {/* Queue Items */}
-        <div className="space-y-3 mb-4">
+        <div className="space-y-2.5 mb-4">
           {items.map((item) => (
             <div
               key={item.id}
-              className="bg-surface-elevated border border-border hover:border-border-strong rounded-lg p-3 transition-all duration-150 flex items-center justify-between"
+              className="bg-surface-elevated border border-border hover:border-pastelPetal/40 rounded-lg p-3.5 transition-all duration-200 flex items-center justify-between gap-3"
             >
-              <div className="space-y-0.5 max-w-[70%]">
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold text-xs text-foreground truncate">
+              <div className="space-y-1 flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-sm text-foreground">
                     {item.company}
                   </span>
-                  <span className="text-[10px] font-semibold text-warning bg-warning-muted px-1.5 py-0.2 rounded border border-warning/30">
+                  <span className="text-[10px] font-bold text-foreground bg-warning/20 px-2 py-0.5 rounded border border-warning/40">
                     {item.priority}
                   </span>
                 </div>
-                <p className="text-[11px] text-foreground-secondary truncate">{item.title}</p>
+                <p className="text-xs text-foreground-secondary leading-relaxed">{item.title}</p>
                 <span className="text-[10px] text-foreground-tertiary block font-mono">{item.due}</span>
               </div>
 
               <button
                 type="button"
                 onClick={() => navigate(item.target)}
-                className="p-2 rounded-lg bg-surface hover:bg-surface-hover text-foreground-secondary hover:text-foreground border border-border transition-all"
-                title="Execute Follow-up"
+                className="shrink-0 p-2.5 rounded-lg bg-pastelPetal/10 hover:bg-pastelPetal/20 text-pastelPetal border border-pastelPetal/30 hover:border-pastelPetal/50 transition-all"
+                title={t.actions.followUpQueue.execute}
               >
-                <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="pt-3 border-t border-border text-xs text-foreground-tertiary flex items-center justify-between">
-        <span>Follow-up dispatch cadence active</span>
-        <span className="text-warning font-semibold font-mono">100% On Schedule</span>
+      <div className="pt-3 border-t border-border/50 text-xs flex items-center justify-between">
+        <span className="text-foreground-secondary">{t.actions.followUpQueue.active}</span>
+        <span className="text-emerald-400 font-bold font-mono">100% {t.actions.followUpQueue.onSchedule}</span>
       </div>
     </div>
   );

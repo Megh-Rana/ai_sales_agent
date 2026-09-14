@@ -10,10 +10,10 @@ export interface PipelineSnapshotProps {
 
 export const PipelineSnapshot: React.FC<PipelineSnapshotProps> = ({ metrics, className = '' }) => {
   const getMetricIcon = (id: string) => {
-    if (id.includes('signals')) return <Zap className="w-4 h-4 text-signal-high" />;
-    if (id.includes('high-intent')) return <Target className="w-4 h-4 text-signal-high" />;
-    if (id.includes('calls')) return <PhoneCall className="w-4 h-4 text-primary" />;
-    return <DollarSign className="w-4 h-4 text-signal-qualified" />;
+    if (id.includes('signals')) return <Zap className="w-4 h-4 text-babyPink" />;
+    if (id.includes('high-intent')) return <Target className="w-4 h-4 text-pastelPetal" />;
+    if (id.includes('calls')) return <PhoneCall className="w-4 h-4 text-skyBlue" />;
+    return <DollarSign className="w-4 h-4 text-success" />;
   };
 
   const parseValueProps = (raw: string) => {
@@ -44,36 +44,34 @@ export const PipelineSnapshot: React.FC<PipelineSnapshotProps> = ({ metrics, cla
   };
 
   return (
-    <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3.5 ${className}`}>
+    <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}>
       {metrics.map((metric, idx) => {
         const { val, prefix, suffix, decimals, raw } = parseValueProps(metric.value);
         const progressVal = Math.min(100, Math.max(15, (val / (val > 100 ? 200 : 50)) * 100));
+        
+        // Assign pastel colors to each metric
+        const colors = ['thistle', 'skyBlue', 'babyPink', 'icyBlue'];
+        const colorClass = colors[idx % colors.length];
 
         return (
           <div
             key={metric.id}
-            className={`p-4 rounded-xl border transition-all duration-150 relative overflow-hidden group ${
-              metric.isAccent
-                ? 'bg-surface-0 border-border-default shadow-xs'
-                : 'bg-surface-0 border-border-default hover:border-border-hover/60'
-            }`}
+            className={`p-4 rounded-xl border border-${colorClass}/20 bg-surface hover:border-${colorClass}/40 transition-all duration-200 relative overflow-hidden group shadow-sm`}
           >
-            {metric.isAccent && (
-              <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary rounded-l-xl" />
-            )}
+            <div className="absolute top-0 left-0 bottom-0 w-1 bg-${colorClass} opacity-60 rounded-l-xl" />
 
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-caption font-medium text-foreground-secondary truncate">
+            <div className="flex items-center justify-between gap-2 mb-2.5 pl-2">
+              <span className="text-xs font-medium text-foreground-secondary">
                 {metric.label}
               </span>
-              <span className="p-1 rounded bg-surface-1 text-foreground-tertiary shrink-0">
+              <span className={`p-1.5 rounded-lg bg-${colorClass}/10 border border-${colorClass}/30 shrink-0`}>
                 {getMetricIcon(metric.id)}
               </span>
             </div>
 
-            <div className="flex items-baseline gap-2 mb-2">
+            <div className="flex items-baseline gap-2 mb-3 pl-2">
               {isNaN(val) ? (
-                <span className="text-metric font-bold text-foreground tracking-tight">
+                <span className="text-2xl font-bold text-foreground tracking-tight">
                   {raw}
                 </span>
               ) : (
@@ -82,25 +80,18 @@ export const PipelineSnapshot: React.FC<PipelineSnapshotProps> = ({ metrics, cla
                   prefix={prefix}
                   suffix={suffix}
                   decimals={decimals}
-                  className="text-metric font-bold text-foreground tracking-tight"
+                  className="text-2xl font-bold text-foreground tracking-tight"
                 />
               )}
               {metric.trendValue && (
-                <span className="inline-flex items-center text-[11px] font-medium text-signal-qualified">
-                  <ArrowUpRight className="w-3 h-3 shrink-0" />
+                <span className="inline-flex items-center text-xs font-semibold text-success">
+                  <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
                   <span>{metric.trendValue}</span>
                 </span>
               )}
             </div>
 
-            <AnimatedProgressBar
-              value={progressVal}
-              height={4}
-              showPercentage={false}
-              color={idx % 2 === 0 ? 'primary' : 'success'}
-            />
-
-            <div className="text-[11px] text-foreground-tertiary truncate mt-2">
+            <div className="text-xs text-foreground-tertiary pl-2 leading-relaxed">
               {metric.context}
             </div>
           </div>

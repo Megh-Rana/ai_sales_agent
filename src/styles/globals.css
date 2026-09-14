@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  /* Default Theme (Dark Mode) */
+  /* Default Theme (Dark Mode) - Pastel Color Scheme */
   :root,
   .dark,
   [data-theme='dark'] {
@@ -14,21 +14,22 @@
     --surface: #12161F;           /* Primary card / panel background */
     --surface-elevated: #1A202C;  /* Elevated panel / hover / container */
 
-    /* Pastel Palette Tokens */
+    /* Pastel Palette Tokens - Primary Theme Colors */
     --thistle: #CDB4DB;
     --pastel-petal: #FFC8DD;
     --baby-pink: #FFAFCC;
     --icy-blue: #BDE0FE;
     --sky-blue: #A2D2FF;
+    
     --surface-muted: #151924;     /* Secondary / muted card backdrop */
     --surface-hover: #222A3A;     /* Hover state for interactive items */
     --surface-highlight: #2C364A; /* Active highlight surface */
 
-    /* Borders */
+    /* Borders - Using Pastel Colors */
     --border: #1E2638;            /* Subtle structural border */
     --border-strong: #2B354C;     /* Standard component border */
-    --border-hover: #3B82F6;      /* Hover / Focus border */
-    --border-accent: #2563EB;     /* Accent border indicator */
+    --border-hover: #A2D2FF;      /* Hover / Focus border - Sky Blue */
+    --border-accent: #CDB4DB;     /* Accent border indicator - Thistle */
 
     /* Text & Legibility */
     --text-primary: #F8FAFC;      /* High contrast legibility off-white */
@@ -37,36 +38,36 @@
     --text-disabled: #475569;     /* Disabled text state */
     --text-inverse: #090D16;      /* Text on high-light backgrounds */
 
-    /* Primary Brand Action (Restrained Enterprise Blue) */
-    --primary: #2563EB;
-    --primary-hover: #3B82F6;
-    --primary-active: #1D4ED8;
-    --primary-foreground: #FFFFFF;
-    --primary-muted: #172554;
+    /* Primary Brand Action - Thistle Pastel */
+    --primary: #CDB4DB;
+    --primary-hover: #D8C0E3;
+    --primary-active: #B8A4C9;
+    --primary-foreground: #0B0E14;
+    --primary-muted: #2D1F35;
 
-    /* Accent & Signals */
-    --accent: #0D9488;
-    --accent-foreground: #FFFFFF;
+    /* Accent & Signals - Pastel Colors */
+    --accent: #BDE0FE;
+    --accent-foreground: #0B0E14;
 
-    /* Success (Emerald Green) */
+    /* Success (Emerald Green - Keep functional) */
     --success: #10B981;
     --success-foreground: #FFFFFF;
     --success-muted: #064E3B;
 
-    /* Warning / High Intent (Amber) */
-    --warning: #F59E0B;
-    --warning-foreground: #FFFFFF;
-    --warning-muted: #451A03;
+    /* Warning / High Intent - Baby Pink */
+    --warning: #FFAFCC;
+    --warning-foreground: #0B0E14;
+    --warning-muted: #3D1F2A;
 
-    /* Danger / Urgent (Crimson Red) */
-    --danger: #EF4444;
-    --danger-foreground: #FFFFFF;
-    --danger-muted: #450A0A;
+    /* Danger / Urgent - Pastel Petal (softer red) */
+    --danger: #FFC8DD;
+    --danger-foreground: #0B0E14;
+    --danger-muted: #3D2228;
 
-    /* Information / Neutral Action */
-    --info: #3B82F6;
-    --info-foreground: #FFFFFF;
-    --info-muted: #1E293B;
+    /* Information / Neutral Action - Sky Blue */
+    --info: #A2D2FF;
+    --info-foreground: #0B0E14;
+    --info-muted: #1E2533;
 
     /* Backward Compatibility Aliases */
     --bg-app: var(--background);
@@ -83,24 +84,31 @@
     --signal-urgent: var(--danger);
   }
 
-  /* Light / Day Mode (Subtle Neutral Off-White / Soft Paper Workspace) */
+  /* Light / Day Mode - Pastel Color Scheme */
   .light,
   [data-theme='light'] {
     color-scheme: light;
 
-    /* Base Surfaces - Neutral Paper Workspace (NOT yellow, beige, or blinding white) */
-    --background: #F4F3F0;        /* Soft neutral paper workspace */
+    /* Base Surfaces - Neutral Paper Workspace */
+    --background: #FAF9F7;        /* Very soft warm white */
     --surface: #FFFFFF;           /* Crisp clean white surface */
     --surface-elevated: #F9F9F8;  /* Elevated panel surface */
-    --surface-muted: #EBEAE6;     /* Secondary muted background */
-    --surface-hover: #E4E3DD;     /* Interactive hover surface */
-    --surface-highlight: #DDDCD6; /* Active selection surface */
+    --surface-muted: #F0EFF0;     /* Secondary muted background */
+    --surface-hover: #E8E6E8;     /* Interactive hover surface */
+    --surface-highlight: #E0DDE0; /* Active selection surface */
 
-    /* Borders */
-    --border: #E2E0D8;            /* Soft neutral border */
-    --border-strong: #CBD5E1;     /* High-contrast structure border */
-    --border-hover: #1D4ED8;      /* Primary focus border */
-    --border-accent: #2563EB;     /* Accent border */
+    /* Pastel Palette Tokens */
+    --thistle: #CDB4DB;
+    --pastel-petal: #FFC8DD;
+    --baby-pink: #FFAFCC;
+    --icy-blue: #BDE0FE;
+    --sky-blue: #A2D2FF;
+
+    /* Borders - Using Pastel Colors */
+    --border: #E8E6E8;            /* Soft neutral border */
+    --border-strong: #D0CDD0;     /* High-contrast structure border */
+    --border-hover: #A2D2FF;      /* Primary focus border - Sky Blue */
+    --border-accent: #CDB4DB;     /* Accent border - Thistle */
 
     /* Text & Legibility */
     --text-primary: #0F172A;      /* Deep slate charcoal (high contrast) */
@@ -109,36 +117,36 @@
     --text-disabled: #94A3B8;     /* Disabled text state */
     --text-inverse: #F8FAFC;      /* Text on dark backgrounds */
 
-    /* Primary Brand Action */
-    --primary: #1D4ED8;
-    --primary-hover: #2563EB;
-    --primary-active: #1E40AF;
+    /* Primary Brand Action - Thistle */
+    --primary: #9B7EAD;
+    --primary-hover: #B094C4;
+    --primary-active: #866D98;
     --primary-foreground: #FFFFFF;
-    --primary-muted: #EFF6FF;
+    --primary-muted: #F3EFF5;
 
-    /* Accent & Signals */
-    --accent: #0F766E;
-    --accent-foreground: #FFFFFF;
+    /* Accent & Signals - Pastel Colors */
+    --accent: #87CEEB;
+    --accent-foreground: #0F172A;
 
-    /* Success (Emerald Green) */
+    /* Success (Keep functional green) */
     --success: #059669;
     --success-foreground: #FFFFFF;
     --success-muted: #ECFDF5;
 
-    /* Warning / High Intent (Amber) */
-    --warning: #D97706;
+    /* Warning / High Intent - Baby Pink */
+    --warning: #E689AC;
     --warning-foreground: #FFFFFF;
-    --warning-muted: #FFFBEB;
+    --warning-muted: #FFF0F5;
 
-    /* Danger / Urgent (Crimson Red) */
-    --danger: #DC2626;
+    /* Danger / Urgent - Pastel Petal */
+    --danger: #E6A4B8;
     --danger-foreground: #FFFFFF;
-    --danger-muted: #FEF2F2;
+    --danger-muted: #FFF5F7;
 
-    /* Information / Neutral Action */
-    --info: #2563EB;
+    /* Information / Neutral Action - Sky Blue */
+    --info: #87B3E6;
     --info-foreground: #FFFFFF;
-    --info-muted: #EFF6FF;
+    --info-muted: #EFF7FF;
 
     /* Backward Compatibility Aliases */
     --bg-app: var(--background);

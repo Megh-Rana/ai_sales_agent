@@ -143,12 +143,12 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
             </p>
           </div>
 
-          <div className="space-y-1 p-3 rounded-lg bg-surface-elevated/60 border border-border-subtle">
-            <div className="flex items-center gap-1 text-signal-high font-semibold text-[11px]">
+          <div className="space-y-1.5 p-3.5 rounded-lg bg-icyBlue/5 border border-icyBlue/25">
+            <div className="flex items-center gap-1.5 text-icyBlue font-semibold text-xs">
               <Clock className="w-3.5 h-3.5" />
               <span>Why Contact Now?</span>
             </div>
-            <p className="text-foreground-secondary text-caption leading-relaxed">
+            <p className="text-foreground-secondary text-xs leading-relaxed">
               {lead.whyNow}
             </p>
           </div>

@@ -98,23 +98,25 @@ export const CopilotHeader: React.FC<CopilotHeaderProps> = ({
         </div>
       </div>
 
-      {/* WHY NOW BANNER */}
-      <div className="p-3.5 rounded-xl bg-surface-1 border border-border-subtle flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2 min-w-0">
-          <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-          <div>
-            <div className="text-xs font-mono font-bold text-amber-400 uppercase">
-              WHY NOW TRIGGER — {context.whyNowRecency}
+      {/* WHY NOW BANNER - Fixed mobile layout */}
+      <div className="p-3.5 rounded-xl bg-surface-1 border border-skyBlue/20 hover:border-skyBlue/40 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+            <Zap className="w-4 h-4 text-skyBlue shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-mono font-bold text-skyBlue uppercase mb-1">
+                WHY NOW TRIGGER — {context.whyNowRecency}
+              </div>
+              <p className="text-sm font-medium text-foreground leading-relaxed">
+                {context.whyNowHeadline}
+              </p>
             </div>
-            <p className="text-small font-medium text-foreground leading-snug mt-0.5">
-              {context.whyNowHeadline}
-            </p>
           </div>
-        </div>
 
-        <span className="text-xs font-mono px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0 font-medium">
-          {context.primarySignal}
-        </span>
+          <span className="text-xs font-mono px-2.5 py-1 rounded bg-skyBlue/10 text-skyBlue border border-skyBlue/30 shrink-0 font-semibold self-start">
+            {context.primarySignal}
+          </span>
+        </div>
       </div>
     </div>
   );

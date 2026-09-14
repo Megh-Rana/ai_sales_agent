@@ -11,6 +11,7 @@ import { ObjectionMatrix } from '../components/copilot/ObjectionMatrix';
 import { CopilotActionPanel } from '../components/copilot/CopilotActionPanel';
 import { Sparkles, MessageSquare, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useI18n } from '../i18n/i18nContext';
 
 import { getLeadDetails } from '../data/leads';
 
@@ -107,6 +108,7 @@ function getCopilotContextForLead(targetLeadId: string): SalesConversationContex
 export const SalesCopilot: React.FC = () => {
   const { leadId } = useParams<{ leadId?: string }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [contexts] = useState<SalesConversationContext[]>(mockCopilotContexts);
   const [selectedLeadId, setSelectedLeadId] = useState<string>(leadId || mockCopilotContexts[0].leadId);
 
@@ -129,14 +131,16 @@ export const SalesCopilot: React.FC = () => {
 
   if (!activeContext) {
     return (
-      <div className="min-h-screen bg-background text-foreground p-8 text-center flex flex-col items-center justify-center">
-        <AlertTriangle className="w-8 h-8 text-amber-400 mb-2" />
-        <h2 className="text-h3 font-bold">No Conversation Intelligence Context Found</h2>
-        <p className="text-small text-foreground-tertiary mt-1">Select a valid lead or opportunity to launch Sales Copilot.</p>
+      <div className="min-h-screen bg-background text-foreground p-6 sm:p-8 text-center flex flex-col items-center justify-center">
+        <AlertTriangle className="w-10 h-10 text-amber-400 mb-3" />
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">No Conversation Intelligence Context Found</h2>
+        <p className="text-sm text-foreground-tertiary mt-1 max-w-md">
+          Select a valid lead or opportunity to launch Sales Copilot.
+        </p>
         <button
           type="button"
           onClick={() => navigate('/opportunities')}
-          className="mt-4 px-4 py-2 bg-amber-400 text-black font-semibold rounded-lg text-xs"
+          className="mt-6 px-5 py-2.5 bg-amber-400 text-black font-semibold rounded-xl text-sm hover:bg-amber-300 transition-colors"
         >
           Return to Opportunity Radar
         </button>
@@ -145,7 +149,7 @@ export const SalesCopilot: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col pb-16">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-20">
       {/* COPILOT HEADER */}
       <CopilotHeader
         context={activeContext}
@@ -153,8 +157,8 @@ export const SalesCopilot: React.FC = () => {
         onSelectLead={handleSelectLead}
       />
 
-      {/* COPILOT WORKSPACE MAIN BODY */}
-      <main className="flex-1 px-6 py-6 max-w-7xl w-full mx-auto space-y-6">
+      {/* COPILOT WORKSPACE MAIN BODY - More breathing room */}
+      <main className="flex-1 px-4 sm:px-6 py-6 sm:py-8 max-w-6xl w-full mx-auto space-y-6 sm:space-y-8">
         {/* SECTION 1: BRIEF */}
         <ConversationBriefCard context={activeContext} />
 

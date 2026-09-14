@@ -13,9 +13,12 @@ import {
   AnimatedHoverPreview,
 } from '../components/ui/21st';
 import { Bot, ArrowRight, PhoneCall, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useI18n } from '../i18n/i18nContext';
+import { LanguageSelector } from '../components/ui/LanguageSelector';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState('discovery');
 
   return (
@@ -24,80 +27,76 @@ export const LandingPage: React.FC = () => {
       <SpotlightCursor />
 
       {/* TOP MARKETING BAR */}
-      <header className="border-b border-border-subtle bg-surface-0/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-md shadow-primary/30">
-            <Bot className="w-5 h-5" />
+      <header className="border-b border-border-subtle bg-surface-0/80 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-md shadow-primary/30">
+            <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div>
-            <div className="text-small font-extrabold tracking-tight font-mono text-foreground flex items-center gap-2">
+            <div className="text-xs sm:text-small font-extrabold tracking-tight font-mono text-foreground flex items-center gap-2">
               <span>VIDUR</span>
-              <span className="text-[10px] bg-amber-500/20 text-amber-300 font-semibold px-2 py-0.5 rounded border border-amber-500/30">
+              <span className="text-[9px] sm:text-[10px] bg-pastelPetal/20 text-pastelPetal font-semibold px-1.5 sm:px-2 py-0.5 rounded border border-pastelPetal/40">
                 PRO 3.0
               </span>
             </div>
-            <div className="text-[11px] text-foreground-tertiary">AI Sales Platform</div>
+            <div className="text-[10px] sm:text-[11px] text-foreground-tertiary">AI Sales Platform</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <LanguageSelector variant="minimal" />
           <HoverGlowButton
             onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 text-xs text-black bg-amber-400 hover:bg-amber-300 rounded-xl"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs text-white bg-thistle hover:bg-thistle/90 rounded-xl font-semibold"
           >
-            <span>Launch Workstation</span>
-            <ArrowRight className="w-4 h-4" />
+            <span className="hidden sm:inline">Launch Workstation</span>
+            <span className="sm:hidden">Launch</span>
+            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </HoverGlowButton>
         </div>
       </header>
 
-      {/* HERO SECTION */}
-      <section className="relative pt-16 pb-20 px-6 max-w-7xl mx-auto text-center space-y-8">
+      {/* HERO SECTION - Clean, minimal, above the fold */}
+      <section className="relative min-h-[85vh] flex items-center justify-center px-4 sm:px-6 max-w-6xl mx-auto text-center">
         <ScrollAnimation direction="up">
-          <div className="max-w-4xl mx-auto flex flex-col items-center">
+          <div className="max-w-4xl mx-auto flex flex-col items-center space-y-6 sm:space-y-8">
             <MagicTextReveal
-              text="TURN BUYING INTENT INTO CONVERSATIONS"
-              className="text-3xl sm:text-5xl lg:text-6xl text-center justify-center leading-tight mb-4"
+              text={t.landing.heroTitle}
+              className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl text-center justify-center leading-tight font-bold"
             />
-            <p className="text-small sm:text-body text-foreground-secondary max-w-2xl mx-auto leading-relaxed">
-              Detect real-time B2B buying signals for enterprise targets like{' '}
-              <AnimatedHoverPreview
-                data={{
-                  name: 'Acme Technologies',
-                  industry: 'Enterprise SaaS',
-                  employees: '2,500+',
-                  intentScore: 96,
-                  recentSignal: 'Downloaded Enterprise AI Whitepaper',
-                  decisionMaker: 'Sarah Jenkins',
-                  role: 'VP Engineering',
-                }}
-              >
-                Acme Corp
-              </AnimatedHoverPreview>{' '}
-              and deploy autonomous AI Voice BDR agents in sub-500ms phone calls.
+            <p className="text-sm sm:text-base lg:text-lg text-foreground-secondary max-w-2xl mx-auto leading-relaxed">
+              {t.landing.heroDescription}
             </p>
-          </div>
-        </ScrollAnimation>
 
-        {/* HERO CALL TO ACTIONS */}
-        <ScrollAnimation direction="up" delay={0.1}>
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <MagneticButton
-              onClick={() => navigate('/dashboard')}
-              className="px-6 py-3.5 text-sm font-bold text-black bg-amber-400 hover:bg-amber-300 shadow-xl shadow-amber-500/20"
-            >
-              <span>Explore Live Dashboard</span>
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </MagneticButton>
+            {/* HERO CALL TO ACTION */}
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 pt-4">
+              <MagneticButton
+                onClick={() => navigate('/dashboard')}
+                className="px-5 sm:px-7 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-thistle hover:bg-thistle/90 shadow-xl shadow-thistle/20"
+              >
+                <span>{t.landing.exploreDashboard}</span>
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
+              </MagneticButton>
+            </div>
+
+            {/* Scroll indicator */}
+            <div className="pt-8 sm:pt-12 animate-bounce">
+              <div className="w-6 h-10 rounded-full border-2 border-border-strong flex items-start justify-center p-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              </div>
+            </div>
           </div>
         </ScrollAnimation>
       </section>
 
-      {/* FEATURE INTERACTIVE TABS */}
-      <section className="py-12 px-6 max-w-5xl mx-auto border-t border-border-subtle/60">
+      {/* FEATURE INTERACTIVE TABS - Now below fold for clean hero */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 max-w-5xl mx-auto border-t border-border-subtle/60">
         <AnimatedContentReveal direction="up">
-          <div className="text-center mb-6">
-            <h3 className="text-xl font-bold text-foreground">Interactive Capabilities Matrix</h3>
+          <div className="text-center mb-8 sm:mb-10 space-y-2">
+            <h3 className="text-xl sm:text-2xl font-bold text-foreground">{t.landing.interactiveCapabilities}</h3>
+            <p className="text-xs sm:text-sm text-foreground-tertiary max-w-xl mx-auto">
+              Explore our core capabilities powering autonomous B2B sales
+            </p>
           </div>
           <AnimatedTabs
             activeTab={activeTab}
@@ -105,42 +104,42 @@ export const LandingPage: React.FC = () => {
             tabs={[
               {
                 id: 'discovery',
-                label: 'Signal Discovery',
+                label: t.landing.capabilities.discovery.title,
                 content: (
-                  <div className="p-6 rounded-2xl bg-surface-0 border border-border-default text-left space-y-2">
-                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Real-time Buying Signal Ingestion
+                  <div className="p-5 sm:p-7 rounded-2xl bg-surface-0 border border-icyBlue/30 text-left space-y-3">
+                    <h4 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-icyBlue" /> {t.landing.capabilities.discovery.heading}
                     </h4>
-                    <p className="text-xs text-foreground-secondary leading-relaxed">
-                      Monitors hiring surges, executive changes, technology stack deployments, and website pricing page visits to automatically score target accounts.
+                    <p className="text-xs sm:text-sm text-foreground-secondary leading-relaxed">
+                      {t.landing.capabilities.discovery.description}
                     </p>
                   </div>
                 ),
               },
               {
                 id: 'calling',
-                label: 'Autonomous Voice BDR',
+                label: t.landing.capabilities.calling.title,
                 content: (
-                  <div className="p-6 rounded-2xl bg-surface-0 border border-border-default text-left space-y-2">
-                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <PhoneCall className="w-4 h-4 text-amber-400" /> Sub-500ms Conversational Telephony
+                  <div className="p-5 sm:p-7 rounded-2xl bg-surface-0 border border-pastelPetal/30 text-left space-y-3">
+                    <h4 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                      <PhoneCall className="w-4 h-4 sm:w-5 sm:h-5 text-pastelPetal" /> {t.landing.capabilities.calling.heading}
                     </h4>
-                    <p className="text-xs text-foreground-secondary leading-relaxed">
-                      Executes outbound calls, answers complex technical questions, resolves objections in real-time, and books calendar meetings automatically.
+                    <p className="text-xs sm:text-sm text-foreground-secondary leading-relaxed">
+                      {t.landing.capabilities.calling.description}
                     </p>
                   </div>
                 ),
               },
               {
                 id: 'intelligence',
-                label: 'Revenue Analytics',
+                label: t.landing.capabilities.intelligence.title,
                 content: (
-                  <div className="p-6 rounded-2xl bg-surface-0 border border-border-default text-left space-y-2">
-                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-blue-400" /> Pipeline Forecast & Conversion Telemetry
+                  <div className="p-5 sm:p-7 rounded-2xl bg-surface-0 border border-skyBlue/30 text-left space-y-3">
+                    <h4 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-skyBlue" /> {t.landing.capabilities.intelligence.heading}
                     </h4>
-                    <p className="text-xs text-foreground-secondary leading-relaxed">
-                      Tracks intent scores, call quality metrics, qualification progress, and projected revenue metrics with real-time value updates.
+                    <p className="text-xs sm:text-sm text-foreground-secondary leading-relaxed">
+                      {t.landing.capabilities.intelligence.description}
                     </p>
                   </div>
                 ),
@@ -151,12 +150,12 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* AUTONOMOUS SALES LOOP WORKFLOW */}
-      <section className="py-16 px-6 max-w-7xl mx-auto border-t border-border-subtle/60">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 max-w-7xl mx-auto border-t border-border-subtle/60">
         <AnimatedContentReveal direction="up">
-          <div className="text-center mb-10 space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">The 10-Step Autonomous Sales Backbone</h2>
-            <p className="text-caption text-foreground-tertiary">
-              Continuous progression from signal discovery to booked executive meeting
+          <div className="text-center mb-10 sm:mb-14 space-y-2 sm:space-y-3">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">{t.landing.workflow.title}</h2>
+            <p className="text-xs sm:text-sm text-foreground-tertiary max-w-2xl mx-auto">
+              {t.landing.workflow.subtitle}
             </p>
           </div>
 
@@ -165,12 +164,12 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* FEATURE CAROUSEL SHOWCASE */}
-      <section className="py-16 px-6 max-w-7xl mx-auto border-t border-border-subtle/60">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 max-w-7xl mx-auto border-t border-border-subtle/60">
         <AnimatedContentReveal direction="up">
-          <div className="text-center mb-10 space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">Enterprise AI Capabilities</h2>
-            <p className="text-caption text-foreground-tertiary">
-              Click features to inspect deep telemetry and automated BDR workflows
+          <div className="text-center mb-10 sm:mb-14 space-y-2 sm:space-y-3">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">{t.landing.features.title}</h2>
+            <p className="text-xs sm:text-sm text-foreground-tertiary max-w-2xl mx-auto">
+              {t.landing.features.subtitle}
             </p>
           </div>
 
@@ -179,25 +178,25 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* CTA FOOTER STRIP */}
-      <footer className="py-12 px-6 border-t border-border-subtle bg-surface-0 text-center space-y-4">
+      <footer className="py-8 sm:py-12 px-4 sm:px-6 border-t border-border-subtle bg-surface-0 text-center space-y-4">
         <div className="text-xs font-mono text-foreground-tertiary">
           VIDUR AI SALES PLATFORM
         </div>
-        <div className="flex justify-center gap-4 text-xs text-foreground-secondary">
-          <button onClick={() => navigate('/dashboard')} className="hover:text-foreground">
-            Dashboard
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-xs text-foreground-secondary">
+          <button onClick={() => navigate('/dashboard')} className="hover:text-foreground transition-colors">
+            {t.navigation.dashboard}
           </button>
           <span>•</span>
-          <button onClick={() => navigate('/leads/discover')} className="hover:text-foreground">
-            Lead Discovery
+          <button onClick={() => navigate('/leads/discover')} className="hover:text-foreground transition-colors">
+            {t.navigation.leads}
           </button>
           <span>•</span>
-          <button onClick={() => navigate('/calls')} className="hover:text-foreground">
-            AI Sales Agent
+          <button onClick={() => navigate('/calls')} className="hover:text-foreground transition-colors">
+            {t.navigation.calls}
           </button>
           <span>•</span>
-          <button onClick={() => navigate('/analytics')} className="hover:text-foreground">
-            Analytics
+          <button onClick={() => navigate('/analytics')} className="hover:text-foreground transition-colors">
+            {t.navigation.analytics}
           </button>
         </div>
       </footer>

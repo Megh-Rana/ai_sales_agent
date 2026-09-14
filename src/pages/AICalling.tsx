@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useI18n } from '../i18n/i18nContext';
 import {
   CallSession,
   CallState,
@@ -57,6 +58,7 @@ export const AICalling: React.FC = () => {
   const { callId, id } = useParams<{ callId?: string; id?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const rawId = callId || id || '';
   const queryLeadId = searchParams.get('leadId');
@@ -336,24 +338,24 @@ export const AICalling: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-5 pb-16">
-      {/* Top AI Status Indicator Bar */}
-      <div className="p-3 rounded-2xl border border-border-default bg-surface-0 flex items-center justify-between gap-3 shadow-xs">
+    <div className="space-y-4 sm:space-y-5 pb-16 sm:pb-20">
+      {/* Top AI Status Indicator Bar - Cleaner design */}
+      <div className="p-3 sm:p-4 rounded-2xl border border-skyBlue/20 bg-surface-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
         <div className="flex items-center gap-3">
           <AnimatedStatusIndicator status={mapAIStatus()} />
-          <div className="text-xs font-mono">
-            <span className="font-bold text-foreground block uppercase">AI VOICE BOT: {session.contactName}</span>
-            <AnimatedTextScramble text={`STATUS_${session.status}`} speed={30} className="text-primary text-[10px]" />
+          <div className="text-xs sm:text-sm font-mono">
+            <span className="font-bold text-foreground block uppercase">{t.calls.aiStatus}: {session.contactName}</span>
+            <AnimatedTextScramble text={`STATUS_${session.status}`} speed={30} className="text-skyBlue text-[10px]" />
           </div>
         </div>
         <div className="flex items-center gap-3 text-xs font-mono">
-          <span className="text-foreground-tertiary">CONFIDENCE:</span>
+          <span className="text-foreground-tertiary">{t.calls.confidence}:</span>
           <AnimatedNumberTransition value={94} suffix="%" className="text-emerald-400 font-bold" />
         </div>
       </div>
 
-      {/* Workflow Stepper */}
-      <div className="p-3 rounded-2xl border border-border-default bg-surface-0">
+      {/* Workflow Stepper - Simplified */}
+      <div className="p-3 sm:p-4 rounded-2xl border border-border-default bg-surface-0">
         <AnimatedStepper
           steps={[
             { id: '1', label: 'PREP' },
@@ -448,14 +450,14 @@ export const AICalling: React.FC = () => {
         </div>
       )}
 
-      {/* 6. LIVE AND PAUSED STATES */}
+      {/* 6. LIVE AND PAUSED STATES - Cleaner layout */}
       {(session.status === 'LIVE' || session.status === 'PAUSED') && (
         <div className="space-y-4 animate-in fade-in duration-300">
           <CallHeader session={session} formatDuration={formatDuration} />
           <CallWaveform status={session.audioStatus} isMuted={session.isMuted} />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            <div className="lg:col-span-7 h-[560px] flex flex-col">
+            <div className="lg:col-span-7 h-[520px] sm:h-[560px] flex flex-col">
               <LiveTranscript transcript={session.transcript} isCallLive={session.status === 'LIVE'} className="h-full" />
             </div>
 

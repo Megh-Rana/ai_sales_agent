@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
+import { useI18n } from '../i18n/i18nContext';
 import { ActionPriorityLevel, NextBestActionItem } from '../types/actions';
 import {
   mockNextBestActions,
@@ -29,6 +30,7 @@ import {
 import { Target, Zap, Clock, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export const ActionCenter: React.FC = () => {
+  const { t } = useI18n();
   const [activePriority, setActivePriority] = useState<'ALL' | ActionPriorityLevel>('ALL');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [actionsList, setActionsList] = useState<NextBestActionItem[]>(mockNextBestActions);
@@ -76,7 +78,7 @@ export const ActionCenter: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-8 select-none pb-16">
+    <div className="space-y-6 sm:space-y-8 select-none pb-16 sm:pb-20">
       {/* HEADER */}
       <ActionCenterHeader
         activePriority={activePriority}
@@ -89,8 +91,8 @@ export const ActionCenter: React.FC = () => {
         isRefreshing={isRefreshing}
       />
 
-      {/* QUALIFICATION WORKFLOW STEPPER BAR */}
-      <div className="p-4 rounded-2xl border border-border-default bg-surface-0 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
+      {/* QUALIFICATION WORKFLOW STEPPER BAR - Cleaner, more breathing room */}
+      <div className="p-4 sm:p-5 rounded-2xl border border-thistle/20 bg-surface-0 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 shadow-sm">
         <div className="w-full md:w-2/3">
           <AnimatedStepper
             steps={[
@@ -103,7 +105,7 @@ export const ActionCenter: React.FC = () => {
             currentStepIndex={3}
           />
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           <AnimatedCircularProgress
             value={89}
             size={70}
@@ -123,17 +125,17 @@ export const ActionCenter: React.FC = () => {
       {viewState === 'error' && <ActionCenterErrorState onRetry={() => setViewState('normal')} />}
 
       {viewState === 'normal' && (
-        <main className="space-y-8 animate-fade-in">
+        <main className="space-y-6 sm:space-y-8 animate-fade-in">
           <ActionSummaryGrid summary={mockActionSummary} />
 
           <section aria-label="Priority Next Best Actions" className="space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-2.5">
-              <div className="flex items-center space-x-2">
-                <div className="p-1 rounded bg-primary-muted text-primary border border-primary/30">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 border-b border-border pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-thistle/10 text-thistle border border-thistle/30">
                   <Target className="w-4 h-4" />
                 </div>
-                <h2 className="text-sm font-bold text-foreground tracking-tight uppercase font-mono flex items-center gap-2">
-                  <span>Priority Next Best Actions Queue ({filteredActions.length})</span>
+                <h2 className="text-sm sm:text-base font-bold text-foreground tracking-tight flex items-center gap-2 flex-wrap">
+                  <span>{t.actions.nextBestAction.title} ({filteredActions.length})</span>
                   <AnimatedBadge label="HIGH URGENCY" variant="urgent" pulse />
                 </h2>
               </div>
@@ -143,7 +145,7 @@ export const ActionCenter: React.FC = () => {
             </div>
 
             {filteredActions.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
                 {filteredActions.map((action) => (
                   <NextBestActionCard
                     key={action.id}
@@ -158,14 +160,14 @@ export const ActionCenter: React.FC = () => {
             )}
           </section>
 
-          <section aria-label="Stalled Deals and Follow-up Dispatch Queue" className="space-y-4 pt-2">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <section aria-label="Stalled Deals and Follow-up Dispatch Queue" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
               <StalledOpportunitiesCard deals={mockStalledDeals} />
               <FollowUpQueueCard />
             </div>
           </section>
 
-          <section aria-label="Real-time Buying Signal Stream" className="space-y-4 pt-2">
+          <section aria-label="Real-time Buying Signal Stream" className="space-y-4">
             <LiveSignalFeedCard signals={mockLiveSignals} />
           </section>
         </main>
