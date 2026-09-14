@@ -47,7 +47,7 @@ export const IntentDistributionCard: React.FC<IntentDistributionCardProps> = ({ 
   ];
 
   return (
-    <div className="bg-[#12161F] border border-[#1E2638] rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
+    <div className="bg-surface border border-border rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
       <div>
         {/* Card Header */}
         <div className="flex items-center justify-between mb-5">
@@ -56,13 +56,13 @@ export const IntentDistributionCard: React.FC<IntentDistributionCardProps> = ({ 
               <Zap className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-[#F8FAFC]">Lead Quality & Intent Distribution</h2>
-              <p className="text-xs text-[#94A3B8]">
+              <h2 className="text-base font-semibold text-foreground">Lead Quality & Intent Distribution</h2>
+              <p className="text-xs text-foreground-secondary">
                 Buying signal density across discovered dataset
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono font-medium text-[#64748B] bg-[#0B0E14] px-2.5 py-1 rounded-md border border-[#1E2638]">
+          <span className="text-xs font-mono font-medium text-foreground-tertiary bg-background px-2.5 py-1 rounded-md border border-border">
             AI Score Model
           </span>
         </div>
@@ -76,7 +76,7 @@ export const IntentDistributionCard: React.FC<IntentDistributionCardProps> = ({ 
                   {item.label}
                 </span>
                 <div className="flex items-center space-x-2 font-mono">
-                  <span className="text-sm font-bold text-[#F8FAFC]">{item.count} leads</span>
+                  <span className="text-sm font-bold text-foreground">{item.count} leads</span>
                   <span className={`px-1.5 py-0.5 rounded text-[11px] border font-medium ${item.badgeBg}`}>
                     {item.percentage}%
                   </span>
@@ -84,7 +84,7 @@ export const IntentDistributionCard: React.FC<IntentDistributionCardProps> = ({ 
               </div>
 
               {/* Bar */}
-              <div className="w-full bg-[#0B0E14] h-3.5 rounded-md overflow-hidden p-0.5 border border-[#1E2638]">
+              <div className="w-full bg-background h-3.5 rounded-md overflow-hidden p-0.5 border border-border">
                 <div
                   className={`h-full rounded ${item.barColor} transition-all duration-500`}
                   style={{ width: `${Math.max(item.percentage, 2)}%` }}
@@ -96,9 +96,9 @@ export const IntentDistributionCard: React.FC<IntentDistributionCardProps> = ({ 
       </div>
 
       {/* Footer Note */}
-      <div className="pt-3 border-t border-[#1E2638] flex items-center justify-between text-xs text-[#64748B]">
+      <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-foreground-tertiary">
         <div className="flex items-center space-x-1.5">
-          <Compass className="w-3.5 h-3.5 text-[#94A3B8]" />
+          <Compass className="w-3.5 h-3.5 text-foreground-secondary" />
           <span>High-intent signals updated continuously</span>
         </div>
         <span className="font-mono text-emerald-400 font-semibold">

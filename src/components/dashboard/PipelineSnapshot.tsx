@@ -54,12 +54,12 @@ export const PipelineSnapshot: React.FC<PipelineSnapshotProps> = ({ metrics, cla
             key={metric.id}
             className={`p-4 rounded-xl border transition-all duration-150 relative overflow-hidden group ${
               metric.isAccent
-                ? 'bg-surface-0 border-signal-high/30 shadow-xs'
+                ? 'bg-surface-0 border-border-default shadow-xs'
                 : 'bg-surface-0 border-border-default hover:border-border-hover/60'
             }`}
           >
             {metric.isAccent && (
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-signal-high" />
+              <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary rounded-l-xl" />
             )}
 
             <div className="flex items-center justify-between gap-2 mb-2">

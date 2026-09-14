@@ -8,7 +8,7 @@ interface SourcePerformanceCardProps {
 
 export const SourcePerformanceCard: React.FC<SourcePerformanceCardProps> = ({ sources }) => {
   return (
-    <div className="bg-[#12161F] border border-[#1E2638] rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
+    <div className="bg-surface border border-border rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
       <div>
         {/* Card Header */}
         <div className="flex items-center justify-between mb-5">
@@ -17,8 +17,8 @@ export const SourcePerformanceCard: React.FC<SourcePerformanceCardProps> = ({ so
               <Globe className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-[#F8FAFC]">Discovery Source Yield</h2>
-              <p className="text-xs text-[#94A3B8]">
+              <h2 className="text-base font-semibold text-foreground">Discovery Source Yield</h2>
+              <p className="text-xs text-foreground-secondary">
                 Where should you find more leads?
               </p>
             </div>
@@ -33,10 +33,10 @@ export const SourcePerformanceCard: React.FC<SourcePerformanceCardProps> = ({ so
           {sources.map((item, idx) => (
             <div
               key={item.sourceKey}
-              className={`bg-[#0B0E14] border rounded-lg p-3.5 transition-all duration-150 ${
+              className={`bg-background border rounded-lg p-3.5 transition-all duration-150 ${
                 idx === 0
                   ? 'border-blue-500/40 bg-blue-500/[0.02]'
-                  : 'border-[#1E2638] hover:border-[#2B354C]'
+                  : 'border-border hover:border-border-strong'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -46,7 +46,7 @@ export const SourcePerformanceCard: React.FC<SourcePerformanceCardProps> = ({ so
                       Top Source
                     </span>
                   )}
-                  <span className="font-semibold text-xs text-[#F8FAFC]">{item.sourceLabel}</span>
+                  <span className="font-semibold text-xs text-foreground">{item.sourceLabel}</span>
                 </div>
                 <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                   Qualified: {item.qualificationRate}%
@@ -54,17 +54,17 @@ export const SourcePerformanceCard: React.FC<SourcePerformanceCardProps> = ({ so
               </div>
 
               {/* Detail Metrics Row */}
-              <div className="grid grid-cols-3 gap-2 text-[11px] font-mono text-[#94A3B8] pt-1">
+              <div className="grid grid-cols-3 gap-2 text-[11px] font-mono text-foreground-secondary pt-1">
                 <div>
-                  <span className="text-[#64748B] block">Discovered</span>
-                  <span className="font-bold text-[#F8FAFC]">{item.discoveredLeads}</span>
+                  <span className="text-foreground-tertiary block">Discovered</span>
+                  <span className="font-bold text-foreground">{item.discoveredLeads}</span>
                 </div>
                 <div>
-                  <span className="text-[#64748B] block">High Intent</span>
+                  <span className="text-foreground-tertiary block">High Intent</span>
                   <span className="font-bold text-amber-400">{item.highIntentLeads}</span>
                 </div>
                 <div>
-                  <span className="text-[#64748B] block">Avg Intent</span>
+                  <span className="text-foreground-tertiary block">Avg Intent</span>
                   <span className="font-bold text-blue-400">{item.avgIntentScore} / 100</span>
                 </div>
               </div>
@@ -73,7 +73,7 @@ export const SourcePerformanceCard: React.FC<SourcePerformanceCardProps> = ({ so
         </div>
       </div>
 
-      <div className="pt-3 border-t border-[#1E2638] text-xs text-[#64748B] flex items-center justify-between">
+      <div className="pt-3 border-t border-border text-xs text-foreground-tertiary flex items-center justify-between">
         <span>Recommendation: Focus scanning on Public Requirements</span>
         <span className="text-blue-400 font-semibold font-mono">1.8× Higher Conversion</span>
       </div>

@@ -24,7 +24,7 @@ export const AICallSnapshot: React.FC<AICallSnapshotProps> = ({ call, className 
             <div className="flex items-center gap-2">
               <h4 className="text-body font-semibold text-foreground">Latest AI Voice Agent Call</h4>
               <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-signal-qualified-muted text-signal-qualified border border-signal-qualified/30">
-                BANT Qualified
+                Qualified
               </span>
             </div>
             <div className="text-[11px] text-foreground-tertiary">Autonomous dialogue completed {call.completedAt}</div>
@@ -55,36 +55,12 @@ export const AICallSnapshot: React.FC<AICallSnapshotProps> = ({ call, className 
         </div>
       </div>
 
-      {/* BANT Qualification Grid */}
-      <div className="grid grid-cols-4 gap-1.5 p-2 bg-surface-1 rounded-lg border border-border-subtle text-center text-[11px]">
-        <div className="space-y-0.5">
-          <div className="text-[10px] font-mono uppercase text-foreground-tertiary">Budget</div>
-          <div className="font-semibold text-signal-qualified flex items-center justify-center gap-1">
-            <CheckCircle2 className="w-3 h-3 shrink-0" />
-            <span className="truncate">$40K</span>
-          </div>
-        </div>
-        <div className="space-y-0.5">
-          <div className="text-[10px] font-mono uppercase text-foreground-tertiary">Authority</div>
-          <div className="font-semibold text-signal-qualified flex items-center justify-center gap-1">
-            <CheckCircle2 className="w-3 h-3 shrink-0" />
-            <span className="truncate">Decision</span>
-          </div>
-        </div>
-        <div className="space-y-0.5">
-          <div className="text-[10px] font-mono uppercase text-foreground-tertiary">Need</div>
-          <div className="font-semibold text-signal-qualified flex items-center justify-center gap-1">
-            <CheckCircle2 className="w-3 h-3 shrink-0" />
-            <span className="truncate">Immediate</span>
-          </div>
-        </div>
-        <div className="space-y-0.5">
-          <div className="text-[10px] font-mono uppercase text-foreground-tertiary">Timeline</div>
-          <div className="font-semibold text-signal-qualified flex items-center justify-center gap-1">
-            <CheckCircle2 className="w-3 h-3 shrink-0" />
-            <span className="truncate">Q4</span>
-          </div>
-        </div>
+      {/* Qualification Status */}
+      <div className="flex items-center gap-2 p-2.5 bg-surface-1 rounded-lg border border-border-subtle text-xs">
+        <CheckCircle2 className="w-4 h-4 text-signal-qualified shrink-0" />
+        <span className="font-semibold text-foreground">Qualification Status:</span>
+        <span className="text-signal-qualified font-bold">Fully Qualified</span>
+        <span className="text-foreground-tertiary ml-auto">Budget • Authority • Need • Timeline confirmed</span>
       </div>
 
       {/* Takeaway & Objection Breakdown */}

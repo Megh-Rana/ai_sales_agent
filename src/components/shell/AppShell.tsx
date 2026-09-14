@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { GlobalSearch } from './GlobalSearch';
-import { MobileNavigation } from './MobileNavigation';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { PageContainer } from './PageContainer';
 import { SpotlightCursor, AnimatedDock } from '../ui/21st';
@@ -13,24 +11,11 @@ export interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
-    return localStorage.getItem('vidur_sidebar_collapsed') === 'true';
-  });
-
   const [searchOpen, setSearchOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
-
-  const handleToggleSidebar = () => {
-    setIsSidebarCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem('vidur_sidebar_collapsed', String(next));
-      return next;
-    });
-  };
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -81,27 +66,16 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex overflow-hidden">
-      {/* Desktop Persistent Sidebar */}
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={handleToggleSidebar}
-        className="hidden lg:flex"
+    <div className="min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
+      {/* Top Header */}
+      <TopBar
+        onOpenSearch={() => setSearchOpen(true)}
+        onOpenMobileNav={() => {}}
+        onOpenShortcuts={() => setShortcutsOpen(true)}
       />
 
-      {/* Mobile Navigation Drawer */}
-      <MobileNavigation isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
-
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
-        {/* Top Header */}
-        <TopBar
-          onOpenSearch={() => setSearchOpen(true)}
-          onOpenMobileNav={() => setMobileNavOpen(true)}
-          onOpenShortcuts={() => setShortcutsOpen(true)}
-        />
-
-        {/* Page Content Container */}
+      <div className="flex-1 min-w-0 overflow-y-auto pb-20">
         <PageContainer key={location.pathname}>{children}</PageContainer>
       </div>
 
@@ -119,9 +93,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       {/* Keyboard Shortcuts Help Modal */}
       <KeyboardShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
-      {/* 21st.dev Ambient Spotlight Cursor & Quick Dock */}
+      {/* Ambient Spotlight Cursor & Navigation Dock */}
       <SpotlightCursor />
       <AnimatedDock />
     </div>
   );
 };
+

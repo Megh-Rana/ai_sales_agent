@@ -7,7 +7,7 @@ interface AnalyticsErrorStateProps {
 
 export const AnalyticsErrorState: React.FC<AnalyticsErrorStateProps> = ({ onRetry }) => {
   return (
-    <div className="bg-[#12161F] border border-rose-500/30 rounded-xl p-8 md:p-12 text-center shadow-sm my-6">
+    <div className="bg-surface border border-rose-500/30 rounded-xl p-8 md:p-12 text-center shadow-sm my-6">
       <div className="max-w-md mx-auto space-y-4">
         {/* Icon */}
         <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center">
@@ -16,8 +16,8 @@ export const AnalyticsErrorState: React.FC<AnalyticsErrorStateProps> = ({ onRetr
 
         {/* Heading & Description */}
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-[#F8FAFC]">Analytics couldn't be loaded</h2>
-          <p className="text-sm text-[#94A3B8]">
+          <h2 className="text-xl font-bold text-foreground">Analytics couldn't be loaded</h2>
+          <p className="text-sm text-foreground-secondary">
             We encountered a temporary issue loading your sales pipeline metrics. Please check your network connection and try again.
           </p>
         </div>

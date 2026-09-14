@@ -8,7 +8,7 @@ interface CallOutcomeBreakdownProps {
 
 export const CallOutcomeBreakdown: React.FC<CallOutcomeBreakdownProps> = ({ outcomes }) => {
   return (
-    <div className="bg-[#12161F] border border-[#1E2638] rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
+    <div className="bg-surface border border-border rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
       <div>
         {/* Card Header */}
         <div className="flex items-center justify-between mb-5">
@@ -17,13 +17,13 @@ export const CallOutcomeBreakdown: React.FC<CallOutcomeBreakdownProps> = ({ outc
               <ListFilter className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-[#F8FAFC]">Call Outcome Distribution</h2>
-              <p className="text-xs text-[#94A3B8]">
+              <h2 className="text-base font-semibold text-foreground">Call Outcome Distribution</h2>
+              <p className="text-xs text-foreground-secondary">
                 Scannable ranked breakdown of completed touchpoints
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono font-medium text-[#64748B] bg-[#0B0E14] px-2.5 py-1 rounded-md border border-[#1E2638]">
+          <span className="text-xs font-mono font-medium text-foreground-tertiary bg-background px-2.5 py-1 rounded-md border border-border">
             Ranked List View
           </span>
         </div>
@@ -33,7 +33,7 @@ export const CallOutcomeBreakdown: React.FC<CallOutcomeBreakdownProps> = ({ outc
           {outcomes.map((item) => (
             <div
               key={item.outcome}
-              className="bg-[#0B0E14] border border-[#1E2638] hover:border-[#2B354C] rounded-lg p-3 transition-all duration-150"
+              className="bg-background border border-border hover:border-border-strong rounded-lg p-3 transition-all duration-150"
             >
               <div className="flex items-center justify-between text-xs mb-2">
                 <div className="flex items-center space-x-2">
@@ -42,16 +42,16 @@ export const CallOutcomeBreakdown: React.FC<CallOutcomeBreakdownProps> = ({ outc
                   >
                     {item.outcome}
                   </span>
-                  <span className="font-medium text-[#F8FAFC]">{item.label}</span>
+                  <span className="font-medium text-foreground">{item.label}</span>
                 </div>
                 <div className="flex items-center space-x-2 font-mono">
-                  <span className="font-bold text-[#F8FAFC]">{item.count} calls</span>
-                  <span className="text-[#94A3B8] font-semibold">({item.percentage}%)</span>
+                  <span className="font-bold text-foreground">{item.count} calls</span>
+                  <span className="text-foreground-secondary font-semibold">({item.percentage}%)</span>
                 </div>
               </div>
 
               {/* Relative Progress Bar */}
-              <div className="w-full bg-[#1A202C] h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-surface-elevated h-2 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full ${item.colorClass}`}
                   style={{ width: `${Math.max(item.percentage, 4)}%` }}
@@ -62,7 +62,7 @@ export const CallOutcomeBreakdown: React.FC<CallOutcomeBreakdownProps> = ({ outc
         </div>
       </div>
 
-      <div className="pt-3 border-t border-[#1E2638] text-xs text-[#64748B] flex items-center justify-between">
+      <div className="pt-3 border-t border-border text-xs text-foreground-tertiary flex items-center justify-between">
         <div className="flex items-center space-x-1.5">
           <Award className="w-3.5 h-3.5 text-emerald-400" />
           <span>72.2% positive conversation outcome rate</span>

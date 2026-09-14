@@ -49,7 +49,7 @@ export const FollowUpQueue: React.FC<FollowUpQueueProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-body font-semibold text-foreground">Follow-Up Commitments</h4>
+              <h4 className="text-body font-bold text-foreground">Follow-Up Commitments</h4>
               <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-signal-high-muted text-signal-high border border-signal-high/30">
                 {items.length - completedIds.length} Due
               </span>
@@ -79,8 +79,8 @@ export const FollowUpQueue: React.FC<FollowUpQueueProps> = ({
                 isDone
                   ? 'bg-surface-0 border-border-subtle opacity-50'
                   : item.isUrgent
-                  ? 'bg-surface-1 border-signal-high/40 hover:border-signal-high shadow-xs'
-                  : 'bg-surface-1/60 hover:bg-surface-1 border-border-subtle hover:border-border-default'
+                  ? 'bg-surface-1 border-signal-high/60 hover:border-signal-high shadow-sm'
+                  : 'bg-surface-1 hover:bg-surface-elevated border-border-default hover:border-primary/40'
               }`}
             >
               <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -121,7 +121,7 @@ export const FollowUpQueue: React.FC<FollowUpQueueProps> = ({
                 </div>
               </div>
 
-              <p className={`text-caption leading-relaxed pl-6 ${isDone ? 'line-through text-foreground-tertiary' : 'text-foreground-secondary'}`}>
+              <p className={`text-caption leading-relaxed pl-6 ${isDone ? 'line-through text-foreground-tertiary' : 'text-foreground'}`}>
                 {item.description}
               </p>
             </div>

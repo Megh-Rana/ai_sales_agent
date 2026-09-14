@@ -93,11 +93,11 @@ export const Analytics: React.FC = () => {
 
           {/* NARRATIVE BLOCK 2: TOUCHPOINT QUALITY & CONVERSION RATIOS */}
           <section aria-label="Call Performance and Stage Conversions" className="space-y-4 pt-2">
-            <div className="flex items-center space-x-2 border-b border-[#1E2638] pb-2.5">
+            <div className="flex items-center space-x-2 border-b border-border pb-2.5">
               <div className="p-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Activity className="w-4 h-4" aria-hidden="true" />
               </div>
-              <h2 className="text-sm font-bold text-[#F8FAFC] tracking-tight uppercase font-mono">
+              <h2 className="text-sm font-bold text-foreground tracking-tight uppercase font-mono">
                 Touchpoint Efficiency & Conversation Conversion
               </h2>
             </div>
@@ -130,11 +130,11 @@ export const Analytics: React.FC = () => {
 
           {/* NARRATIVE BLOCK 3: TOUCHPOINT OUTCOMES & DISCOVERY PROVENANCE */}
           <section aria-label="Call Outcomes and Discovery Sources" className="space-y-4 pt-2">
-            <div className="flex items-center space-x-2 border-b border-[#1E2638] pb-2.5">
+            <div className="flex items-center space-x-2 border-b border-border pb-2.5">
               <div className="p-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                 <Compass className="w-4 h-4" aria-hidden="true" />
               </div>
-              <h2 className="text-sm font-bold text-[#F8FAFC] tracking-tight uppercase font-mono">
+              <h2 className="text-sm font-bold text-foreground tracking-tight uppercase font-mono">
                 Outcome Breakdown & Discovery Channel Yield
               </h2>
             </div>
@@ -147,11 +147,11 @@ export const Analytics: React.FC = () => {
 
           {/* NARRATIVE BLOCK 4: ICP SEGMENTATION & MARKET VERTICAL MATRIX */}
           <section aria-label="Industry Segment Matrix" className="space-y-4 pt-2">
-            <div className="flex items-center space-x-2 border-b border-[#1E2638] pb-2.5">
+            <div className="flex items-center space-x-2 border-b border-border pb-2.5">
               <div className="p-1 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
                 <Layers className="w-4 h-4" aria-hidden="true" />
               </div>
-              <h2 className="text-sm font-bold text-[#F8FAFC] tracking-tight uppercase font-mono">
+              <h2 className="text-sm font-bold text-foreground tracking-tight uppercase font-mono">
                 ICP Industry Performance Matrix
               </h2>
             </div>
@@ -160,14 +160,14 @@ export const Analytics: React.FC = () => {
           </section>
 
           {/* NARRATIVE BLOCK 5: TACTICAL AI SALES INSIGHTS */}
-          <section aria-label="AI Sales Insights" className="space-y-4 pt-4 border-t border-[#1E2638]">
+          <section aria-label="AI Sales Insights" className="space-y-4 pt-4 border-t border-border">
             <div className="flex items-center space-x-2">
               <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
                 <Sparkles className="w-4 h-4" aria-hidden="true" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-[#F8FAFC]">AI Sales Insights</h2>
-                <p className="text-xs text-[#94A3B8]">
+                <h2 className="text-base font-bold text-foreground">AI Sales Insights</h2>
+                <p className="text-xs text-foreground-secondary">
                   Contextual observations & recommended next best actions derived from live data
                 </p>
               </div>

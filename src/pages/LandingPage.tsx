@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   MagicTextReveal,
   AnimatedFeatureCarousel,
-  ParallaxFloatingElements,
   MagneticButton,
   HoverGlowButton,
   ScrollAnimation,
@@ -11,11 +10,9 @@ import {
   SpotlightCursor,
   AnimatedTabs,
   AnimatedContentReveal,
-  AnimatedTextScramble,
   AnimatedHoverPreview,
-  AnimatedSearchInteraction,
 } from '../components/ui/21st';
-import { Bot, ArrowRight, PhoneCall, Sparkles, Building, CheckCircle2 } from 'lucide-react';
+import { Bot, ArrowRight, PhoneCall, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,18 +36,11 @@ export const LandingPage: React.FC = () => {
                 PRO 3.0
               </span>
             </div>
-            <div className="text-[11px] text-foreground-tertiary">B2B AI Sales Operating System</div>
+            <div className="text-[11px] text-foreground-tertiary">AI Sales Platform</div>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/login')}
-            className="text-xs font-semibold text-foreground-secondary hover:text-foreground transition-colors cursor-pointer"
-          >
-            Sign In
-          </button>
-
           <HoverGlowButton
             onClick={() => navigate('/dashboard')}
             className="px-4 py-2 text-xs text-black bg-amber-400 hover:bg-amber-300 rounded-xl"
@@ -64,11 +54,6 @@ export const LandingPage: React.FC = () => {
       {/* HERO SECTION */}
       <section className="relative pt-16 pb-20 px-6 max-w-7xl mx-auto text-center space-y-8">
         <ScrollAnimation direction="up">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-mono font-semibold mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>21st.dev V3 Motion System Active</span>
-          </div>
-
           <div className="max-w-4xl mx-auto flex flex-col items-center">
             <MagicTextReveal
               text="TURN BUYING INTENT INTO CONVERSATIONS"
@@ -94,44 +79,17 @@ export const LandingPage: React.FC = () => {
           </div>
         </ScrollAnimation>
 
-        {/* HERO SEARCH & LIVE DECODE DEMO */}
-        <AnimatedContentReveal direction="up" delay={0.1} className="max-w-md mx-auto">
-          <div className="p-4 rounded-2xl border border-border-default bg-surface-0/60 shadow-xl backdrop-blur-md space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono text-foreground-tertiary border-b border-border-subtle pb-2">
-              <span className="flex items-center gap-1.5">
-                <Building className="w-3.5 h-3.5 text-amber-400" />
-                Live Intent Radar
-              </span>
-              <AnimatedTextScramble text="HIGH_INTENT_DETECTED" speed={40} className="text-emerald-400 text-[10px] font-bold" />
-            </div>
-            <AnimatedSearchInteraction placeholder="Test search pipeline or company..." />
-          </div>
-        </AnimatedContentReveal>
-
         {/* HERO CALL TO ACTIONS */}
-        <ScrollAnimation direction="up" delay={0.2}>
+        <ScrollAnimation direction="up" delay={0.1}>
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <MagneticButton
               onClick={() => navigate('/dashboard')}
-              className="px-6 py-3.5 text-sm font-bold text-primary-foreground bg-primary hover:bg-primary/90 shadow-xl shadow-primary/30"
+              className="px-6 py-3.5 text-sm font-bold text-black bg-amber-400 hover:bg-amber-300 shadow-xl shadow-amber-500/20"
             >
               <span>Explore Live Dashboard</span>
               <ArrowRight className="w-4 h-4 ml-2" />
             </MagneticButton>
-
-            <MagneticButton
-              onClick={() => navigate('/calls')}
-              className="px-6 py-3.5 text-sm font-bold text-foreground bg-surface-1 border border-border-default hover:bg-surface-2"
-            >
-              <PhoneCall className="w-4 h-4 text-amber-400 mr-2" />
-              <span>Test AI Voice Agent</span>
-            </MagneticButton>
           </div>
-        </ScrollAnimation>
-
-        {/* FLOATING PARALLAX METRIC CARDS */}
-        <ScrollAnimation direction="up" delay={0.3} className="pt-8">
-          <ParallaxFloatingElements className="max-w-3xl mx-auto" />
         </ScrollAnimation>
       </section>
 
@@ -148,7 +106,6 @@ export const LandingPage: React.FC = () => {
               {
                 id: 'discovery',
                 label: 'Signal Discovery',
-                badge: 'LIVE',
                 content: (
                   <div className="p-6 rounded-2xl bg-surface-0 border border-border-default text-left space-y-2">
                     <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -163,7 +120,6 @@ export const LandingPage: React.FC = () => {
               {
                 id: 'calling',
                 label: 'Autonomous Voice BDR',
-                badge: 'VOICE',
                 content: (
                   <div className="p-6 rounded-2xl bg-surface-0 border border-border-default text-left space-y-2">
                     <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -225,7 +181,7 @@ export const LandingPage: React.FC = () => {
       {/* CTA FOOTER STRIP */}
       <footer className="py-12 px-6 border-t border-border-subtle bg-surface-0 text-center space-y-4">
         <div className="text-xs font-mono text-foreground-tertiary">
-          VIDUR AI SALES OS • POWERED BY 21ST.DEV COMPONENT ENGINE
+          VIDUR AI SALES OS
         </div>
         <div className="flex justify-center gap-4 text-xs text-foreground-secondary">
           <button onClick={() => navigate('/dashboard')} className="hover:text-foreground">

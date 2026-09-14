@@ -100,32 +100,7 @@ export const Login: React.FC = () => {
             </Button>
           </form>
 
-          {/* SSO Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border-subtle" />
-            </div>
-            <div className="relative flex justify-center text-[10px] uppercase font-mono text-foreground-tertiary">
-              <span className="bg-surface-0 px-2 font-semibold">Or enterprise SSO</span>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className="px-3 py-2 bg-surface-1 hover:bg-surface-elevated border border-border-subtle hover:border-border-default rounded-lg text-xs font-medium text-foreground-secondary hover:text-foreground transition-colors text-center"
-            >
-              Okta Verify
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className="px-3 py-2 bg-surface-1 hover:bg-surface-elevated border border-border-subtle hover:border-border-default rounded-lg text-xs font-medium text-foreground-secondary hover:text-foreground transition-colors text-center"
-            >
-              Google Workspace
-            </button>
-          </div>
 
           <div className="pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-foreground-secondary">
             <span>Need a new sales workspace?</span>

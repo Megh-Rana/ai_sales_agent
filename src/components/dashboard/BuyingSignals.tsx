@@ -43,7 +43,7 @@ export const BuyingSignals: React.FC<BuyingSignalsProps> = ({ signals, className
       opportunityId: 'opp-103',
       companyName: 'Nexus Health AI',
       type: 'Growth Capital',
-      description: 'Series-B funding round ($24M) announced with commercial GTM focus.',
+      description: 'Series-B funding round (₹24M) announced with commercial GTM focus.',
       timestamp: '3h ago',
       impactScore: 91,
     },

@@ -109,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <SidebarSection label="Sales Operations" isCollapsed={isCollapsed}>
           <SidebarItem
             to="/command-center"
-            icon={<Activity className="w-4 h-4 text-amber-400" />}
+            icon={<Activity className="w-4 h-4" />}
             label="Revenue Command Center"
             badge="Live OS"
             badgeVariant="primary"
@@ -117,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           />
           <SidebarItem
             to="/opportunities"
-            icon={<Radar className="w-4 h-4 text-amber-400" />}
+            icon={<Radar className="w-4 h-4" />}
             label="Opportunity Radar"
             badge="7 Active"
             badgeVariant="signal"
@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <SidebarSection label="Intelligence" isCollapsed={isCollapsed}>
           <SidebarItem
             to="/copilot"
-            icon={<Sparkles className="w-4 h-4 text-amber-400" />}
+            icon={<Sparkles className="w-4 h-4" />}
             label="Sales Copilot"
             badge="AI Pitch"
             badgeVariant="primary"
@@ -209,40 +209,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Footer Area: Settings & User Profile */}
-      <div className="p-3 border-t border-border bg-surface space-y-2 shrink-0">
+      <div className="p-3 border-t border-border bg-surface shrink-0">
         <SidebarItem
           to="/settings"
           icon={<Settings className="w-4 h-4" />}
           label="Settings"
           isCollapsed={isCollapsed}
         />
-
-        {/* User Card */}
-        {isCollapsed ? (
-          <Tooltip content={`${mockUser.name} (${mockUser.role})`} position="right">
-            <NavLink
-              to="/settings/profile"
-              className="flex justify-center p-1.5 rounded-lg bg-surface-1 border border-border-subtle hover:bg-surface-elevated transition-colors"
-              aria-label="User Profile Settings"
-            >
-              <Avatar type="user" name={mockUser.name} size="sm" />
-            </NavLink>
-          </Tooltip>
-        ) : (
-          <NavLink
-            to="/settings/profile"
-            className="flex items-center gap-3 p-2 rounded-lg bg-surface-1 border border-border-subtle hover:bg-surface-elevated transition-colors group"
-            title="User Profile Settings"
-          >
-            <Avatar type="user" name={mockUser.name} size="sm" />
-            <div className="min-w-0 flex-1">
-              <div className="text-small font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                {mockUser.name}
-              </div>
-              <div className="text-caption text-foreground-tertiary truncate">{mockUser.role}</div>
-            </div>
-          </NavLink>
-        )}
       </div>
     </aside>
   );

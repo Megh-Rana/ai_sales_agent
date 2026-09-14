@@ -16,12 +16,12 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({ stages, className = ''
             <TrendingUp className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-body font-semibold text-foreground">Pipeline Velocity Funnel</h4>
-            <div className="text-[11px] text-foreground-tertiary">Real-time signal-to-meeting conversion velocity</div>
+            <h4 className="text-body font-semibold text-foreground">Pipeline Conversion Funnel</h4>
+            <div className="text-[11px] text-foreground-tertiary">Real-time signal-to-meeting conversion tracking</div>
           </div>
         </div>
-        <span className="text-[11px] font-mono text-signal-qualified font-semibold bg-signal-qualified-muted px-2 py-0.5 rounded border border-signal-qualified/30">
-          4.2d Avg Velocity
+        <span className="text-[11px] font-mono text-primary font-semibold bg-primary-muted px-2 py-0.5 rounded border border-primary/30">
+          Active Pipeline
         </span>
       </div>
 

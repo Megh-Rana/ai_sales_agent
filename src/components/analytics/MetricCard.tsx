@@ -12,14 +12,14 @@ export const MetricCard: React.FC<MetricCardProps> = ({ metric, icon }) => {
   const isNegative = metric.trendDirection === 'down';
 
   return (
-    <div className="bg-[#12161F] border border-[#1E2638] hover:border-[#2B354C] rounded-xl p-5 transition-all duration-200 shadow-sm flex flex-col justify-between group">
+    <div className="bg-surface border border-border hover:border-border-strong rounded-xl p-5 transition-all duration-200 shadow-sm flex flex-col justify-between group">
       {/* Top Header Row */}
       <div className="flex items-center justify-between gap-2 mb-3">
-        <span className="text-xs font-medium text-[#94A3B8] tracking-wide uppercase">
+        <span className="text-xs font-medium text-foreground-secondary tracking-wide uppercase">
           {metric.label}
         </span>
         {icon && (
-          <div className="p-1.5 rounded-lg bg-[#1A202C] text-[#64748B] group-hover:text-blue-400 group-hover:bg-blue-500/10 border border-transparent group-hover:border-blue-500/20 transition-all">
+          <div className="p-1.5 rounded-lg bg-surface-elevated text-foreground-tertiary group-hover:text-blue-400 group-hover:bg-blue-500/10 border border-transparent group-hover:border-blue-500/20 transition-all">
             {icon}
           </div>
         )}
@@ -28,7 +28,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({ metric, icon }) => {
       {/* Main Metric Value & Trend */}
       <div className="space-y-2">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-2xl md:text-3xl font-extrabold text-[#F8FAFC] tracking-tight font-mono">
+          <span className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight font-mono">
             {metric.value}
           </span>
 
@@ -50,10 +50,10 @@ export const MetricCard: React.FC<MetricCardProps> = ({ metric, icon }) => {
         </div>
 
         {/* Comparison Context */}
-        <div className="flex items-center justify-between text-[11px] text-[#64748B]">
+        <div className="flex items-center justify-between text-[11px] text-foreground-tertiary">
           <span>{metric.comparisonLabel}</span>
           {metric.context && (
-            <span className="truncate max-w-[140px] text-[#94A3B8] font-medium text-right">
+            <span className="truncate max-w-[140px] text-foreground-secondary font-medium text-right">
               {metric.context}
             </span>
           )}

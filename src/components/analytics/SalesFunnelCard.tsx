@@ -32,7 +32,7 @@ export const SalesFunnelCard: React.FC<SalesFunnelCardProps> = ({ stages, insigh
   };
 
   return (
-    <div className="bg-[#12161F] border border-[#1E2638] rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
+    <div className="bg-surface border border-border rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
       <div>
         {/* Card Header */}
         <div className="flex items-center justify-between mb-5">
@@ -41,13 +41,13 @@ export const SalesFunnelCard: React.FC<SalesFunnelCardProps> = ({ stages, insigh
               <Filter className="w-4 h-4" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-[#F8FAFC]">Sales Funnel Velocity</h2>
-              <p className="text-xs text-[#94A3B8]">
+              <h2 className="text-base font-semibold text-foreground">Sales Funnel Velocity</h2>
+              <p className="text-xs text-foreground-secondary">
                 Stage volume, conversion yield & drop-off points
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono font-medium text-[#64748B] bg-[#0B0E14] px-2.5 py-1 rounded-md border border-[#1E2638]">
+          <span className="text-xs font-mono font-medium text-foreground-tertiary bg-background px-2.5 py-1 rounded-md border border-border">
             5 Stages Supported
           </span>
         </div>
@@ -63,15 +63,15 @@ export const SalesFunnelCard: React.FC<SalesFunnelCardProps> = ({ stages, insigh
                 {/* Bar Label & Value Row */}
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center space-x-2">
-                    <span className="font-semibold text-[#F8FAFC]">{stage.label}</span>
-                    <span className="text-[11px] font-mono text-[#64748B]">
+                    <span className="font-semibold text-foreground">{stage.label}</span>
+                    <span className="text-[11px] font-mono text-foreground-tertiary">
                       ({calculatedPctOfTop}% of total)
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 font-mono">
-                    <span className="text-sm font-bold text-[#F8FAFC]">{stage.count}</span>
+                    <span className="text-sm font-bold text-foreground">{stage.count}</span>
                     {idx > 0 && (
-                      <span className="text-[11px] text-[#94A3B8] bg-[#1A202C] px-1.5 py-0.5 rounded border border-[#2B354C]">
+                      <span className="text-[11px] text-foreground-secondary bg-surface-elevated px-1.5 py-0.5 rounded border border-border-strong">
                         {stage.conversionFromPrevious}% yield
                       </span>
                     )}
@@ -79,7 +79,7 @@ export const SalesFunnelCard: React.FC<SalesFunnelCardProps> = ({ stages, insigh
                 </div>
 
                 {/* Proportional Bar */}
-                <div className="w-full bg-[#0B0E14] h-7 rounded-lg overflow-hidden p-1 border border-[#1E2638] flex items-center">
+                <div className="w-full bg-background h-7 rounded-lg overflow-hidden p-1 border border-border flex items-center">
                   <div
                     className={`h-full rounded-md transition-all duration-500 flex items-center justify-end px-2 text-[11px] font-mono font-bold border ${getStageColor(
                       idx
@@ -92,7 +92,7 @@ export const SalesFunnelCard: React.FC<SalesFunnelCardProps> = ({ stages, insigh
 
                 {/* Drop-off Callout line between stages */}
                 {idx < stages.length - 1 && stage.dropOffCount > 0 && (
-                  <div className="flex items-center justify-between px-2 pt-0.5 text-[11px] text-[#64748B]">
+                  <div className="flex items-center justify-between px-2 pt-0.5 text-[11px] text-foreground-tertiary">
                     <span className="flex items-center space-x-1 text-rose-400/80">
                       <TrendingDown className="w-3 h-3" aria-hidden="true" />
                       <span>Drop-off: {stage.dropOffCount} leads</span>
@@ -110,8 +110,8 @@ export const SalesFunnelCard: React.FC<SalesFunnelCardProps> = ({ stages, insigh
       <div className="p-3.5 rounded-lg bg-blue-500/5 border border-blue-500/20 flex items-start space-x-3">
         <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" aria-hidden="true" />
         <div className="text-xs space-y-0.5">
-          <p className="font-semibold text-[#F8FAFC]">{insightText.highlight}</p>
-          <p className="text-[#94A3B8]">{insightText.dropOffDetail}</p>
+          <p className="font-semibold text-foreground">{insightText.highlight}</p>
+          <p className="text-foreground-secondary">{insightText.dropOffDetail}</p>
         </div>
       </div>
     </div>

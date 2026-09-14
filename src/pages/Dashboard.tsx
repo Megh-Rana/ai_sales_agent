@@ -104,18 +104,18 @@ export const Dashboard: React.FC = () => {
           {/* REVENUE COMMAND CENTER DASHBOARD ENTRY POINT */}
           <div
             onClick={() => navigate('/command-center')}
-            className="p-4 rounded-xl bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-surface-1 border border-amber-500/30 hover:border-amber-500/60 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+            className="p-4 rounded-xl bg-surface-0 border border-border-default hover:border-primary/50 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group relative overflow-hidden"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
+            {/* Left accent stripe */}
+            <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary rounded-l-xl" />
+
+            <div className="flex items-center gap-3 pl-2">
+              <div className="w-9 h-9 rounded-lg bg-surface-1 border border-border-subtle text-primary flex items-center justify-center shrink-0">
                 <Activity className="w-5 h-5 group-hover:scale-110 transition-transform" />
               </div>
               <div>
                 <div className="text-small font-bold text-foreground flex items-center gap-2">
                   <span>Revenue Command Center • 7 Opportunities & 4 Urgent Actions Pending</span>
-                  <span className="text-[10px] font-mono uppercase bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-semibold border border-amber-500/40">
-                    Live OS
-                  </span>
                 </div>
                 <div className="text-caption text-foreground-tertiary">
                   ₹1.54 Cr Active Pipeline Value • 88% Automated Voice Qualification Rating
@@ -125,7 +125,7 @@ export const Dashboard: React.FC = () => {
 
             <button
               type="button"
-              className="px-3.5 py-1.5 text-xs font-semibold text-black bg-amber-400 group-hover:bg-amber-300 rounded-lg transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+              className="px-3.5 py-1.5 text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary-hover rounded-lg transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
             >
               Open Revenue Command Center →
             </button>
@@ -205,30 +205,7 @@ export const Dashboard: React.FC = () => {
         </>
       )}
 
-      {/* UNOBTRUSIVE STATE SIMULATION TOOLBAR (FOR VERIFICATION) */}
-      <div className="pt-6 border-t border-border-subtle/60 flex flex-wrap items-center justify-between text-[11px] text-foreground-tertiary">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-primary font-bold">VIDUR SALES OS</span>
-          <span>·</span>
-          <span>Shift Telemetry Connected</span>
-        </div>
-        <div className="flex items-center gap-1 font-mono">
-          <span className="text-[10px] uppercase text-foreground-tertiary mr-1">Simulate UI State:</span>
-          {(['normal', 'loading', 'empty', 'error'] as const).map((st) => (
-            <button
-              key={st}
-              onClick={() => setViewState(st)}
-              className={`px-2 py-0.5 rounded transition-colors uppercase text-[10px] ${
-                viewState === st
-                  ? 'bg-primary text-primary-foreground font-bold'
-                  : 'hover:text-foreground hover:bg-surface-elevated border border-border-subtle'
-              }`}
-            >
-              {st}
-            </button>
-          ))}
-        </div>
-      </div>
+
     </div>
   );
 };

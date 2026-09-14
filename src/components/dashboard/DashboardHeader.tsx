@@ -2,7 +2,7 @@ import React from 'react';
 import { Compass } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
-import { AnimatedBadge, AnimatedStatusIndicator } from '../ui/21st';
+import { AnimatedBadge } from '../ui/21st';
 
 export interface DashboardHeaderProps {
   workspaceName: string;
@@ -38,7 +38,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-h1 font-bold text-foreground tracking-tight">Sales Workspace</h1>
           <AnimatedBadge label={`${workspaceName} · ${division}`} variant="hot" />
-          <AnimatedStatusIndicator status={isScanning ? 'thinking' : 'ready'} />
+
         </div>
         <p className="text-body text-foreground-secondary flex items-center gap-2">
           <span className="truncate">{shiftBriefing}</span>

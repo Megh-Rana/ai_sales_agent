@@ -40,7 +40,7 @@ export const AnimatedTabs: React.FC<AnimatedTabsProps> = ({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Sliding Pill Tab Bar */}
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-surface-1 border border-border-default overflow-x-auto scrollbar-none">
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-surface-1 border border-border-default overflow-x-auto scrollbar-none justify-center">
         {tabs.map((tab) => {
           const isActive = tab.id === activeId;
           const Icon = tab.icon;

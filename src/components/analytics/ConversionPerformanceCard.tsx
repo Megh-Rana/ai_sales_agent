@@ -10,7 +10,7 @@ export const ConversionPerformanceCard: React.FC<ConversionPerformanceCardProps>
   conversions,
 }) => {
   return (
-    <div className="bg-[#12161F] border border-[#1E2638] rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
+    <div className="bg-surface border border-border rounded-xl p-5 md:p-6 shadow-sm flex flex-col justify-between h-full">
       <div>
         {/* Card Header */}
         <div className="flex items-center justify-between mb-5">
@@ -19,8 +19,8 @@ export const ConversionPerformanceCard: React.FC<ConversionPerformanceCardProps>
               <Target className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-[#F8FAFC]">Stage Conversion Ratios</h2>
-              <p className="text-xs text-[#94A3B8]">
+              <h2 className="text-base font-semibold text-foreground">Stage Conversion Ratios</h2>
+              <p className="text-xs text-foreground-secondary">
                 Key conversion benchmarks across sales touchpoints
               </p>
             </div>
@@ -38,21 +38,21 @@ export const ConversionPerformanceCard: React.FC<ConversionPerformanceCardProps>
             return (
               <div
                 key={conv.id}
-                className="bg-[#0B0E14] border border-[#1E2638] hover:border-[#2B354C] rounded-lg p-4 transition-all duration-150"
+                className="bg-background border border-border hover:border-border-strong rounded-lg p-4 transition-all duration-150"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-[#F8FAFC]">{conv.title}</span>
-                  <span className="text-[11px] text-[#64748B] font-mono">
+                  <span className="text-xs font-semibold text-foreground">{conv.title}</span>
+                  <span className="text-[11px] text-foreground-tertiary font-mono">
                     Benchmark: {conv.benchmark}%
                   </span>
                 </div>
 
                 <div className="flex items-baseline justify-between">
                   <div className="flex items-baseline space-x-2">
-                    <span className="text-2xl font-extrabold text-[#F8FAFC] font-mono">
+                    <span className="text-2xl font-extrabold text-foreground font-mono">
                       {conv.rate}%
                     </span>
-                    <span className="text-xs text-[#94A3B8]">
+                    <span className="text-xs text-foreground-secondary">
                       ({conv.fromStage} → {conv.toStage})
                     </span>
                   </div>
@@ -74,7 +74,7 @@ export const ConversionPerformanceCard: React.FC<ConversionPerformanceCardProps>
                 </div>
 
                 {/* Progress bar relative to benchmark */}
-                <div className="w-full bg-[#1A202C] h-2 rounded-full overflow-hidden mt-3">
+                <div className="w-full bg-surface-elevated h-2 rounded-full overflow-hidden mt-3">
                   <div
                     className={`h-full rounded-full ${
                       isAbove ? 'bg-emerald-500' : 'bg-amber-500'
@@ -88,7 +88,7 @@ export const ConversionPerformanceCard: React.FC<ConversionPerformanceCardProps>
         </div>
       </div>
 
-      <div className="pt-3 border-t border-[#1E2638] text-xs text-[#64748B] flex items-center justify-between">
+      <div className="pt-3 border-t border-border text-xs text-foreground-tertiary flex items-center justify-between">
         <span>Updated real-time from touchpoint events</span>
         <span className="text-emerald-400 font-semibold font-mono">3 / 3 Above Benchmark</span>
       </div>
