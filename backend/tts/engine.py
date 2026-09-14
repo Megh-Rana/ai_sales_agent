@@ -216,7 +216,16 @@ class TTSEngine:
     # ─── Helpers ─────────────────────────────────────────────────────
 
     def _lang_code(self, language: str | None) -> str:
+        # Accept both full names ("Hindi", "hindi") and short codes ("hi")
+        _name_to_code = {
+            "english":  "en",
+            "hindi":    "hi",
+            "gujarati": "gu",
+            "marathi":  "mr",
+            "hinglish": "hi",  # closest supported language
+        }
         lang = language or config.TTS_DEFAULT_LANGUAGE
+        lang = _name_to_code.get(lang.lower(), lang) if lang else lang
         return config.SARVAM_LANG_MAP.get(lang, "en-IN")
 
     def synthesize_to_file(self, text: str, filepath: str, language: str = None):

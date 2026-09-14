@@ -18,6 +18,7 @@ import {
   buildDynamicScriptForLead,
   INITIAL_QUALIFICATION_DIMENSIONS
 } from '../data/mockCalls';
+import { callService } from '../services/callService';
 import { CallHeader } from '../components/calls/CallHeader';
 import { CallWaveform } from '../components/calls/CallWaveform';
 import { LiveTranscript } from '../components/calls/LiveTranscript';
@@ -81,6 +82,8 @@ export const AICalling: React.FC = () => {
   const [connectingStageText, setConnectingStageText] = useState('Allocating Tier-1 SIP Carrier Route...');
   const [activeMobileTab, setActiveMobileTab] = useState<'transcript' | 'intelligence'>('transcript');
   const [showDevSimulator, setShowDevSimulator] = useState(false);
+  const [backendSessionId, setBackendSessionId] = useState<string | null>(null);
+  const [isRealVoiceCall, setIsRealVoiceCall] = useState(false);
 
   const scriptSteps = React.useMemo(() => {
     return buildDynamicScriptForLead(resolvedLeadId);
@@ -89,6 +92,76 @@ export const AICalling: React.FC = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const activeTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const stepIndexRef = useRef<number>(0);
+  const statusPollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  const pollCallStatus = useCallback(async (sessionId: string) => {
+    // Stop any existing polling
+    if (statusPollingRef.current) {
+      clearInterval(statusPollingRef.current);
+    }
+
+    // Poll backend every 2 seconds for updates
+    statusPollingRef.current = setInterval(async () => {
+      try {
+        const status = await callService.getCallStatus(sessionId);
+
+        // Handle backend-reported failures
+        if (status.status === 'failed') {
+          if (statusPollingRef.current) clearInterval(statusPollingRef.current);
+          setSession((prev) => ({
+            ...prev,
+            status: 'FAILED',
+            audioStatus: 'idle',
+            failureReason: 'Voice agent encountered an error. Check backend logs.'
+          }));
+          toast.error('Voice agent stopped unexpectedly. Check the backend terminal.');
+          return;
+        }
+
+        // Update transcript — guard against malformed items
+        if (Array.isArray(status.transcript) && status.transcript.length > 0) {
+          setSession((prev) => ({
+            ...prev,
+            transcript: status.transcript
+              .filter(t => t && t.speaker && t.text)
+              .map(t => {
+                // Convert unix timestamp to "MM:SS" string expected by TranscriptItem
+                const totalSecs = Math.floor((t.timestamp ?? 0));
+                const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+                const secs = (totalSecs % 60).toString().padStart(2, '0');
+                const speakerRole: 'ai_agent' | 'prospect' = t.speaker === 'agent' ? 'ai_agent' : 'prospect';
+                return {
+                  id: `${t.speaker}-${t.timestamp ?? Date.now()}`,
+                  speaker: speakerRole,
+                  speakerName: speakerRole === 'ai_agent' ? 'AI Agent' : 'You',
+                  text: t.text,
+                  timestamp: `${mins}:${secs}`,
+                  isFinal: true,
+                };
+              })
+          }));
+        }
+
+        // Update duration
+        if (typeof status.duration === 'number') {
+          setSession((prev) => ({ ...prev, duration: status.duration }));
+        }
+
+        // Check if call ended cleanly
+        if (status.status === 'completed') {
+          if (statusPollingRef.current) clearInterval(statusPollingRef.current);
+          setSession((prev) => ({
+            ...prev,
+            status: 'COMPLETED',
+            audioStatus: 'idle'
+          }));
+        }
+
+      } catch (error) {
+        console.error('Failed to poll status:', error);
+      }
+    }, 2000);
+  }, []);
 
   const safeTimeout = useCallback((fn: () => void, ms: number) => {
     const t = setTimeout(() => {
@@ -113,6 +186,7 @@ export const AICalling: React.FC = () => {
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (statusPollingRef.current) clearInterval(statusPollingRef.current);
       clearAllTimeouts();
     };
   }, [clearAllTimeouts]);
@@ -202,10 +276,19 @@ export const AICalling: React.FC = () => {
     setIsConfirmationOpen(true);
   };
 
-  const handleConfirmStart = (language: CallLanguage) => {
+  const handleConfirmStart = async (language: CallLanguage) => {
     setIsConfirmationOpen(false);
     clearAllTimeouts();
     stepIndexRef.current = 0;
+
+    // Map display names → backend short codes (SARVAM_LANG_MAP expects 'en','hi','gu','mr')
+    const LANG_CODE_MAP: Record<CallLanguage, string> = {
+      'English':  'en',
+      'Hindi':    'hi',
+      'Gujarati': 'gu',
+      'Hinglish': 'hi',  // closest supported; Sarvam handles code-switching with hi-IN
+    };
+    const langCode = LANG_CODE_MAP[language] ?? 'en';
 
     setSession((prev) => ({
       ...prev,
@@ -218,23 +301,63 @@ export const AICalling: React.FC = () => {
       qualification: JSON.parse(JSON.stringify(INITIAL_QUALIFICATION_DIMENSIONS))
     }));
 
-    setConnectingStageText('Allocating Tier-1 SIP Carrier Route...');
+    setConnectingStageText('Initializing AI Voice Agent...');
 
-    safeTimeout(() => {
-      setConnectingStageText(`Calling ${session.contactName} (${session.contactPhone})...`);
-      safeTimeout(() => {
-        setSession((prev) => ({ ...prev, status: 'RINGING' }));
-        setConnectingStageText(`Ringing ${session.contactName}'s direct line...`);
-        safeTimeout(() => {
-          setSession((prev) => ({
-            ...prev,
-            status: 'LIVE',
-            audioStatus: 'ai_speaking'
-          }));
-          toast.success(`${session.contactName} answered the call. Live full-duplex session active.`);
-        }, 2000);
-      }, 1500);
-    }, 1200);
+    try {
+      // Start REAL voice call with backend
+      const startResponse = await callService.startCall({
+        leadId: resolvedLeadId,
+        companyName: session.companyName,
+        contactName: session.contactName,
+        contactRole: session.contactRole,
+        contactPhone: session.contactPhone,
+        language: langCode,
+        companyInfo: `${session.companyName} - ${lead?.industry ?? 'Technology'}`,
+        services: lead?.buyingSignals?.map(s => s.description).join(', '),
+        goal: `Understand ${session.contactName}'s requirements and qualify for demo`
+      });
+
+      setBackendSessionId(startResponse.sessionId);
+      setIsRealVoiceCall(true);
+      
+      setConnectingStageText('AI models loaded. Ready to launch voice call...');
+      toast.success(startResponse.message);
+
+      // Wait a moment, then launch the actual voice interaction
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setConnectingStageText('Launching live voice interaction...');
+      
+      // Launch the REAL voice call (this starts the mic/speaker interaction)
+      const launchResponse = await callService.launchVoiceCall(startResponse.sessionId);
+      
+      setSession((prev) => ({
+        ...prev,
+        status: 'LIVE',
+        audioStatus: 'ai_speaking'
+      }));
+
+      toast.success(launchResponse.message, {
+        description: launchResponse.instruction,
+        duration: 5000
+      });
+
+      // Start polling for status updates
+      pollCallStatus(startResponse.sessionId);
+
+    } catch (error: any) {
+      console.error('Failed to start voice call:', error);
+      toast.error('Failed to start voice call', {
+        description: error.message || 'Please check backend is running'
+      });
+      
+      setSession((prev) => ({
+        ...prev,
+        status: 'FAILED',
+        failureReason: error.message || 'Backend connection failed'
+      }));
+      setIsRealVoiceCall(false);
+    }
   };
 
   const handleToggleMute = useCallback(() => {
@@ -275,8 +398,9 @@ export const AICalling: React.FC = () => {
     });
   }, []);
 
-  const handleEndCall = useCallback(() => {
+  const handleEndCall = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (statusPollingRef.current) clearInterval(statusPollingRef.current);
     clearAllTimeouts();
 
     setSession((prev) => ({
@@ -285,25 +409,71 @@ export const AICalling: React.FC = () => {
       audioStatus: 'idle'
     }));
 
-    safeTimeout(() => {
-      setSession((prev) => ({
-        ...prev,
-        status: 'COMPLETED',
-        audioStatus: 'idle'
-      }));
-      toast.success('Conversation concluded. Executive brief generated.');
-    }, 750);
-  }, [clearAllTimeouts, safeTimeout]);
+    // If this is a real voice call, end it on the backend
+    if (isRealVoiceCall && backendSessionId) {
+      try {
+        const result = await callService.endCall(backendSessionId);
+        
+        setSession((prev) => ({
+          ...prev,
+          status: 'COMPLETED',
+          audioStatus: 'idle',
+          duration: result.duration
+        }));
 
-  const handleCancelConnecting = () => {
+        toast.success('Call ended. AI is generating the executive summary...', {
+          description: `Duration: ${formatDuration(result.duration)}`,
+          duration: 3000
+        });
+
+      } catch (error: any) {
+        console.error('Failed to end call:', error);
+        toast.error('Failed to end call properly', {
+          description: error.message
+        });
+        
+        // Still mark as completed on frontend
+        setSession((prev) => ({
+          ...prev,
+          status: 'COMPLETED',
+          audioStatus: 'idle'
+        }));
+      }
+    } else {
+      // Mock call ending
+      safeTimeout(() => {
+        setSession((prev) => ({
+          ...prev,
+          status: 'COMPLETED',
+          audioStatus: 'idle'
+        }));
+        toast.success('Conversation concluded. Executive brief generated.');
+      }, 750);
+    }
+  }, [isRealVoiceCall, backendSessionId, clearAllTimeouts, safeTimeout, formatDuration]);
+
+  const handleCancelConnecting = async () => {
     clearAllTimeouts();
+    if (statusPollingRef.current) clearInterval(statusPollingRef.current);
+
+    // If real call was started, clean it up
+    if (backendSessionId) {
+      try {
+        await callService.deleteSession(backendSessionId);
+      } catch (error) {
+        console.error('Failed to delete session:', error);
+      }
+      setBackendSessionId(null);
+      setIsRealVoiceCall(false);
+    }
+
     setSession((prev) => ({
       ...prev,
       status: 'PRE_CALL',
       audioStatus: 'idle',
       duration: 0
     }));
-    toast('Outbound dial canceled.');
+    toast('Call canceled.');
   };
 
   const mapAIStatus = (): 'ready' | 'thinking' | 'listening' | 'speaking' | 'completed' => {

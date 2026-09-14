@@ -10,6 +10,7 @@ import { BusinessOnboarding } from './pages/BusinessOnboarding';
 import { LeadDiscovery } from './pages/LeadDiscovery';
 import { LeadDetails } from './pages/LeadDetails';
 import { AICalling } from './pages/AICalling';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { CallResults } from './pages/CallResults';
 import { Analytics } from './pages/Analytics';
 import { ActionCenter } from './pages/ActionCenter';
@@ -80,9 +81,9 @@ function AppContent() {
                 <Route path="/calls/:callId/results" element={<CallResults />} />
 
                 {/* AI Voice Agent Calls */}
-                <Route path="/calls" element={<AICalling />} />
-                <Route path="/calls/:id" element={<AICalling />} />
-                <Route path="/calls/:callId" element={<AICalling />} />
+                <Route path="/calls" element={<ErrorBoundary fallbackMessage="The call session encountered an error. Please go back and try again."><AICalling /></ErrorBoundary>} />
+                <Route path="/calls/:id" element={<ErrorBoundary fallbackMessage="The call session encountered an error. Please go back and try again."><AICalling /></ErrorBoundary>} />
+                <Route path="/calls/:callId" element={<ErrorBoundary fallbackMessage="The call session encountered an error. Please go back and try again."><AICalling /></ErrorBoundary>} />
 
                 {/* Follow-ups Queue & Sequence Intelligence */}
                 <Route path="/follow-ups" element={<FollowUps />} />

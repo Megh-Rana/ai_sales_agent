@@ -1,236 +1,204 @@
-# AI Sales Voice Agent - Backend API
+# AI Sales Voice Agent - Backend
 
-This is the FastAPI backend server that powers the AI Sales Voice Agent functionality.
+Real voice interaction backend for the AI Sales Frontend MVP. When you click "Start Call" in the frontend, this launches an actual AI voice agent that you can talk to through your microphone.
 
-## Features
+## What This Does
 
-- **REST API**: Complete REST API for call management
-- **WebSocket Support**: Real-time communication during calls
-- **Multilingual**: Supports English, Hindi, Gujarati, and Marathi
-- **Streaming**: LLM streaming for faster responses
-- **Voice & Text**: Both voice and text-based interactions
+This is **NOT** a simulation. When you start a call:
+1. Frontend sends your lead details to this backend
+2. Backend loads AI models (STT, TTS, LLM)
+3. Backend starts listening to your **microphone**
+4. You speak as the "customer" 
+5. AI agent responds through your **speakers**
+6. Real conversation happens with voice recognition and synthesis
 
-## Setup
+## Prerequisites
 
-### 1. Install Dependencies
+1. **Python 3.10+** with virtual environment
+2. **Ollama** running locally with `gemma3:4b` model
+3. **Sarvam AI API Key** for multilingual voice (EN/HI/GU/MR)
+4. **Working microphone and speakers**
+
+## Quick Start
+
+### 1. Setup Environment
 
 ```bash
 cd backend
-python -m venv venv
+
+# Create virtual environment
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements-api.txt
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+### 2. Configure API Keys
 
-Copy `.env.example` to `.env` and configure:
+Create `.env` file:
 
 ```bash
-cp .env.example .env
+# Required for multilingual voice
+SARVAM_API_KEY=your_sarvam_api_key_here
+
+# Ollama should be running on localhost:11434
+# Start it with: ollama serve
 ```
 
-Required environment variables:
-- `SARVAM_API_KEY`: Your Sarvam AI API key for STT/TTS
-- Other optional configurations in `config.py`
+Get Sarvam API key from: https://app.sarvam.ai/
 
-### 3. Start the Server
+### 3. Verify Ollama
 
 ```bash
-# Development mode with auto-reload
+# Make sure Ollama is running
+ollama serve
+
+# In another terminal, verify the model
+ollama pull gemma3:4b
+ollama list  # Should show gemma3:4b
+```
+
+### 4. Test Your Audio
+
+```bash
+# Test microphone (should record and play back)
+python audio/test_audio.py
+```
+
+If audio doesn't work:
+- **Linux**: Install `portaudio19-dev` and `python3-pyaudio`
+- **Mac**: `brew install portaudio`
+- **Windows**: PyAudio should work out of the box
+
+### 5. Start Backend Server
+
+```bash
 python api_server.py
-
-# Or with uvicorn directly
-uvicorn api_server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The API will be available at:
-- API: `http://localhost:8000`
-- Docs: `http://localhost:8000/docs`
-- WebSocket: `ws://localhost:8000/ws/call/<session_id>`
+You should see:
+```
+🎙️  AI Sales Voice Agent API Server - MVP MODE
+API:               http://localhost:8000
+API Documentation: http://localhost:8000/docs
+```
+
+### 6. Start Frontend
+
+In another terminal:
+
+```bash
+cd ..  # Go back to frontend root
+npm run dev
+```
+
+Visit http://localhost:5173
+
+## How to Use
+
+### Making a Real Voice Call
+
+1. **Go to any lead** in the frontend (Dashboard → Lead Discovery)
+2. **Click "AI Call"** button
+3. **Click "Start Call"** - Backend loads AI models (takes ~10 seconds)
+4. **Click "Launch"** - Voice interaction starts
+5. **Speak into your microphone** - You are now the customer!
+6. **AI responds through speakers** - Real conversation
+7. **Click "End Call"** when done
+
+### What You'll Experience
+
+- **Opening**: AI greets you by name and introduces itself
+- **Your Turn**: Speak naturally into your mic (e.g., "Hi, what can you help me with?")
+- **AI Turn**: AI responds through your speakers
+- **Back and forth**: Continue the conversation
+- **Transcript**: See everything in real-time on screen
 
 ## API Endpoints
 
-### Health & Config
-- `GET /` - API info
-- `GET /health` - Health check
-- `GET /api/config` - Get configuration
+- `POST /api/call/start` - Initialize call, load models
+- `POST /api/call/{id}/launch` - Start REAL voice interaction
+- `GET /api/call/{id}/status` - Get transcript and status
+- `POST /api/call/{id}/end` - End call, get summary
+- `DELETE /api/call/{id}` - Cleanup session
 
-### Call Management
-- `POST /api/call/start` - Start a new call session
-- `POST /api/call/{session_id}/connect` - Connect the call
-- `GET /api/call/{session_id}/status` - Get call status
-- `POST /api/call/{session_id}/message` - Send text message
-- `POST /api/call/{session_id}/end` - End the call
-- `DELETE /api/call/{session_id}` - Delete session
+Full API docs: http://localhost:8000/docs
 
-### Session Management
-- `GET /api/sessions` - List all active sessions
+## Configuration
 
-### WebSocket
-- `WS /ws/call/{session_id}` - Real-time call interaction
-
-## Usage Example
-
-### Starting a Call
+Edit `config.py` to customize:
 
 ```python
-import requests
+# STT Provider
+STT_PROVIDER = "sarvam"  # or "whisper" for local
 
-# 1. Start call session
-response = requests.post("http://localhost:8000/api/call/start", json={
-    "leadId": "lead-123",
-    "companyName": "Acme Corp",
-    "contactName": "John Doe",
-    "contactRole": "CTO",
-    "language": "en",
-    "companyInfo": "Enterprise software company",
-    "services": "IT consulting and cloud solutions",
-    "goal": "Schedule a demo"
-})
+# LLM Provider  
+LLM_PROVIDER = "ollama"  # uses gemma3:4b
 
-session_id = response.json()["sessionId"]
+# Ollama Model
+OLLAMA_MODEL = "gemma3:4b"  # Fast, lightweight model for sales conversations
 
-# 2. Connect the call
-response = requests.post(f"http://localhost:8000/api/call/{session_id}/connect")
-opening = response.json()["opening"]
-print(f"Agent: {opening}")
+# Voice Gender
+TTS_SPEAKER = "ishita"  # or "shubh" (male)
 
-# 3. Send messages
-response = requests.post(
-    f"http://localhost:8000/api/call/{session_id}/message",
-    json={
-        "sessionId": session_id,
-        "message": "I'm interested in your cloud solutions",
-        "language": "en"
-    }
-)
-print(f"Agent: {response.json()['response']}")
+# Languages
+SUPPORTED_LANGUAGES = ["en", "hi", "gu", "mr"]
 
-# 4. End call
-response = requests.post(f"http://localhost:8000/api/call/{session_id}/end")
-summary = response.json()["summary"]
+# Max conversation turns
+MAX_CONVERSATION_TURNS = 20
 ```
 
-### Using WebSocket
+## Troubleshooting
 
-```javascript
-const ws = new WebSocket(`ws://localhost:8000/ws/call/${sessionId}`);
+### Backend won't start
+- Check Python version: `python --version` (need 3.10+)
+- Check Ollama: `ollama list` (should show gemma3:4b)
+- Check dependencies: `pip list`
 
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  console.log('Received:', data);
-};
+### No audio input
+- Test mic: `python audio/test_audio.py`
+- Linux: `sudo apt install portaudio19-dev python3-pyaudio`
+- Check system mic permissions
 
-// Send message
-ws.send(JSON.stringify({
-  type: 'message',
-  message: 'Hello, I want to know more about your services',
-  language: 'en'
-}));
+### AI not responding
+- Check Ollama: `curl http://localhost:11434/api/tags`
+- Check Sarvam key in `.env`
+- Check logs in terminal where you ran `python api_server.py`
 
-// End call
-ws.send(JSON.stringify({
-  type: 'end'
-}));
-```
+### Call gets stuck on "Connecting"
+- Backend might not be running (check http://localhost:8000/health)
+- Check browser console for errors
+- Verify CORS is not blocking (should be allowed for localhost)
 
 ## Architecture
 
 ```
-backend/
-├── api_server.py          # FastAPI application
-├── config.py              # Configuration
-├── requirements-api.txt   # Python dependencies
-├── ai/                    # AI Brain (LLM logic)
-│   ├── brain.py
-│   ├── memory.py
-│   └── prompts.py
-├── pipeline/              # Orchestrator
-│   ├── orchestrator.py
-│   └── audio_io.py
-├── stt/                   # Speech-to-Text
-│   ├── engine.py
-│   └── vad.py
-└── tts/                   # Text-to-Speech
-    └── engine.py
+Frontend (React)
+    ↓ HTTP REST API
+Backend (FastAPI)
+    ↓
+PipelineOrchestrator
+    ├── STT (Sarvam) - Your voice → text
+    ├── LLM (Ollama gemma3:4b) - Conversation logic
+    └── TTS (Sarvam) - Text → voice
+    ↓
+Your Microphone & Speakers
 ```
-
-## Configuration
-
-Key configuration options in `config.py`:
-
-- **STT_PROVIDER**: `"sarvam"` or `"whisper"`
-- **LLM_PROVIDER**: `"ollama"`, `"sarvam"`, or `"param"`
-- **STREAMING_PIPELINE**: Enable/disable LLM streaming
-- **SUPPORTED_LANGUAGES**: Languages for voice interaction
-- **MAX_CONVERSATION_TURNS**: Maximum turns per call
 
 ## Development
 
-### Running Tests
-
+Run with auto-reload:
 ```bash
-pytest test_components.py
+python api_server.py  # Already has reload enabled for dev
 ```
 
-### Hot Reload
-
-The server automatically reloads on code changes when run with `--reload` flag.
-
-### Debugging
-
-Enable debug logging:
-
-```bash
-LOG_LEVEL=debug python api_server.py
+View API docs:
+```
+http://localhost:8000/docs
 ```
 
-## Production Deployment
-
-### Using Gunicorn
-
+Check active sessions:
 ```bash
-gunicorn api_server:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+curl http://localhost:8000/api/sessions
 ```
-
-### Docker
-
-```bash
-docker build -t ai-sales-backend .
-docker run -p 8000:8000 --env-file .env ai-sales-backend
-```
-
-### Environment Variables for Production
-
-- Set `CORS_ORIGINS` to your frontend domain
-- Configure `SARVAM_API_KEY`
-- Set appropriate `LOG_LEVEL`
-- Configure `MAX_WORKERS` for gunicorn
-
-## Troubleshooting
-
-### GPU Issues
-If GPU is not available, models will fall back to CPU. Check:
-```bash
-python -c "import torch; print(torch.cuda.is_available())"
-```
-
-### Audio Issues
-For voice mode, ensure:
-- Microphone permissions are granted
-- Audio devices are properly configured
-- Run `python -m sounddevice` to list devices
-
-### API Key Issues
-Verify Sarvam API key:
-```bash
-curl -H "api-subscription-key: YOUR_KEY" https://api.sarvam.ai/voices
-```
-
-## Support
-
-For issues or questions:
-1. Check the logs in console output
-2. Review FastAPI automatic docs at `/docs`
-3. Check configuration in `config.py`
-4. Verify `.env` file is properly configured

@@ -126,21 +126,22 @@ class CallService {
   }
 
   /**
-   * Connect the call and get opening message
+   * Launch the REAL voice call - starts interactive voice conversation
+   * User will talk through microphone and AI responds through speakers
    */
-  async connectCall(sessionId: string): Promise<{
+  async launchVoiceCall(sessionId: string): Promise<{
     sessionId: string;
     status: string;
-    opening: string;
-    language: string;
+    message: string;
+    instruction: string;
   }> {
-    const response = await fetch(`${this.baseUrl}/api/call/${sessionId}/connect`, {
+    const response = await fetch(`${this.baseUrl}/api/call/${sessionId}/launch`, {
       method: 'POST',
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || 'Failed to connect call');
+      throw new Error(error.detail || 'Failed to launch voice call');
     }
 
     return response.json();
