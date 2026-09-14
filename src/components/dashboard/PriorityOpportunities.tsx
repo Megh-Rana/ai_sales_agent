@@ -47,7 +47,7 @@ export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
               </span>
             </div>
             <div className="text-caption text-foreground-tertiary">
-              Ranked dynamically by intent velocity and actionable buying signals
+              Ranked dynamically by intent momentum and actionable buying signals
             </div>
           </div>
         </div>

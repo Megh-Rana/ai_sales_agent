@@ -82,7 +82,7 @@ export const LiveIntelligenceRail: React.FC<LiveIntelligenceRailProps> = ({
         </div>
       </section>
 
-      {/* 2. REAL-TIME BANT & READINESS QUALIFICATION */}
+      {/* 2. REAL-TIME Qualification & READINESS QUALIFICATION */}
       <section
         aria-labelledby="heading-qualification-matrix"
         className="bg-surface-0 border border-border-default rounded-xl p-4 shadow-xs"

@@ -6,7 +6,7 @@ export const CampaignCadenceProgress: React.FC = () => {
     {
       day: 'Day 0',
       title: 'AI Voice Call Session',
-      desc: 'Autonomous call with BANT qualification hook.',
+      desc: 'Autonomous call with lead qualification hook.',
       status: 'active',
       icon: <PhoneCall className="w-4 h-4 text-primary" aria-hidden="true" />,
     },

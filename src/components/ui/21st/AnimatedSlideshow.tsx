@@ -28,7 +28,7 @@ const defaultTabs: SlideTab[] = [
         <div className="grid grid-cols-2 gap-2 pt-2">
           <div className="p-2.5 rounded-lg bg-surface-1 border border-border-subtle text-xs">
             <span className="text-foreground-tertiary block">Annual Revenue</span>
-            <span className="font-mono font-bold text-foreground">₹120 Cr ($15M ARR)</span>
+            <span className="font-mono font-bold text-foreground">₹120 Cr ARR</span>
           </div>
           <div className="p-2.5 rounded-lg bg-surface-1 border border-border-subtle text-xs">
             <span className="text-foreground-tertiary block">Employee Growth</span>
@@ -86,7 +86,7 @@ const defaultTabs: SlideTab[] = [
         <h4 className="text-small font-bold text-foreground">Capital Raised & Backers</h4>
         <div className="space-y-2">
           <div className="flex justify-between items-center text-xs p-2 rounded bg-surface-1 border border-border-subtle">
-            <span className="font-semibold text-foreground">Series B Round ($35M)</span>
+            <span className="font-semibold text-foreground">Series B Round (₹280 Cr)</span>
             <span className="font-mono text-signal-qualified font-bold">Closed Jan 2026</span>
           </div>
           <div className="flex justify-between items-center text-xs p-2 rounded bg-surface-1 border border-border-subtle">

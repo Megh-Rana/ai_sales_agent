@@ -109,7 +109,7 @@ export const CallHeader: React.FC<CallHeaderProps> = ({
                 'AI is researching target company context...',
                 'AI is analyzing buying intent signals...',
                 'AI is preparing personalized executive pitch...',
-                'AI is conducting BANT qualification...',
+                'AI is conducting lead qualification...',
                 'AI Sales Agent session active.',
               ]}
               className="mt-1"

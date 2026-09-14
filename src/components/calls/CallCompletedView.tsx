@@ -97,7 +97,7 @@ export const CallCompletedView: React.FC<CallCompletedViewProps> = ({
         </div>
       </div>
 
-      {/* Verified BANT Attributes */}
+      {/* Verified Qualification Attributes */}
       <div className="space-y-2">
         <span className="text-[10px] font-mono font-bold uppercase text-foreground-tertiary">
           Verified Qualification Summary

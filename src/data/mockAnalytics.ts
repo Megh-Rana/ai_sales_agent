@@ -367,7 +367,7 @@ export const mockAnalyticsDataByRange: Record<DateRangePreset, SalesAnalyticsDat
         category: 'INTENT_VELOCITY',
         categoryLabel: '7-Day Pipeline Surge',
         title: 'Weekly call qualification rate reached 60%',
-        evidence: '3 out of 5 calls initiated in the last 7 days reached full BANT qualification.',
+        evidence: '3 out of 5 calls initiated in the last 7 days reached full lead qualification.',
         whyItMatters: 'Pitch calibration on legacy replacement is directly shortening call qualification times.',
         recommendedAction: 'Maintain current voice agent configuration for all pending high-intent leads.',
         ctaLabel: 'View Active Calls',

@@ -36,7 +36,7 @@ const STAGES: DiscoveryStage[] = [
   {
     id: 4,
     title: 'Scoring opportunity intent & urgency (80–100)',
-    detail: 'Applying dynamic intent velocity weights and contact availability checks...',
+    detail: 'Applying dynamic intent momentum weights and contact availability checks...',
     durationMs: 450,
   },
   {

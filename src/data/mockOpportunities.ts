@@ -398,7 +398,7 @@ export const mockOpportunities: SalesOpportunity[] = [
       label: 'View Lead Intelligence',
       actionType: 'lead',
       route: '/leads/lead-5',
-      suggestedOpening: 'Ananya, congrats on expanding the engineering team! Our platform helps scale sales velocity automatically.',
+      suggestedOpening: 'Ananya, congrats on expanding the engineering team! Our platform helps scale sales momentum automatically.',
     },
 
     nextBestAction: {

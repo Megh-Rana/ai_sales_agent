@@ -39,7 +39,7 @@ export const CallPerformanceCard: React.FC<CallPerformanceCardProps> = ({ data }
               Operational Focus: Useful Sales Conversations
             </p>
             <p className="text-[11px] text-foreground-secondary">
-              {qualRate}% of completed calls resulted in BANT qualified opportunities.
+              {qualRate}% of completed calls resulted in lead qualified opportunities.
             </p>
           </div>
           <div className="text-right font-mono">

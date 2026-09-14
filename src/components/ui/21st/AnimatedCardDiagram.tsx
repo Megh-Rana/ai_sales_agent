@@ -15,7 +15,7 @@ const defaultNodes: WorkflowNode[] = [
   { id: 'enrich', label: 'ENRICH', sublabel: 'Tech & Funding', icon: Database, status: 'completed' },
   { id: 'score', label: 'SCORE', sublabel: 'Intent Signal 94', icon: Target, status: 'completed' },
   { id: 'call', label: 'CALL', sublabel: 'AI Voice Agent', icon: PhoneCall, status: 'active' },
-  { id: 'qualify', label: 'QUALIFY', sublabel: 'BANT Framework', icon: CheckCircle2, status: 'pending' },
+  { id: 'qualify', label: 'QUALIFY', sublabel: 'Fit Qualification', icon: CheckCircle2, status: 'pending' },
   { id: 'meeting', label: 'MEETING', sublabel: 'Calendar Booked', icon: Calendar, status: 'pending' },
 ];
 

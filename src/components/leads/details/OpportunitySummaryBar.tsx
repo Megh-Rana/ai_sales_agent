@@ -58,7 +58,7 @@ export const OpportunitySummaryBar: React.FC<OpportunitySummaryBarProps> = ({
             </span>
             <span className="text-foreground-tertiary">·</span>
             <span className="font-semibold text-signal-qualified font-mono">
-              {lead.estimatedValue || '$48,000 / yr'}
+              {lead.estimatedValue || '₹40 Lakh / yr'}
             </span>
           </div>
           <p className="text-foreground-tertiary text-[11px]">

@@ -52,7 +52,7 @@ const defaultFeatures: FeatureItem[] = [
     icon: PhoneCall,
     stat: '98.4%',
     statLabel: 'Extraction Accuracy',
-    bullets: ['Automated BANT scorecard', 'Objection log matrix', 'CRM field auto-sync'],
+    bullets: ['Automated Qualification scorecard', 'Objection log matrix', 'CRM field auto-sync'],
   },
   {
     id: 'qualification',

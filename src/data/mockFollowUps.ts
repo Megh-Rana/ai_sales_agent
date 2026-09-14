@@ -36,7 +36,7 @@ export const mockFollowUpDataset: ExtendedFollowUpItem[] = [
     timingLabel: 'DUE_NOW',
     suggestedPitch:
       'Hi Rahul, following up on our call regarding Acme Logistics 450-fleet upgrade. I have prepared the tiered enterprise pricing proposal with custom API integration modules.',
-    previousInteraction: 'AI Voice Call completed (Sentiment: Highly Receptive, BANT Qualified).',
+    previousInteraction: 'AI Voice Call completed (Sentiment: Highly Receptive, Lead Qualified).',
     createdAt: '2026-09-13T09:15:00Z',
   },
   {

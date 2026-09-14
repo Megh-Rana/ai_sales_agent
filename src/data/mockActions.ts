@@ -91,7 +91,7 @@ export const mockNextBestActions: NextBestActionItem[] = [
     whyNow: {
       headline: 'Qualified opportunity sitting 5 days without touchpoint',
       evidence: [
-        'Confirmed BANT qualification on 2026-09-08 (Intent score 84/100)',
+        'Confirmed lead qualification on 2026-09-08 (Intent score 84/100)',
         'Displaced legacy dialer objection in previous call session',
         'No follow-up logged in 5 days — risk of deal stalling',
       ],

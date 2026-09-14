@@ -48,7 +48,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: 'Today · 08:30',
       postedAt: '18 hours ago',
     },
-    estimatedValue: '$48,000 / yr',
+    estimatedValue: '₹40 Lakh / yr',
     recommendedAction: 'call',
     suggestedOpeningHook: 'Hi David, saw Acme just issued the regional dispatch RFP. Are you looking to eliminate driver wait-times ahead of the Q4 surge?',
     decisionMakerContact: {
@@ -71,7 +71,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     intentLevel: 'high',
     scoreReasons: [
       'Category comparison surge logged on G2 Voice AI Cadences matrix',
-      'Series-A funding ($14M) closed with commercial go-to-market mandate',
+      'Series-A funding (₹115 Cr) closed with commercial go-to-market mandate',
       'VP of Growth recruited from Twilio in last 30 days',
     ],
     whyNow: 'G2 Buyer Intent surge logged 4 hours ago across 8 employee IP addresses.',
@@ -86,7 +86,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       {
         id: 'sig-102-2',
         type: 'Funding Round',
-        description: 'Closed $14M Series-A led by Scale Ventures to build outbound sales org.',
+        description: 'Closed ₹115 Cr Series-A led by Scale Ventures to build outbound sales org.',
         timestamp: '3d ago',
         impactScore: 90,
       },
@@ -98,7 +98,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: 'Today · 09:45',
       postedAt: '4 hours ago',
     },
-    estimatedValue: '$64,000 / yr',
+    estimatedValue: '₹52 Lakh / yr',
     recommendedAction: 'call',
     suggestedOpeningHook: 'Hi Sarah, noticed your team evaluating voice AI cadences this morning. How are you tackling inbound speed-to-lead following the Series-A?',
     decisionMakerContact: {
@@ -120,7 +120,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     intentScore: 89,
     intentLevel: 'high',
     scoreReasons: [
-      'New production facility announced in Saxony ($32M investment)',
+      'New production facility announced in Saxony (₹260 Cr investment)',
       'Product launch announced on LinkedIn for Cobot Series 6',
       'Actively hiring 6 multilingual Enterprise Account Executives',
     ],
@@ -148,7 +148,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: 'Yesterday · 16:15',
       postedAt: '1 day ago',
     },
-    estimatedValue: '$82,000 / yr',
+    estimatedValue: '₹68 Lakh / yr',
     recommendedAction: 'call',
     suggestedOpeningHook: 'Guten Tag Marcus, congratulations on the Leipzig facility expansion. Are you equipping your new outbound team with automated voice discovery?',
     decisionMakerContact: {
@@ -190,7 +190,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: 'Yesterday · 11:20',
       postedAt: '1 day ago',
     },
-    estimatedValue: '$110,000 / yr',
+    estimatedValue: '₹90 Lakh / yr',
     recommendedAction: 'brief',
     suggestedOpeningHook: 'Hello Dr. Patel, saw the hospital trust published the intake automation RFP. We specialize in HIPAA-compliant voice appointment qualification.',
     decisionMakerContact: {
@@ -232,7 +232,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: 'Today · 06:10',
       postedAt: '22 hours ago',
     },
-    estimatedValue: '$52,000 / yr',
+    estimatedValue: '₹45 Lakh / yr',
     recommendedAction: 'call',
     suggestedOpeningHook: 'Hi Jason, noticed your inquiry into automated freight qualification. Are you aiming to ramp load booking capacity before Q4?',
     decisionMakerContact: {
@@ -250,7 +250,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     location: 'San Diego, CA',
     employeeCount: '100–250',
     requirement: 'Evaluating outbound appointment reminder agents to eliminate 18% no-show rate for specialized MRI and CT scans.',
-    detailedPain: 'Unfilled MRI slots cost the imaging center an estimated $2,400 per missed scanner hour.',
+    detailedPain: 'Unfilled MRI slots cost the imaging center an estimated ₹2,00,000 per missed scanner hour.',
     intentScore: 78,
     intentLevel: 'medium',
     scoreReasons: [
@@ -274,7 +274,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '2 days ago',
       postedAt: '2 days ago',
     },
-    estimatedValue: '$38,000 / yr',
+    estimatedValue: '₹32 Lakh / yr',
     recommendedAction: 'call',
     suggestedOpeningHook: 'Hi Elena, saw MediCore is modernizing patient intake workflows. We help imaging centers cut scanner idle time with autonomous SMS and voice confirmations.',
     decisionMakerContact: {
@@ -316,7 +316,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '3 days ago',
       postedAt: '3 days ago',
     },
-    estimatedValue: '$28,000 / yr',
+    estimatedValue: '₹25 Lakh / yr',
     recommendedAction: 'campaign',
     suggestedOpeningHook: 'Hello Arthur, congratulations on securing the AS9100 aerospace certification. Are you currently building targeted outbound cadences into aerospace procurement leads?',
     decisionMakerContact: {
@@ -358,7 +358,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '4 days ago',
       postedAt: '4 days ago',
     },
-    estimatedValue: '$42,000 / yr',
+    estimatedValue: '₹35 Lakh / yr',
     recommendedAction: 'campaign',
     suggestedOpeningHook: 'Hi Chloe, saw your team hiring for the SDR expansion following the launch. We help SaaS teams automatically qualify dormant product signups via voice AI.',
     decisionMakerContact: {
@@ -376,7 +376,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     location: 'Dallas, TX',
     employeeCount: '500–1,000',
     requirement: 'Need automated inventory exception alerting and supplier rescheduling telephony integration.',
-    detailedPain: 'Suppliers arrive with manifest discrepancies, creating 3-hour dock delays and $800 demurrage charges.',
+    detailedPain: 'Suppliers arrive with manifest discrepancies, creating 3-hour dock delays and ₹65,000 demurrage charges.',
     intentScore: 71,
     intentLevel: 'medium',
     scoreReasons: [
@@ -400,7 +400,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '5 days ago',
       postedAt: '5 days ago',
     },
-    estimatedValue: '$65,000 / yr',
+    estimatedValue: '₹55 Lakh / yr',
     recommendedAction: 'brief',
     suggestedOpeningHook: 'Hi Robert, saw the announcement for the new Fort Worth cross-dock. Are you managing supplier arrival exceptions with automated outbound calls?',
     decisionMakerContact: {
@@ -442,7 +442,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '6 days ago',
       postedAt: '6 days ago',
     },
-    estimatedValue: '$36,000 / yr',
+    estimatedValue: '₹30 Lakh / yr',
     recommendedAction: 'campaign',
     suggestedOpeningHook: 'Hi Gregory, saw OmniPack launched the biodegradable packaging series. How are your sales reps cutting through the noise with consumer brand procurement teams?',
     decisionMakerContact: {
@@ -484,7 +484,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '7 days ago',
       postedAt: '7 days ago',
     },
-    estimatedValue: '$140,000 / yr',
+    estimatedValue: '₹1.1 Cr / yr',
     recommendedAction: 'brief',
     suggestedOpeningHook: 'Dear Dr. Keller, congratulations on launching the Phase-3 oncology trial. Are you deploying automated voice check-ins to safeguard patient trial adherence?',
     decisionMakerContact: {
@@ -526,7 +526,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '1 week ago',
       postedAt: '1 week ago',
     },
-    estimatedValue: '$32,000 / yr',
+    estimatedValue: '₹28 Lakh / yr',
     recommendedAction: 'call',
     suggestedOpeningHook: 'Hi Simon, with the DVS compliance deadline 90 days out, are your sales reps able to contact all transport managers in your database in time?',
     decisionMakerContact: {
@@ -568,7 +568,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '2 weeks ago',
       postedAt: '2 weeks ago',
     },
-    estimatedValue: '$24,000 / yr',
+    estimatedValue: '₹20 Lakh / yr',
     recommendedAction: 'campaign',
     suggestedOpeningHook: 'Hi Nathan, saw Apex Cloud is mapping out sales tooling for upcoming quarters. Would it be helpful to see a 5-minute benchmark of AI connect rates?',
     decisionMakerContact: {
@@ -609,7 +609,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '2 weeks ago',
       postedAt: '2 weeks ago',
     },
-    estimatedValue: '$18,000 / yr',
+    estimatedValue: '₹15 Lakh / yr',
     recommendedAction: 'followup',
     suggestedOpeningHook: 'Hello Kevin, saw your note on dental re-order automation. We help suppliers automate recurring consumable re-orders via AI phone check-ins.',
     decisionMakerContact: {
@@ -651,7 +651,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: 'Today · 10:15',
       postedAt: '6 hours ago',
     },
-    estimatedValue: '$42,000 / yr',
+    estimatedValue: '₹35 Lakh / yr',
     recommendedAction: 'call',
     suggestedOpeningHook: 'Namaste Rajesh, saw Precision Cold Chain posted an immediate need for driver phone alerts. We can deploy automated emergency voice escalation in 24 hours.',
     decisionMakerContact: {
@@ -693,7 +693,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: 'Yesterday · 14:20',
       postedAt: '1 day ago',
     },
-    estimatedValue: '$45,000 / yr',
+    estimatedValue: '₹38 Lakh / yr',
     recommendedAction: 'call',
     suggestedOpeningHook: 'Hi Laura, congratulations on the robotics webinar turnout. How is your team currently qualifying the 800 attendees before interest cools down?',
     decisionMakerContact: {
@@ -711,7 +711,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     location: 'New York, NY',
     employeeCount: '50–100',
     requirement: 'Evaluating automated voice appointment setting for multi-channel e-commerce inventory sync platform.',
-    detailedPain: 'Outbound SDR team booking meetings at $850 cost-per-meeting with legacy dialer.',
+    detailedPain: 'Outbound SDR team booking meetings at ₹70,000 cost-per-meeting with legacy dialer.',
     intentScore: 84,
     intentLevel: 'high',
     scoreReasons: [
@@ -735,7 +735,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: 'Yesterday · 18:00',
       postedAt: '1 day ago',
     },
-    estimatedValue: '$55,000 / yr',
+    estimatedValue: '₹46 Lakh / yr',
     recommendedAction: 'call',
     suggestedOpeningHook: 'Hi Jordan, noticed your team evaluating voice AI to lower outbound meeting costs. We help B2B SaaS teams cut CAC by 65% with autonomous discovery calls.',
     decisionMakerContact: {
@@ -757,7 +757,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     intentScore: 83,
     intentLevel: 'high',
     scoreReasons: [
-      'NHS trust quality audit flagged cancellation waste ($450k/year loss)',
+      'NHS trust quality audit flagged cancellation waste (₹3.6 Cr/year loss)',
       'Clinical director mandated phone-based pre-procedure checklist',
     ],
     whyNow: 'Hospital trust audit findings published; corrective action plan due in 30 days.',
@@ -777,7 +777,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '2 days ago',
       postedAt: '2 days ago',
     },
-    estimatedValue: '$95,000 / yr',
+    estimatedValue: '₹80 Lakh / yr',
     recommendedAction: 'brief',
     suggestedOpeningHook: 'Dear Dr. Wright, saw the Trust audit on procedure cancellation rates. We deploy automated interactive voice calls to ensure patients complete exact fasting protocols.',
     decisionMakerContact: {
@@ -819,7 +819,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: 'Yesterday · 12:45',
       postedAt: '1 day ago',
     },
-    estimatedValue: '$38,000 / yr',
+    estimatedValue: '₹32 Lakh / yr',
     recommendedAction: 'call',
     suggestedOpeningHook: 'Namaste Sanjay, saw Zenith is expanding North-South carrier routes. We can deploy Hindi & English voice agents to call fleet owners and book loads automatically.',
     decisionMakerContact: {
@@ -861,7 +861,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
       discoveredAt: '1 week ago',
       postedAt: '1 week ago',
     },
-    estimatedValue: '$48,000 / yr',
+    estimatedValue: '₹40 Lakh / yr',
     recommendedAction: 'campaign',
     suggestedOpeningHook: 'Hi Bradley, saw you recently joined AeroCranes to scale maintenance contracts. How are you approaching outreach to busy automotive plant managers?',
     decisionMakerContact: {
@@ -978,7 +978,7 @@ export function getLeadDetails(rawLeadId: string | undefined): DiscoveredLead | 
       enrichmentState: 'completed',
       companyIntelligence: {
         overview: 'High-growth cloud communications provider offering enterprise telephony APIs and contact center integrations.',
-        scale: 'Austin HQ · 100–250 employees · $14M Series-A funding',
+        scale: 'Austin HQ · 100–250 employees · ₹115 Cr Series-A funding',
         techStack: {
           confirmed: ['HubSpot CRM', 'Segment CDP', 'Twilio Voice', 'Intercom'],
           displacing: ['Legacy SalesLoft outbound dialer']
@@ -1016,7 +1016,7 @@ export function getLeadDetails(rawLeadId: string | undefined): DiscoveredLead | 
         pitch: "Hi Sarah, noticed your team evaluating voice AI cadences this morning. How are you tackling inbound speed-to-lead following the Series-A? We help B2B SaaS teams qualify inbound demo requests within 60 seconds with autonomous voice agents.",
         whyThisPitch: [
           'Directly references G2 Buyer Intent spike logged across their IP range.',
-          'Connects to the $14M Series-A commercial go-to-market mandate.',
+          'Connects to the ₹115 Cr Series-A commercial go-to-market mandate.',
           'Solves their 4-hour inbound demo drop-off bottleneck.'
         ],
         keyAngle: 'Sub-60s Inbound Voice Qualification & Real-Time CRM Booking',
@@ -1029,7 +1029,7 @@ export function getLeadDetails(rawLeadId: string | undefined): DiscoveredLead | 
       callBrief: {
         opening: "Hi Sarah, noticed CloudScale evaluating voice AI cadences on G2 this morning. Are you aiming to solve inbound speed-to-lead?",
         leadContext: "Series-A funded B2B SaaS with 4-hour demo response lag causing 42% lead attrition before first touch.",
-        keySignal: "G2 Buyer Intent surge logged 4h ago; $14M Series-A closed with GTM mandate.",
+        keySignal: "G2 Buyer Intent surge logged 4h ago; ₹115 Cr Series-A closed with GTM mandate.",
         discoveryQuestion: "What is your current average time between a website demo request submission and an SDR's first outbound dial?",
         potentialObjection: "We are currently trialing a competing voice agent solution.",
         objectionCounter: "That makes complete sense. Most teams we work with evaluated them first, but switched when latency exceeded 1.2s. Our sub-400ms voice engine feels like an authentic human SDR. Can we run a live test together?",

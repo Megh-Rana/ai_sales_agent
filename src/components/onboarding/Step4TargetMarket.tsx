@@ -34,10 +34,10 @@ const GEOGRAPHY_PRESETS = [
 
 const REVENUE_THRESHOLDS = [
   { value: 'Any Revenue', label: 'Any Revenue Band (Startups & Mid-Market)' },
-  { value: '>$5M ARR', label: '>$5M Annual Revenue' },
-  { value: '>$10M ARR', label: '>$10M Annual Revenue' },
-  { value: '>$25M ARR', label: '>$25M Annual Revenue' },
-  { value: '>$100M ARR', label: '>$100M Enterprise Revenue' },
+  { value: '>₹5 Cr ARR', label: '>₹5 Cr Annual Revenue' },
+  { value: '>₹10 Cr ARR', label: '>₹10 Cr Annual Revenue' },
+  { value: '>₹25 Cr ARR', label: '>₹25 Cr Annual Revenue' },
+  { value: '>₹100 Cr Enterprise Revenue', label: '>₹100 Cr Enterprise Revenue' },
 ];
 
 export const Step4TargetMarket: React.FC<Step4TargetMarketProps> = ({

@@ -180,7 +180,7 @@ export const CampaignBuilderModal: React.FC<CampaignBuilderModalProps> = ({
                     {
                       id: 'BOOK_MEETINGS',
                       title: 'Book Executive Demos',
-                      desc: 'Direct outreach for high-intent BANT qualification.',
+                      desc: 'Direct outreach for high-intent lead qualification.',
                     },
                     {
                       id: 'REENGAGE_STALLED',
@@ -271,7 +271,7 @@ export const CampaignBuilderModal: React.FC<CampaignBuilderModalProps> = ({
                     <h4 className="font-bold text-small">AI Voice Agent Cadence</h4>
                   </div>
                   <p className="text-caption text-foreground-secondary">
-                    Autonomous voice calls with real-time sentiment analysis and BANT qualification.
+                    Autonomous voice calls with real-time sentiment analysis and lead qualification.
                   </p>
                 </div>
                 <div className="bg-surface-1 border border-border-subtle rounded-xl p-4 text-foreground-tertiary">

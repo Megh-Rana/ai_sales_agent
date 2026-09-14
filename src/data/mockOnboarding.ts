@@ -89,7 +89,7 @@ export const initialOnboardingData: OnboardingFormData = {
       customerProblem: '',
       usp: '',
       pricingModel: 'subscription',
-      priceRange: '$10k - $50k / year',
+      priceRange: '₹8 Lakh - ₹40 Lakh / year',
     },
   ],
   idealCustomer: {
@@ -107,7 +107,7 @@ export const initialOnboardingData: OnboardingFormData = {
     industries: ['3PL & Warehousing', 'Cold Chain Distribution', 'E-Commerce Logistics'],
     regions: ['North America', 'Western Europe'],
     preferredCompanySizes: ['51-200', '201-1000'],
-    revenueThreshold: '>$10M ARR',
+    revenueThreshold: '>₹10 Cr ARR',
     customerSegments: ['Mid-Market Enterprises', 'Fast-Growing 3PL Providers'],
   },
   salesPreferences: {
@@ -149,7 +149,7 @@ export const sampleB2BProfileData: OnboardingFormData = {
       usp:
         'Zero fixed facility markers required; scans 10,000 pallet locations per hour and pushes real-time reconciliation to SAP WMS.',
       pricingModel: 'subscription',
-      priceRange: '$36,000 / facility / year',
+      priceRange: '₹30 Lakh / facility / year',
     },
     {
       id: 'offering-2',
@@ -162,7 +162,7 @@ export const sampleB2BProfileData: OnboardingFormData = {
       usp:
         'Pre-built bi-directional connectors for SAP EWM, Manhattan Associates, and Blue Yonder deployed in under 48 hours.',
       pricingModel: 'usage',
-      priceRange: '$1,200 / month',
+      priceRange: '₹1,00,000 / month',
     },
   ],
   idealCustomer: {
@@ -191,7 +191,7 @@ export const sampleB2BProfileData: OnboardingFormData = {
     regions: ['North America (US & Canada)', 'Western Europe (UK, Germany, Benelux)'],
     excludedRegions: ['Restricted Military Facilities'],
     preferredCompanySizes: ['51-200', '201-1000'],
-    revenueThreshold: '>$25M Annual Revenue',
+    revenueThreshold: '>₹200 Cr Annual Revenue',
     customerSegments: ['High-volume Distribution Centers', 'Omni-channel 3PLs'],
   },
   salesPreferences: {
@@ -263,7 +263,7 @@ export function generateMockAIProfile(data: OnboardingFormData): GeneratedBusine
     bestFitCustomers: [
       `High-growth ${targetIndustry} accounts operating in ${data.targetMarket.regions.join(', ') || 'target regions'}`,
       `Organizations experiencing ${primaryTrigger.toLowerCase()}`,
-      `Companies with verified budget allocation threshold (${data.targetMarket.revenueThreshold || '>$10M ARR'})`,
+      `Companies with verified budget allocation threshold (${data.targetMarket.revenueThreshold || '>₹10 Cr ARR'})`,
     ],
     recommendedSalesApproach: `Lead with measurable ROI and speed-to-value: address ${primaryPain.toLowerCase()} within the first 20 seconds. Highlight ${primaryOffering.usp || 'proven automated efficiency'} before positioning a live 15-minute operational audit.`,
     confidenceScore: 94,

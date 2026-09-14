@@ -12,7 +12,7 @@ export interface AnimatedTextCycleProps {
 const defaultPhrases = [
   'AI is researching the target company context...',
   'AI is analyzing high-intent buying signals...',
-  'AI is scoring BANT qualification requirements...',
+  'AI is scoring lead qualification requirements...',
   'AI is preparing a personalized executive pitch...',
   'AI Sales Agent is ready to initiate live session.',
 ];

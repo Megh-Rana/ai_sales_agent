@@ -47,8 +47,8 @@ export const AIActivityIndicator: React.FC<AIActivityIndicatorProps> = ({
       default:
         return {
           label: 'AI ready',
-          color: 'bg-signal-qualified',
-          pulseColor: 'bg-signal-qualified',
+          color: 'bg-foreground-tertiary',
+          pulseColor: 'bg-foreground-tertiary',
           isActive: false,
         };
     }

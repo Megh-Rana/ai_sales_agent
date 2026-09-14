@@ -431,7 +431,7 @@ export const AICalling: React.FC = () => {
             <h2 className="text-h3 font-bold text-foreground">
               Finalizing Call Intelligence...
             </h2>
-            <AnimatedTypingEffect text="Compiling BANT qualification dimensions and executive notes..." speed={20} className="text-xs text-foreground-secondary" />
+            <AnimatedTypingEffect text="Compiling lead qualification dimensions and executive notes..." speed={20} className="text-xs text-foreground-secondary" />
           </div>
         </div>
       )}

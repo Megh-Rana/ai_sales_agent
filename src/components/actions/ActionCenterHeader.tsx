@@ -54,7 +54,7 @@ export const ActionCenterHeader: React.FC<ActionCenterHeaderProps> = ({
             </span>
           </div>
           <p className="text-sm text-[#94A3B8] font-normal pl-0.5">
-            Intelligent next best actions prioritized by buying intent, RFP signals & follow-up velocity.
+            Intelligent next best actions prioritized by buying intent, RFP signals & follow-up speed.
           </p>
         </div>
 

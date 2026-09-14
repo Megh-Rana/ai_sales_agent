@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 
-export interface BANTItem {
+export interface QualificationItem {
   key: 'budget' | 'authority' | 'need' | 'timeline';
   label: string;
   status: 'verified' | 'unverified' | 'failed';
@@ -9,7 +9,7 @@ export interface BANTItem {
 }
 
 export interface QualificationMatrixProps {
-  items?: BANTItem[];
+  items?: QualificationItem[];
   className?: string;
 }
 
@@ -22,7 +22,7 @@ export const QualificationMatrix: React.FC<QualificationMatrixProps> = ({
   ],
   className = '',
 }) => {
-  const getStatusIcon = (status: BANTItem['status']) => {
+  const getStatusIcon = (status: QualificationItem['status']) => {
     switch (status) {
       case 'verified':
         return <CheckCircle2 className="w-4 h-4 text-signal-qualified shrink-0" />;
@@ -36,7 +36,7 @@ export const QualificationMatrix: React.FC<QualificationMatrixProps> = ({
   return (
     <div className={`bg-surface-0 border border-border-default rounded-xl p-4 sm:p-5 ${className}`}>
       <div className="flex items-center justify-between mb-4 pb-2 border-b border-border-subtle">
-        <h4 className="text-h4 font-semibold text-foreground">BANT Qualification Matrix</h4>
+        <h4 className="text-h4 font-semibold text-foreground">Sales Criteria Qualification Matrix</h4>
         <span className="text-caption font-mono uppercase text-signal-qualified bg-signal-qualified-muted px-2 py-0.5 rounded border border-signal-qualified/30 font-medium">
           4/4 Qualified
         </span>

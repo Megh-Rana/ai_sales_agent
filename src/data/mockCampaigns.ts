@@ -58,7 +58,7 @@ export const mockCampaignsData: SalesCampaign[] = [
         customOpeningHook:
           'Congratulations on your new VP Sales Operations appointment at CloudScale...',
         customValueProp:
-          'We replace manual BDR dialing with autonomous AI voice agents that qualify BANT in 3 mins.',
+          'We replace manual BDR dialing with autonomous AI voice agents that qualify Qualification in 3 mins.',
         status: 'QUEUED',
       },
       {

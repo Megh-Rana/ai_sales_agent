@@ -47,7 +47,7 @@ export interface AICallSnapshotData {
   latencyMs: number;
   sentimentScore: number;
   qualificationStatus: 'QUALIFIED' | 'NEEDS_FOLLOW_UP' | 'DISQUALIFIED';
-  bant: {
+  qualificationCriteria: {
     budget: boolean;
     authority: boolean;
     need: boolean;
@@ -348,7 +348,7 @@ export const mockDashboardData: DashboardData = {
     latencyMs: 42,
     sentimentScore: 88,
     qualificationStatus: 'QUALIFIED',
-    bant: {
+    qualificationCriteria: {
       budget: true,
       authority: true,
       need: true,

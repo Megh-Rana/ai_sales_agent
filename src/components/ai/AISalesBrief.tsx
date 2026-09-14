@@ -16,7 +16,7 @@ export const AISalesBrief: React.FC<AISalesBriefProps> = ({
       'Active tech stack migration away from legacy Salesforce workflow.',
     ],
     recommendedAngle:
-      'Highlight 40% reduction in rep onboarding time & automated BANT qualification without increasing headcount.',
+      'Highlight 40% reduction in rep onboarding time & automated lead qualification without increasing headcount.',
     recommendedOpening:
       '"Hi Sarah, I noticed Acme Corp is expanding the Ops team while migrating stack. Most VP Ops we partner with are looking to automate outbound qualification before hiring standard BDRs. Would 10 minutes make sense this Thursday?"',
     potentialObjections: [

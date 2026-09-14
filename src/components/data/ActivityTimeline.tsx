@@ -13,7 +13,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     { id: '2', timestamp: '10:44 AM', title: 'Company Enriched', description: 'Pulled stack telemetry: Salesforce, Outreach.io', category: 'enrichment' },
     { id: '3', timestamp: '10:46 AM', title: 'Buying Signal Detected', description: 'High Intent Score generated: 94 / 100', category: 'signal' },
     { id: '4', timestamp: '10:49 AM', title: 'AI Call Initiated', description: 'Agent connected with VP of Sales Ops', category: 'call' },
-    { id: '5', timestamp: '10:53 AM', title: 'Prospect Marked Interested', description: 'BANT Qualified. Demo requested for Thursday', category: 'status' },
+    { id: '5', timestamp: '10:53 AM', title: 'Prospect Marked Interested', description: 'Lead Qualified. Demo requested for Thursday', category: 'status' },
   ],
   className = '',
 }) => {

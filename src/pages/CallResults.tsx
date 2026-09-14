@@ -212,7 +212,7 @@ export const CallResults: React.FC = () => {
             sublabel="AI Confidence Index"
           />
           <div className="flex flex-col justify-center space-y-3">
-            <AnimatedProgressBar value={85} label="BANT Qualification Progress" color="success" />
+            <AnimatedProgressBar value={85} label="Qualification Progress" color="success" />
             <AnimatedProgressBar value={94} label="Decision Maker Alignment" color="primary" />
           </div>
         </div>

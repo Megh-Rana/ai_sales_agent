@@ -178,7 +178,7 @@ export const Step2ProductsServices: React.FC<Step2ProductsServicesProps> = ({
 
               <Input
                 label="Price Range Indicator (Optional)"
-                placeholder="e.g., $25,000 / year or $2,500 / month"
+                placeholder="e.g., ₹20 Lakh / year or ₹2,00,000 / month"
                 leftIcon={<DollarSign className="w-4 h-4 text-foreground-tertiary" />}
                 value={offering.priceRange || ''}
                 onChange={(e) => handleUpdateOffering(idx, { priceRange: e.target.value })}

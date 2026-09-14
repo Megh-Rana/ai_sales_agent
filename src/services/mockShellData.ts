@@ -48,16 +48,16 @@ export const mockUser: UserProfile = {
 };
 
 export const mockWorkspaces: Workspace[] = [
-  { id: 'ws-1', name: 'Acme Technologies', type: 'Sales Workspace', plan: 'Enterprise OS', isCurrent: true },
-  { id: 'ws-2', name: 'Growth Labs APAC', type: 'Outbound Operations', plan: 'Pro Agent' },
-  { id: 'ws-3', name: 'Enterprise Global', type: 'Expansion Division', plan: 'Enterprise OS' },
+  { id: 'ws-1', name: 'Acme Technologies India', type: 'Sales Workspace', plan: 'Enterprise OS', isCurrent: true },
+  { id: 'ws-2', name: 'Growth Labs India', type: 'Outbound Operations', plan: 'Pro Agent' },
+  { id: 'ws-3', name: 'Enterprise APAC', type: 'Expansion Division', plan: 'Enterprise OS' },
 ];
 
 export const mockNotifications: NotificationItem[] = [
   {
     id: 'notif-1',
     title: '3 High-Intent Leads Discovered',
-    message: 'Public hiring and cloud infrastructure changes detected for Enterprise SaaS prospects.',
+    message: 'Public hiring and cloud infrastructure expansion detected for Enterprise SaaS prospects.',
     timestamp: '10m ago',
     isRead: false,
     type: 'signal',
@@ -66,7 +66,7 @@ export const mockNotifications: NotificationItem[] = [
   {
     id: 'notif-2',
     title: 'AI Call Completed',
-    message: 'Agent concluded 4m conversation with Sarah Jenkins (VP Ops). BANT qualified for Q4.',
+    message: 'Agent concluded 4m conversation with Rajesh Sharma (VP Ops). Qualified for Q4 procurement.',
     timestamp: '25m ago',
     isRead: false,
     type: 'call',
@@ -75,7 +75,7 @@ export const mockNotifications: NotificationItem[] = [
   {
     id: 'notif-3',
     title: 'Follow-Up Due in 30 Minutes',
-    message: 'Scheduled automated touchpoint reminder for CloudScale Systems opportunity lead.',
+    message: 'Scheduled automated touchpoint reminder for Razorpay opportunity lead.',
     timestamp: '1h ago',
     isRead: false,
     type: 'followup',
@@ -93,7 +93,7 @@ export const mockNotifications: NotificationItem[] = [
   {
     id: 'notif-5',
     title: 'New Buying Signal Detected',
-    message: 'Nexus Health AI registered Series-B funding trigger ($24M) with CRM migration flag.',
+    message: 'Delhivery registered Series-B expansion trigger (₹180 Cr) with CRM migration flag.',
     timestamp: '4h ago',
     isRead: true,
     type: 'signal',
@@ -109,10 +109,10 @@ export const mockCommandItems: CommandItem[] = [
   { id: 'cmd-act-4', title: 'View Keyboard Shortcuts', subtitle: 'Speed up your sales workflow', category: 'Actions', actionKey: 'shortcuts', shortcut: '?' },
 
   // Opportunities / Accounts
-  { id: 'cmd-opp-1', title: 'Acme Technologies', subtitle: 'Head of Sales Ops hired (48h ago)', category: 'Opportunities', path: '/leads/opp-101', intentScore: 94 },
-  { id: 'cmd-opp-2', title: 'CloudScale Systems', subtitle: 'Outbound pipeline expansion signal', category: 'Opportunities', path: '/leads/opp-102', intentScore: 91 },
-  { id: 'cmd-opp-3', title: 'Nexus Health AI', subtitle: 'Series-B $24M funding announced', category: 'Opportunities', path: '/leads/opp-103', intentScore: 88 },
-  { id: 'cmd-opp-4', title: 'Apex Dynamics', subtitle: 'Migrating legacy CRM platform', category: 'Opportunities', path: '/leads/opp-104', intentScore: 84 },
+  { id: 'cmd-opp-1', title: 'Razorpay Software', subtitle: 'Head of Sales Ops hired (48h ago)', category: 'Opportunities', path: '/leads/opp-101', intentScore: 94 },
+  { id: 'cmd-opp-2', title: 'Freshworks India', subtitle: 'Outbound pipeline expansion signal', category: 'Opportunities', path: '/leads/opp-102', intentScore: 91 },
+  { id: 'cmd-opp-3', title: 'Delhivery Logistics', subtitle: 'Series-B ₹180 Cr funding announced', category: 'Opportunities', path: '/leads/opp-103', intentScore: 88 },
+  { id: 'cmd-opp-4', title: 'PharmEasy Healthcare', subtitle: 'Migrating legacy CRM platform', category: 'Opportunities', path: '/leads/opp-104', intentScore: 84 },
 
   // Cadences
   { id: 'cmd-cad-1', title: 'Q4 SaaS Outreach Cadence', subtitle: '85% Qualification rate · 140 Accounts', category: 'Cadences', path: '/campaigns/cmp-201' },
@@ -124,7 +124,7 @@ export const mockCommandItems: CommandItem[] = [
   { id: 'cmd-nav-3', title: 'View Outreach Campaigns', subtitle: '4 active autonomous cadences', category: 'Navigation', path: '/campaigns', shortcut: 'C' },
   { id: 'cmd-nav-4', title: 'AI Voice Calling Hub', subtitle: 'Live dialer & qualification brief', category: 'Navigation', path: '/calls' },
   { id: 'cmd-nav-5', title: 'Pending Follow-ups Queue', subtitle: '12 scheduled touchpoints', category: 'Navigation', path: '/follow-ups', shortcut: 'F' },
-  { id: 'cmd-nav-6', title: 'Pipeline Velocity Analytics', subtitle: 'Conversion funnels & intent metrics', category: 'Navigation', path: '/analytics' },
+  { id: 'cmd-nav-6', title: 'Pipeline Analytics', subtitle: 'Conversion funnels & intent metrics', category: 'Navigation', path: '/analytics' },
   { id: 'cmd-nav-7', title: 'Business Profile & ICP Matrix', subtitle: 'Target profile & competitive intel', category: 'Navigation', path: '/business' },
   { id: 'cmd-nav-8', title: 'Workspace Settings', subtitle: 'Team, subscription & security controls', category: 'Navigation', path: '/settings' },
   { id: 'cmd-nav-9', title: 'Admin Governance Portal', subtitle: 'Global user management & audit logs', category: 'Navigation', path: '/admin' },
