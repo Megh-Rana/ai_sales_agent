@@ -30,7 +30,7 @@ const STAGES: ProcessingStage[] = [
   },
   {
     id: 3,
-    title: 'Identifying high-velocity buying signals',
+    title: 'Identifying high-momentum buying signals',
     description: 'Mapping 42 external trigger sources (hiring sprees, facility growth, tech stack migrations)...',
     durationMs: 1100,
   },

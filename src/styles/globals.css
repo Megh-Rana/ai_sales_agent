@@ -13,6 +13,13 @@
     --background: #0B0E14;        /* Very dark neutral charcoal */
     --surface: #12161F;           /* Primary card / panel background */
     --surface-elevated: #1A202C;  /* Elevated panel / hover / container */
+
+    /* Pastel Palette Tokens */
+    --thistle: #CDB4DB;
+    --pastel-petal: #FFC8DD;
+    --baby-pink: #FFAFCC;
+    --icy-blue: #BDE0FE;
+    --sky-blue: #A2D2FF;
     --surface-muted: #151924;     /* Secondary / muted card backdrop */
     --surface-hover: #222A3A;     /* Hover state for interactive items */
     --surface-highlight: #2C364A; /* Active highlight surface */

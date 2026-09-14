@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Lock, Mail, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Lock, Mail } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
@@ -39,11 +39,8 @@ export const Login: React.FC = () => {
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground flex items-center justify-center gap-2">
-            <span>Vidur</span>
-            <span className="text-xs font-mono uppercase bg-primary-muted text-primary px-1.5 py-0.5 rounded border border-primary/30 font-semibold">
-              OS
-            </span>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            Vidur
           </h2>
           <p className="text-caption text-foreground-secondary mt-1">
             Enterprise AI Sales Intelligence Platform
@@ -56,7 +53,7 @@ export const Login: React.FC = () => {
           <div className="space-y-1">
             <h3 className="text-lg font-semibold text-foreground">Sign In to Workspace</h3>
             <p className="text-xs text-foreground-tertiary">
-              Enter your sales credentials to access the autonomous operating system.
+              Enter your credentials to access the sales platform.
             </p>
           </div>
 
@@ -100,30 +97,12 @@ export const Login: React.FC = () => {
             </Button>
           </form>
 
-
-
           <div className="pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-foreground-secondary">
             <span>Need a new sales workspace?</span>
             <Link to="/register" className="text-primary hover:text-primary-hover font-semibold">
               Create account
             </Link>
           </div>
-        </div>
-
-        {/* Enterprise Assurance Footer */}
-        <div className="mt-6 flex items-center justify-center gap-6 text-[11px] text-foreground-tertiary">
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-signal-qualified" />
-            <span>SOC2 Type II</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-            <span>256-Bit TLS</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Lock className="w-3.5 h-3.5 text-foreground-tertiary" />
-            <span>SAML 2.0</span>
-          </span>
         </div>
       </div>
     </div>

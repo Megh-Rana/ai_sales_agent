@@ -178,7 +178,7 @@ export const AnimatedCommandMenu: React.FC<AnimatedCommandMenuProps> = ({
             {/* Footer */}
             <div className="px-4 py-2 bg-surface-1/40 border-t border-border-subtle text-[11px] text-foreground-tertiary flex items-center justify-between">
               <span>Navigation tip: use arrow keys or click to select</span>
-              <span className="font-mono text-[10px]">AI Sales OS v3.0</span>
+              <span className="font-mono text-[10px]">Vidur Platform v3.0</span>
             </div>
           </motion.div>
         </div>

@@ -25,7 +25,7 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
       isOpen={isOpen}
       onClose={onClose}
       title="Keyboard Shortcuts"
-      subtitle="Rapidly navigate the Vidur Sales Operating System without leaving your keyboard"
+      subtitle="Rapidly navigate the Vidur AI Sales Platform without leaving your keyboard"
     >
       <div className="space-y-2.5">
         {shortcuts.map((sc, idx) => (

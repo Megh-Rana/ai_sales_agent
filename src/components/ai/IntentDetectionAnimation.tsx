@@ -18,7 +18,7 @@ export const IntentDetectionAnimation: React.FC<IntentDetectionAnimationProps> =
     { title: 'Discovering Prospects', detail: 'Scanning public tech stack & job postings...' },
     { title: 'Analyzing Requirements', detail: 'Matching category intent & budget indicators...' },
     { title: 'Buying Signal Detected', detail: 'Urgent hiring post for Head of Sales Ops (48h ago)' },
-    { title: 'Intent Score Generated', detail: 'Intent Velocity: 94 / 100 (High Buying Signal)' },
+    { title: 'Intent Score Generated', detail: 'Intent Momentum: 94 / 100 (High Buying Signal)' },
     { title: 'Opportunity Actionable', detail: 'AI Sales Agent script & pitch brief generated.' },
   ];
 

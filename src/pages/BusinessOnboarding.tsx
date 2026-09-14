@@ -134,7 +134,7 @@ export const BusinessOnboarding: React.FC = () => {
         errs.painPoints = 'Provide at least one customer pain point.';
       }
       if (formData.idealCustomer.buyingTriggers.length === 0) {
-        errs.buyingTriggers = 'Select at least one high-velocity buying trigger.';
+        errs.buyingTriggers = 'Select at least one high-momentum buying trigger.';
       }
     } else if (currentStep === 4) {
       if (formData.targetMarket.industries.length === 0) {
@@ -200,7 +200,7 @@ export const BusinessOnboarding: React.FC = () => {
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
             <span className="font-mono text-primary font-bold text-xs uppercase tracking-wider">
-              VIDUR AUTONOMOUS SALES OS
+              VIDUR AUTONOMOUS SALES PLATFORM
             </span>
             <span>·</span>
             <span className="text-xs text-foreground-tertiary">Agent Setup Wizard</span>

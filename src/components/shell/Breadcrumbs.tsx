@@ -22,7 +22,7 @@ export const Breadcrumbs: React.FC = () => {
       campaigns: 'Outreach Cadences',
       calls: 'AI Voice Calls',
       'follow-ups': 'Follow-ups Queue',
-      analytics: 'Pipeline Velocity',
+      analytics: 'Pipeline Analytics',
       business: 'Business Profile',
       settings: 'Settings',
       profile: 'User Profile',

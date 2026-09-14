@@ -278,7 +278,7 @@ export const mockAnalyticsDataByRange: Record<DateRangePreset, SalesAnalyticsDat
         title: 'Public Requirements leads convert 1.8× faster than average',
         evidence: 'Public Requirement signals yielded 7 of 9 total qualified opportunities with an average intent score of 84/100.',
         whyItMatters: 'These prospects have active public tenders, indicating immediate purchasing budget.',
-        recommendedAction: 'Prioritize requirement-based discovery scans to maximize pipeline velocity.',
+        recommendedAction: 'Prioritize requirement-based discovery scans to maximize pipeline momentum.',
         ctaLabel: 'Discover Requirement Leads',
         ctaTarget: '/leads/discover',
       },
@@ -296,7 +296,7 @@ export const mockAnalyticsDataByRange: Record<DateRangePreset, SalesAnalyticsDat
       {
         id: 'insight-dropoff',
         category: 'FUNNEL_DROPOFF',
-        categoryLabel: 'Pipeline Velocity',
+        categoryLabel: 'Pipeline Analytics',
         title: '47.1% of High Intent leads are awaiting initial contact',
         evidence: '16 high-intent leads (intent score > 75) are sitting in queue without an initiated AI call session.',
         whyItMatters: 'Response rate drops by 60% when intent signals sit uncontacted past 48 hours.',
@@ -324,7 +324,7 @@ export const mockAnalyticsDataByRange: Record<DateRangePreset, SalesAnalyticsDat
     ],
     funnelInsightText: {
       highlight: '33.3% of 7-day high-intent leads converted to qualified opportunities.',
-      dropOffDetail: 'Strong weekly velocity: 60.0% call qualification rate.',
+      dropOffDetail: 'Strong weekly momentum: 60.0% call qualification rate.',
     },
     intentDistribution: {
       veryHigh: { count: 4, percentage: 6.9 },

@@ -61,7 +61,7 @@ export const mockFollowUpDataset: ExtendedFollowUpItem[] = [
     reason: 'CTO requested HIPAA/NDHM compliance architectural diagram during outbound call.',
     timingLabel: 'DUE_TODAY',
     suggestedPitch:
-      'Dr. Ananya, our lead solution architect is ready to walk through Vidur OS security compliance documentation for Apex HealthTech patient triage systems.',
+      'Dr. Ananya, our lead solution architect is ready to walk through Vidur security compliance documentation for Apex HealthTech patient triage systems.',
     previousInteraction: 'AI Voice Call completed (Requested compliance documentation).',
     createdAt: '2026-09-13T10:00:00Z',
   },

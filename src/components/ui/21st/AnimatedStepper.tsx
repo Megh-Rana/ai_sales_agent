@@ -23,13 +23,13 @@ export const AnimatedStepper: React.FC<AnimatedStepperProps> = ({
 }) => {
   return (
     <div className={`w-full ${className}`}>
-      <div className="flex items-center justify-between relative">
-        {/* Background Line */}
-        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-border-subtle -translate-y-1/2 z-0" />
+      <div className="flex items-start justify-between relative">
+        {/* Background Line centered on 32px circles (top-4 = 16px) */}
+        <div className="absolute top-4 left-4 right-4 h-0.5 bg-border-subtle -translate-y-1/2 z-0" />
 
         {/* Animated Active Line Fill */}
         <motion.div
-          className="absolute top-1/2 left-0 h-0.5 bg-primary -translate-y-1/2 z-0"
+          className="absolute top-4 left-4 h-0.5 bg-primary -translate-y-1/2 z-0"
           initial={{ width: '0%' }}
           animate={{
             width: `${(currentStepIndex / Math.max(1, steps.length - 1)) * 100}%`,
@@ -63,10 +63,10 @@ export const AnimatedStepper: React.FC<AnimatedStepperProps> = ({
                     : 'bg-surface-0 text-foreground-tertiary border-border-default'
                 }`}
               >
-                {isCompleted ? <Check className="w-4 h-4" /> : index + 1}
+                {isCompleted ? <Check className="w-4 h-4 text-white" /> : index + 1}
               </motion.div>
               <span
-                className={`mt-2 text-[11px] font-mono uppercase tracking-wider font-semibold truncate max-w-[80px] text-center ${
+                className={`mt-2 text-[11px] font-mono uppercase tracking-wider font-semibold truncate max-w-[90px] text-center ${
                   isCurrent
                     ? 'text-primary'
                     : isCompleted

@@ -284,7 +284,7 @@ export const Step9Review: React.FC<Step9ReviewProps> = ({
       {/* Bottom CTA Bar */}
       <div className="p-4 rounded-xl bg-surface-1 border border-border-default flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-0.5">
-          <div className="text-body font-semibold text-foreground">Ready to Launch Autonomous Sales OS?</div>
+          <div className="text-body font-semibold text-foreground">Ready to Launch Autonomous Vidur Platform?</div>
           <div className="text-caption text-foreground-tertiary">
             Confirming will persist your calibrated profile and redirect you to the live sales workspace.
           </div>

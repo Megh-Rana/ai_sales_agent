@@ -22,7 +22,7 @@ export const CommandHeader: React.FC<CommandHeaderProps> = ({
               <Activity className="w-5 h-5 animate-pulse" />
             </div>
             <span className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold">
-              Vidur Sales Operating System
+              Vidur AI Sales Platform
             </span>
           </div>
 

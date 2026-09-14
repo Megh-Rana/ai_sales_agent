@@ -46,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <NavLink
           to="/dashboard"
           className="flex items-center gap-2.5 min-w-0 group"
-          title="Vidur OS - AI Sales Platform"
+          title="Vidur - AI Sales Platform"
         >
           {/* Restrained Geometric Vidur Brand Aperture */}
           <div className="w-8 h-8 rounded-lg bg-surface-1 border border-primary/40 flex items-center justify-center text-primary shrink-0 shadow-xs group-hover:border-primary transition-colors">

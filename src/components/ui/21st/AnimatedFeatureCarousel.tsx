@@ -32,7 +32,7 @@ const defaultFeatures: FeatureItem[] = [
     icon: Building2,
     stat: '360°',
     statLabel: 'Account Dossier',
-    bullets: ['Tech stack detection', 'Hiring velocity tracking', 'Competitor displacement intelligence'],
+    bullets: ['Tech stack detection', 'Hiring momentum tracking', 'Competitor displacement intelligence'],
   },
   {
     id: 'voice-agent',
@@ -61,7 +61,7 @@ const defaultFeatures: FeatureItem[] = [
     description: 'Automated deal scoring model that dynamically adjusts opportunity priority as new interaction signals arrive.',
     icon: CheckSquare,
     stat: '3.4x',
-    statLabel: 'Pipeline Velocity',
+    statLabel: 'Pipeline Analytics',
     bullets: ['Dynamic deal weight adjustment', 'Urgency & timing validation', 'Stalled deal warning alerts'],
   },
   {

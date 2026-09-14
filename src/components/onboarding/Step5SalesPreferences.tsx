@@ -35,7 +35,7 @@ const DEMEANOR_OPTIONS: { value: AgentDemeanor; title: string; desc: string; sam
   },
   {
     value: 'direct',
-    title: 'Direct & High-Velocity',
+    title: 'Direct & Rapid Outreach',
     desc: 'Concise value hook in <15s, fast disqualification, focused on booking 15-min discovery calls.',
     sampleQuote: '"We helped Acme cut warehouse cycle counts by 72%. Do you have 10 minutes this Thursday?"',
   },

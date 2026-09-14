@@ -41,7 +41,7 @@ export const SalesFunnelCard: React.FC<SalesFunnelCardProps> = ({ stages, insigh
               <Filter className="w-4 h-4" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-foreground">Sales Funnel Velocity</h2>
+              <h2 className="text-base font-semibold text-foreground">Sales Funnel Conversion</h2>
               <p className="text-xs text-foreground-secondary">
                 Stage volume, conversion yield & drop-off points
               </p>

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import { Breadcrumbs } from './Breadcrumbs';
-import { AIActivityIndicator } from './AIActivityIndicator';
 import { NotificationCenter } from './NotificationCenter';
 import { UserMenu } from './UserMenu';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -45,11 +44,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* Global Day / Night Theme Toggle */}
         <ThemeToggle />
-
-        {/* Global AI Activity Indicator - hide on small mobile */}
-        <div className="hidden sm:block">
-          <AIActivityIndicator />
-        </div>
 
         {/* Notifications Popover */}
         <NotificationCenter />

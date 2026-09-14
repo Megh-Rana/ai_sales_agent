@@ -322,7 +322,7 @@ export const Step3IdealCustomer: React.FC<Step3IdealCustomerProps> = ({
         <div className="flex items-center justify-between">
           <label className="block text-caption font-medium text-foreground-secondary flex items-center gap-1.5">
             <Flame className="w-3.5 h-3.5 text-signal-high" />
-            <span>High-Velocity Buying Triggers</span> <span className="text-signal-urgent">*</span>
+            <span>High-Intent Buying Triggers</span> <span className="text-signal-urgent">*</span>
           </label>
           <span className="text-[11px] text-foreground-tertiary">Triggers that spike intent score to 80+</span>
         </div>

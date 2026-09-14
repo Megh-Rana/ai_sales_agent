@@ -41,14 +41,11 @@ export const Register: React.FC = () => {
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground flex items-center justify-center gap-2">
-            <span>Vidur</span>
-            <span className="text-xs font-mono uppercase bg-primary-muted text-primary px-1.5 py-0.5 rounded border border-primary/30 font-semibold">
-              OS
-            </span>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            Vidur
           </h2>
           <p className="text-caption text-foreground-secondary mt-1">
-            Autonomous B2B Sales Agent Operating System
+            Autonomous B2B Sales Platform
           </p>
         </div>
       </div>

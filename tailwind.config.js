@@ -75,6 +75,11 @@ export default {
           'urgent-muted': 'var(--danger-muted)',
           neutral: 'var(--text-muted)',
         },
+        thistle: '#CDB4DB',
+        pastelPetal: '#FFC8DD',
+        babyPink: '#FFAFCC',
+        icyBlue: '#BDE0FE',
+        skyBlue: '#A2D2FF',
       },
       fontFamily: {
         sans: [

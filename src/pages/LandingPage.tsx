@@ -181,7 +181,7 @@ export const LandingPage: React.FC = () => {
       {/* CTA FOOTER STRIP */}
       <footer className="py-12 px-6 border-t border-border-subtle bg-surface-0 text-center space-y-4">
         <div className="text-xs font-mono text-foreground-tertiary">
-          VIDUR AI SALES OS
+          VIDUR AI SALES PLATFORM
         </div>
         <div className="flex justify-center gap-4 text-xs text-foreground-secondary">
           <button onClick={() => navigate('/dashboard')} className="hover:text-foreground">

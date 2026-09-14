@@ -8,13 +8,13 @@ export const ActionCenterSkeleton: React.FC = () => {
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="bg-[#12161F] border border-[#1E2638] rounded-xl p-4 h-24 flex items-center justify-between"
+            className="bg-surface-0 border border-border-default rounded-xl p-4 h-24 flex items-center justify-between"
           >
             <div className="space-y-2 w-2/3">
-              <div className="h-3 bg-[#1A202C] rounded w-3/4" />
-              <div className="h-6 bg-[#242C3D] rounded w-1/2" />
+              <div className="h-3 bg-surface-elevated rounded w-3/4" />
+              <div className="h-6 bg-surface-hover rounded w-1/2" />
             </div>
-            <div className="w-10 h-10 bg-[#1A202C] rounded-xl" />
+            <div className="w-10 h-10 bg-surface-elevated rounded-xl" />
           </div>
         ))}
       </div>
@@ -24,12 +24,12 @@ export const ActionCenterSkeleton: React.FC = () => {
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="bg-[#12161F] border border-[#1E2638] rounded-xl p-6 h-64 flex flex-col justify-between"
+            className="bg-surface-0 border border-border-default rounded-xl p-6 h-64 flex flex-col justify-between"
           >
-            <div className="h-5 bg-[#1A202C] rounded w-1/4 mb-3" />
-            <div className="h-6 bg-[#242C3D] rounded w-1/2 mb-2" />
-            <div className="h-16 bg-[#1A202C] rounded w-full mb-4" />
-            <div className="h-10 bg-[#242C3D] rounded w-full" />
+            <div className="h-5 bg-surface-elevated rounded w-1/4 mb-3" />
+            <div className="h-6 bg-surface-hover rounded w-1/2 mb-2" />
+            <div className="h-16 bg-surface-elevated rounded w-full mb-4" />
+            <div className="h-10 bg-surface-hover rounded w-full" />
           </div>
         ))}
       </div>

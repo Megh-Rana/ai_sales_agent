@@ -105,7 +105,7 @@ export const mockCopilotContexts: SalesConversationContext[] = [
         id: 'obj-3',
         category: 'Competitor',
         objection: 'We are currently looking at Competitor X.',
-        suggestedResponse: 'Competitor X handles outbound email cadences well, but Vidur OS is built ground-up for real-time AI voice qualification and live intent triggers.',
+        suggestedResponse: 'Competitor X handles outbound email cadences well, but Vidur is built ground-up for real-time AI voice qualification and live intent triggers.',
         reasoning: 'Highlights autonomous voice agent differentiation.',
         discoveryPivot: 'Does Competitor X provide real-time voice call qualification in Hindi & English?'
       }
