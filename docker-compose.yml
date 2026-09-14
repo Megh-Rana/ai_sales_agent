@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - SARVAM_API_KEY=${SARVAM_API_KEY}
+      - STT_PROVIDER=sarvam
+      - LLM_PROVIDER=ollama
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    volumes:
+      - ./backend:/app
+      - backend-recordings:/app/recordings
+    restart: unless-stopped
+    networks:
+      - ai-sales-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - ai-sales-network
+
+volumes:
+  backend-recordings:
+
+networks:
+  ai-sales-network:
+    driver: bridge

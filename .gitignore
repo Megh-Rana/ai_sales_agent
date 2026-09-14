@@ -57,3 +57,38 @@ dist-ssr/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# ─── Backend Python ──────────────────────────────────────────
+# Python virtual environments
+backend/venv/
+backend/.venv/
+backend/env/
+backend/.env
+
+# Python cache
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/.pytest_cache/
+backend/.coverage
+
+# Python distribution / packaging
+backend/*.egg-info/
+backend/dist/
+backend/build/
+backend/.eggs/
+
+# AI Model files (large files)
+backend/*.pt
+backend/*.pth
+backend/*.onnx
+backend/*.bin
+backend/voice_profiles/*.wav
+backend/voice_profiles/*.mp3
+
+# Recordings and samples
+backend/recordings/
+backend/samples/
+
+# PyCharm
+backend/.idea/
