@@ -65,6 +65,7 @@ class PipelineOrchestrator:
         self._running = False
         self._is_speaking = False   # True while TTS audio is playing
         self._turn_count = 0
+        self.on_transcript = None   # Optional callback(speaker: str, text: str, language: str)
 
     def load_all(self):
         """Load all models into GPU (concurrent mode)."""
@@ -180,10 +181,22 @@ class PipelineOrchestrator:
         print(f"👤 Prospect [{language}]: {transcript}")
         print(f"   ⏱️  STT: {stt_time:.2f}s")
 
+        # Notify listener (e.g. frontend live transcript) of customer speech
+        if self.on_transcript:
+            try:
+                self.on_transcript("prospect", transcript, language)
+            except Exception as ex:
+                print(f"[Callback Error] {ex}")
+
         # Check for exit keywords
         if self._is_exit_phrase(transcript):
             farewell = self._get_farewell(language)
             print(f"\n🤖 Agent: {farewell}")
+            if self.on_transcript:
+                try:
+                    self.on_transcript("agent", farewell, language)
+                except Exception as ex:
+                    print(f"[Callback Error] {ex}")
             self._speak_text(farewell, language)
             self._running = False
             return
@@ -193,6 +206,11 @@ class PipelineOrchestrator:
         if self._turn_count > config.MAX_CONVERSATION_TURNS:
             wrap_up = self._get_wrap_up(language)
             print(f"\n🤖 Agent (wrapping up): {wrap_up}")
+            if self.on_transcript:
+                try:
+                    self.on_transcript("agent", wrap_up, language)
+                except Exception as ex:
+                    print(f"[Callback Error] {ex}")
             self._speak_text(wrap_up, language)
             self._running = False
             return
@@ -246,13 +264,26 @@ class PipelineOrchestrator:
                 playback_thread.start()
 
                 # Feed sentences from LLM → TTS → audio_q
-                sentence_gen = self.ai.generate_response_streaming(transcript, language)
+                collected_agent_sentences = []
+                def streaming_sentence_wrapper():
+                    for sentence in self.ai.generate_response_streaming(transcript, language):
+                        collected_agent_sentences.append(sentence)
+                        yield sentence
+
                 self.tts.synthesize_streaming_turn(
-                    sentence_gen,
+                    streaming_sentence_wrapper(),
                     language=language,
                     audio_queue=audio_q,
                     done_sentinel=DONE,
                 )
+
+                # Notify transcript listener of agent response
+                full_agent_text = " ".join(collected_agent_sentences).strip()
+                if self.on_transcript and full_agent_text:
+                    try:
+                        self.on_transcript("agent", full_agent_text, language)
+                    except Exception as ex:
+                        print(f"[Callback Error] {ex}")
 
                 # Wait for playback to finish
                 playback_thread.join(timeout=30.0)
@@ -262,6 +293,11 @@ class PipelineOrchestrator:
                 # Non-streaming fallback
                 response = self.ai.generate_response(transcript, language)
                 print(f"🤖 Agent [{language}]: {response}")
+                if self.on_transcript and response:
+                    try:
+                        self.on_transcript("agent", response, language)
+                    except Exception as ex:
+                        print(f"[Callback Error] {ex}")
                 self._speak_text(response, language)
 
         except Exception as e:

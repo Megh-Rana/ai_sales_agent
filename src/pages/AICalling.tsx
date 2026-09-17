@@ -93,14 +93,72 @@ export const AICalling: React.FC = () => {
   const activeTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const stepIndexRef = useRef<number>(0);
   const statusPollingRef = useRef<NodeJS.Timeout | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   const pollCallStatus = useCallback(async (sessionId: string) => {
-    // Stop any existing polling
+    // Stop any existing polling and socket
     if (statusPollingRef.current) {
       clearInterval(statusPollingRef.current);
     }
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
 
-    // Poll backend every 2 seconds for updates
+    // Try WebSocket connection for instant zero-latency speech turn streaming
+    try {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/call/${sessionId}`;
+      const socket = new WebSocket(wsUrl);
+      wsRef.current = socket;
+
+      socket.onopen = () => {
+        console.log('[WebSocket] Connected to live call stream:', wsUrl);
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'transcript') {
+            const speakerRole: 'ai_agent' | 'prospect' = data.speaker === 'agent' ? 'ai_agent' : 'prospect';
+            const totalSecs = Math.floor(data.timestamp ?? 0);
+            const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+            const secs = (totalSecs % 60).toString().padStart(2, '0');
+
+            setSession((prev) => {
+              // Avoid duplicate messages
+              const exists = prev.transcript.some(t => t.text.trim() === data.text.trim());
+              if (exists) return prev;
+
+              const newItem: TranscriptItem = {
+                id: `${data.speaker}-${Date.now()}-${Math.random()}`,
+                speaker: speakerRole,
+                speakerName: speakerRole === 'ai_agent' ? 'Vidur AI Agent' : 'You (Customer) · Live Mic',
+                text: data.text,
+                timestamp: `${mins}:${secs}`,
+                isFinal: true
+              };
+
+              return {
+                ...prev,
+                audioStatus: speakerRole === 'ai_agent' ? 'ai_speaking' : 'prospect_speaking',
+                transcript: [...prev.transcript, newItem]
+              };
+            });
+          }
+        } catch (e) {
+          console.error('[WebSocket] Failed to parse message:', e);
+        }
+      };
+
+      socket.onerror = (err) => {
+        console.log('[WebSocket] Socket error, falling back to fast polling:', err);
+      };
+    } catch (e) {
+      console.log('[WebSocket] Init failed, relying on poller:', e);
+    }
+
+    // Fast polling fallback (every 700ms) for real-time STT & LLM sync
     statusPollingRef.current = setInterval(async () => {
       try {
         const status = await callService.getCallStatus(sessionId);
@@ -108,6 +166,7 @@ export const AICalling: React.FC = () => {
         // Handle backend-reported failures
         if (status.status === 'failed') {
           if (statusPollingRef.current) clearInterval(statusPollingRef.current);
+          if (wsRef.current) wsRef.current.close();
           setSession((prev) => ({
             ...prev,
             status: 'FAILED',
@@ -125,7 +184,6 @@ export const AICalling: React.FC = () => {
             transcript: status.transcript
               .filter(t => t && t.speaker && t.text)
               .map(t => {
-                // Convert unix timestamp to "MM:SS" string expected by TranscriptItem
                 const totalSecs = Math.floor((t.timestamp ?? 0));
                 const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
                 const secs = (totalSecs % 60).toString().padStart(2, '0');
@@ -133,7 +191,7 @@ export const AICalling: React.FC = () => {
                 return {
                   id: `${t.speaker}-${t.timestamp ?? Date.now()}`,
                   speaker: speakerRole,
-                  speakerName: speakerRole === 'ai_agent' ? 'AI Agent' : 'You',
+                  speakerName: speakerRole === 'ai_agent' ? 'Vidur AI Agent' : 'You (Customer) · Live Mic',
                   text: t.text,
                   timestamp: `${mins}:${secs}`,
                   isFinal: true,
@@ -150,6 +208,7 @@ export const AICalling: React.FC = () => {
         // Check if call ended cleanly
         if (status.status === 'completed') {
           if (statusPollingRef.current) clearInterval(statusPollingRef.current);
+          if (wsRef.current) wsRef.current.close();
           setSession((prev) => ({
             ...prev,
             status: 'COMPLETED',
@@ -160,7 +219,7 @@ export const AICalling: React.FC = () => {
       } catch (error) {
         console.error('Failed to poll status:', error);
       }
-    }, 2000);
+    }, 700);
   }, []);
 
   const safeTimeout = useCallback((fn: () => void, ms: number) => {
@@ -187,12 +246,18 @@ export const AICalling: React.FC = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (statusPollingRef.current) clearInterval(statusPollingRef.current);
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
       clearAllTimeouts();
     };
   }, [clearAllTimeouts]);
 
   useEffect(() => {
     if (session.status !== 'LIVE') return;
+    // When real mic/speaker voice call is active with the backend, do NOT inject mock script steps!
+    if (isRealVoiceCall) return;
 
     const nextStep = scriptSteps.find((s) => s.stepIndex === stepIndexRef.current + 1);
 
@@ -623,6 +688,26 @@ export const AICalling: React.FC = () => {
       {/* 6. LIVE AND PAUSED STATES - Cleaner layout */}
       {(session.status === 'LIVE' || session.status === 'PAUSED') && (
         <div className="space-y-4 animate-in fade-in duration-300">
+          {isRealVoiceCall && (
+            <div className="p-3 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span className="text-xs font-semibold text-foreground">
+                  Hackathon Live Demo: <strong className="text-primary">You are the Customer</strong>
+                </span>
+                <span className="text-[11px] text-foreground-secondary hidden sm:inline">
+                  • Speak into your microphone to converse with Vidur AI. Speech-to-text and LLM answers stream below.
+                </span>
+              </div>
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-surface-elevated text-signal-qualified border border-signal-qualified/30 font-bold shrink-0">
+                MIC ACTIVE
+              </span>
+            </div>
+          )}
+
           <CallHeader session={session} formatDuration={formatDuration} />
           <CallWaveform status={session.audioStatus} isMuted={session.isMuted} />
 

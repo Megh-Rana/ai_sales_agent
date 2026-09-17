@@ -268,3 +268,41 @@
   }
 }
 
+/* ==========================================================================
+   BUTTON ACCESSIBILITY & CONTRAST SAFEGUARDS
+   Ensures no blue or dark button ever renders unreadable muted/gray text.
+   ========================================================================== */
+button,
+[role="button"],
+.btn {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Any button with a blue, sky, indigo, or dark elevated background */
+button[class*="bg-[#1A202C]"],
+button[class*="bg-[#1E293B]"],
+button[class*="bg-blue-600"],
+button[class*="bg-blue-700"],
+button[class*="bg-blue-500"],
+button[class*="bg-primary"],
+a[class*="bg-[#1A202C]"],
+a[class*="bg-blue-600"] {
+  color: #FFFFFF !important;
+}
+
+button[class*="bg-[#1A202C]"] svg,
+button[class*="bg-[#1E293B]"] svg,
+button[class*="bg-blue-600"] svg,
+button[class*="bg-primary"] svg {
+  color: inherit !important;
+}
+
+/* Muted text should not apply inside high-contrast primary or colored buttons */
+button.bg-primary .text-foreground-secondary,
+button.bg-primary .text-foreground-tertiary,
+button[class*="bg-blue"] .text-foreground-secondary,
+button[class*="bg-blue"] .text-slate-400 {
+  color: #FFFFFF !important;
+}
+
+

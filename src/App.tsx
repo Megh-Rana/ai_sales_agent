@@ -22,6 +22,7 @@ import { SalesCopilot } from './pages/SalesCopilot';
 import { RevenueCommandCenter } from './pages/RevenueCommandCenter';
 import { DesignSystemShowcase } from './pages/DesignSystemShowcase';
 import { Toaster } from 'sonner';
+import { PWAInstallBanner } from './components/pwa/PWAInstallBanner';
 
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 
@@ -32,6 +33,7 @@ function AppContent() {
   return (
     <BrowserRouter>
       <Toaster richColors position="bottom-right" theme={theme} closeButton />
+      <PWAInstallBanner />
       <Routes>
         {/* PUBLIC ROUTES */}
         <Route path="/" element={<LandingPage />} />

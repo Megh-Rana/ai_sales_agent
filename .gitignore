@@ -66,11 +66,13 @@ backend/env/
 backend/.env
 
 # Python cache
-backend/__pycache__/
-backend/*.py[cod]
-backend/*$py.class
-backend/.pytest_cache/
-backend/.coverage
+**/__pycache__/
+*.py[cod]
+*$py.class
+**/.pytest_cache/
+.pytest_cache/
+*.coverage
+.coverage
 
 # Python distribution / packaging
 backend/*.egg-info/

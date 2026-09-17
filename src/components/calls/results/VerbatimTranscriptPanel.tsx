@@ -118,7 +118,7 @@ export const VerbatimTranscriptPanel: React.FC<VerbatimTranscriptPanelProps> = (
           {/* Copy Full Transcript */}
           <button
             onClick={handleCopyFullTranscript}
-            className="p-1.5 rounded-md bg-[#1A202C] hover:bg-[#252D3D] text-slate-400 hover:text-white border border-[#2D3748] transition-colors"
+            className="p-1.5 rounded-md bg-[#1A202C] hover:bg-[#252D3D] text-slate-200 hover:text-white border border-[#3B4861] transition-colors"
             title="Copy entire transcript"
           >
             {copiedAll ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -127,7 +127,7 @@ export const VerbatimTranscriptPanel: React.FC<VerbatimTranscriptPanelProps> = (
           {/* Collapse/Expand toggle */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1.5 rounded-md bg-[#1A202C] hover:bg-[#252D3D] text-slate-400 hover:text-white border border-[#2D3748] transition-colors"
+            className="p-1.5 rounded-md bg-[#1A202C] hover:bg-[#252D3D] text-slate-200 hover:text-white border border-[#3B4861] transition-colors"
             title={isExpanded ? 'Collapse transcript' : 'Expand transcript'}
           >
             {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
