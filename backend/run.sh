@@ -18,6 +18,11 @@ export LD_LIBRARY_PATH="$NVIDIA_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 # Activate venv
 source "$VENV_DIR/bin/activate"
 
-# Run the agent
+# Run the agent (default to api_server.py for full service, or main.py if --cli is passed)
 cd "$SCRIPT_DIR"
-python main.py "$@"
+if [ "$1" == "--cli" ]; then
+    shift
+    python main.py "$@"
+else
+    python api_server.py "$@"
+fi

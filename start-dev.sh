@@ -1,317 +1,199 @@
 #!/bin/bash
 
-# AI Sales Frontend + Backend - Auto-Setup & Development Server Launcher
-# This script automatically installs all dependencies and starts both servers
+# ==============================================================================
+# 🚀 VIDUR | B2B AI SALES OPERATING SYSTEM - UNIFIED SERVICE LAUNCHER
+# Launches all services at once: Backend Voice Agent, CRM API & Frontend UI
+# ==============================================================================
 
-set -e  # Exit on error
-set -x  # Print each command before executing (verbose mode)
+set -e
 
-echo "🚀 AI Sales Voice Agent - Development Environment Setup"
-echo "========================================================"
-
-# Colors for output
+# Color definitions
 GREEN='\033[0;32m'
+CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+BOLD='\033[1m'
 NC='\033[0m' # No Color
 
-# Function to print colored output
-print_status() {
-    echo -e "${GREEN}✓${NC} $1"
-}
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_DIR="$ROOT_DIR/backend"
+VENV_PYTHON="$BACKEND_DIR/venv/bin/python"
 
-print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
-}
+print_status()  { echo -e "  ${GREEN}✓${NC} $1"; }
+print_warning() { echo -e "  ${YELLOW}⚠${NC} $1"; }
+print_error()   { echo -e "  ${RED}✗${NC} $1"; }
+print_info()    { echo -e "  ${CYAN}ℹ${NC} $1"; }
 
-print_error() {
-    echo -e "${RED}✗${NC} $1"
-}
+PIDS=()
 
-print_info() {
-    echo -e "${BLUE}ℹ${NC} $1"
-}
-
-# Function to handle cleanup
 cleanup() {
-    echo -e "\n\n${RED}🛑 Shutting down servers...${NC}"
+    echo -e "\n\n${RED}🛑 Stopping all Vidur services...${NC}"
+    for pid in "${PIDS[@]}"; do
+        if kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null || true
+        fi
+    done
     kill $(jobs -p) 2>/dev/null || true
-    exit
+    echo -e "${GREEN}✓ All services stopped cleanly.${NC}"
+    exit 0
 }
 
-trap cleanup INT TERM
+trap cleanup INT TERM EXIT
 
-# ============================================================
-# 1. CHECK PREREQUISITES
-# ============================================================
+echo ""
+echo -e "${PURPLE}${BOLD}╔══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${PURPLE}${BOLD}║       🎙️  VIDUR AI SALES OPERATING SYSTEM LAUNCHER           ║${NC}"
+echo -e "${PURPLE}${BOLD}║       Autonomous Voice Calling • Local CRM • PWA Ready       ║${NC}"
+echo -e "${PURPLE}${BOLD}╚══════════════════════════════════════════════════════════════╝${NC}"
+echo ""
 
-echo -e "\n${BLUE}[1/6] Checking Prerequisites...${NC}"
-
-# Check Python
-if ! command -v python3 &> /dev/null; then
-    print_error "Python 3 is not installed. Please install Python 3.10+"
-    exit 1
-fi
-PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
-print_status "Python ${PYTHON_VERSION} found"
+# ==============================================================================
+# 1. PREREQUISITE & ENVIRONMENT CHECKS
+# ==============================================================================
+echo -e "${BLUE}[1/4] Checking Environments & Dependencies...${NC}"
 
 # Check Node.js
 if ! command -v node &> /dev/null; then
     print_error "Node.js is not installed. Please install Node.js 18+"
     exit 1
 fi
-NODE_VERSION=$(node --version)
-print_status "Node.js ${NODE_VERSION} found"
+print_status "Node.js $(node --version) found"
 
-# Check npm
-if ! command -v npm &> /dev/null; then
-    print_error "npm is not installed"
-    exit 1
+# Check Python in venv
+if [ ! -f "$VENV_PYTHON" ]; then
+    print_warning "Backend virtualenv not found at backend/venv. Creating..."
+    python3 -m venv "$BACKEND_DIR/venv"
+    "$VENV_PYTHON" -m pip install --upgrade pip
+    "$VENV_PYTHON" -m pip install -r "$BACKEND_DIR/requirements.txt"
 fi
-NPM_VERSION=$(npm --version)
-print_status "npm ${NPM_VERSION} found"
+print_status "Python virtualenv verified ($("$VENV_PYTHON" --version))"
 
-# Check Ollama
-if ! command -v ollama &> /dev/null; then
-    print_warning "Ollama not found. Install from: https://ollama.ai"
-    print_info "You need Ollama for the AI agent to work"
-else
-    print_status "Ollama found"
-    
-    # Check if Ollama is running
-    if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
-        print_status "Ollama is running"
-        
-        # Check if gemma3:4b is installed
-        if ollama list | grep -q "gemma3:4b"; then
-            print_status "gemma3:4b model is installed"
-        else
-            print_warning "gemma3:4b model not found"
-            print_info "Pulling gemma3:4b model... (this may take a few minutes)"
-            ollama pull gemma3:4b || print_warning "Failed to pull model. Run 'ollama pull gemma3:4b' manually"
+# Setup CUDA Library Paths for faster-whisper CTranslate2 (if available)
+SITE_PACKAGES="$BACKEND_DIR/venv/lib/python3.14/site-packages"
+NVIDIA_LIBS=""
+if [ -d "$SITE_PACKAGES/nvidia" ]; then
+    for dir in "$SITE_PACKAGES"/nvidia/*/lib; do
+        if [ -d "$dir" ]; then
+            NVIDIA_LIBS="$dir:$NVIDIA_LIBS"
         fi
-    else
-        print_warning "Ollama is not running. Starting it..."
-        print_info "Run 'ollama serve' in another terminal"
-    fi
+    done
 fi
+export LD_LIBRARY_PATH="$NVIDIA_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-# ============================================================
-# 2. SETUP BACKEND VIRTUAL ENVIRONMENT
-# ============================================================
-
-echo -e "\n${BLUE}[2/6] Setting up Backend Python Environment...${NC}"
-
-cd backend
-
-# Create venv if it doesn't exist
-if [ ! -d "venv" ]; then
-    print_info "Creating Python virtual environment..."
-    python3 -m venv venv
-    print_status "Virtual environment created"
-else
-    print_status "Virtual environment already exists"
-fi
-
-# Activate venv
-source venv/bin/activate
-
-# Mark deps as already installed since we copied the venv
-touch venv/.deps_installed 2>/dev/null || true
-
-# Check if dependencies are installed
-if [ ! -f "venv/.deps_installed" ]; then
-    print_info "Installing backend dependencies... (this may take a few minutes)"
-    
-    # Upgrade pip first
-    echo ">>> Upgrading pip..."
-    pip install --upgrade pip
-    
-    # Install dependencies
-    if [ -f "requirements.txt" ]; then
-        echo ">>> Installing from requirements.txt..."
-        pip install -r requirements.txt
-        print_status "Backend dependencies installed"
-        touch venv/.deps_installed
-    else
-        print_error "requirements.txt not found in backend/"
-        exit 1
-    fi
-else
-    print_status "Backend dependencies already installed"
-    echo "    (Delete backend/venv/.deps_installed to force reinstall)"
-fi
-
-# Setup .env file
-if [ ! -f ".env" ]; then
-    print_warning ".env file not found, creating from template..."
-    cat > .env << 'EOF'
-# Sarvam AI API Key for multilingual voice (EN/HI/GU/MR)
-# Get your key from: https://app.sarvam.ai/
-SARVAM_API_KEY=your_sarvam_api_key_here
-
-# Ollama Configuration (runs locally)
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=gemma3:4b
-
-# Voice Configuration
-TTS_GENDER=female
-
-# API Configuration
-API_PORT=8000
-DEBUG=true
-EOF
-    print_warning "Please edit backend/.env and add your SARVAM_API_KEY"
-    print_info "Get API key from: https://app.sarvam.ai/"
-else
-    print_status "Backend .env file exists"
-fi
-
-cd ..
-
-# ============================================================
-# 3. SETUP FRONTEND DEPENDENCIES
-# ============================================================
-
-echo -e "\n${BLUE}[3/6] Setting up Frontend Dependencies...${NC}"
-
-# Check if node_modules exists
-if [ ! -d "node_modules" ]; then
-    print_info "Installing frontend dependencies... (this may take a few minutes)"
-    echo ">>> Running npm install..."
+# Check Frontend node_modules
+if [ ! -d "$ROOT_DIR/node_modules" ]; then
+    print_info "Installing frontend npm dependencies..."
     npm install
-    print_status "Frontend dependencies installed"
+fi
+print_status "Frontend packages verified"
+
+# ==============================================================================
+# 2. LOCAL DATABASE VERIFICATION
+# ==============================================================================
+echo -e "\n${BLUE}[2/4] Verifying Local Database...${NC}"
+if [ ! -f "$BACKEND_DIR/sales_platform.db" ]; then
+    print_info "Initializing local SQLite database with demo data..."
+    (cd "$BACKEND_DIR" && "$VENV_PYTHON" seed.py)
+    print_status "Local database seeded successfully"
 else
-    print_status "Frontend dependencies already installed"
-    echo "    (Delete node_modules/ to force reinstall)"
+    print_status "Local database ready: $BACKEND_DIR/sales_platform.db"
 fi
 
-# Setup frontend .env
-if [ ! -f ".env" ]; then
-    print_info "Creating frontend .env file..."
-    cat > .env << 'EOF'
-# Backend API URL
-VITE_API_URL=http://localhost:8000
+# ==============================================================================
+# 3. START BACKEND SERVICES (Voice Engine, CRM API, WebSocket)
+# ==============================================================================
+echo -e "\n${BLUE}[3/4] Launching Backend Services on port 8000...${NC}"
 
-# App Configuration
-VITE_APP_NAME=AI Sales Voice Agent
-VITE_APP_VERSION=1.0.0
-EOF
-    print_status "Frontend .env created"
-else
-    print_status "Frontend .env file exists"
-fi
+# Kill any lingering process on port 8000 if present
+fuser -k 8000/tcp 2>/dev/null || true
 
-# ============================================================
-# 4. VERIFY CONFIGURATION
-# ============================================================
-
-echo -e "\n${BLUE}[4/6] Verifying Configuration...${NC}"
-
-# Check if Sarvam API key is configured
-if grep -q "your_sarvam_api_key_here" backend/.env; then
-    print_warning "Sarvam API key not configured in backend/.env"
-    print_info "Voice calls will work but only in English without Sarvam"
-    print_info "Get your key from: https://app.sarvam.ai/"
-else
-    print_status "Sarvam API key is configured"
-fi
-
-# Check audio system (Linux specific)
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    if ! dpkg -l | grep -q portaudio19-dev; then
-        print_warning "portaudio19-dev not detected (needed for microphone)"
-        print_info "Install with: sudo apt install portaudio19-dev python3-pyaudio"
-    else
-        print_status "Audio libraries detected"
-    fi
-fi
-
-# ============================================================
-# 5. START BACKEND SERVER
-# ============================================================
-
-echo -e "\n${BLUE}[5/6] Starting Backend API Server...${NC}"
-
-cd backend
-source venv/bin/activate
-
-# Start backend in background
-python api_server.py &
+cd "$BACKEND_DIR"
+"$VENV_PYTHON" api_server.py > /dev/null 2>&1 &
 BACKEND_PID=$!
+PIDS+=($BACKEND_PID)
+cd "$ROOT_DIR"
 
-# Wait for backend to start
-print_info "Waiting for backend to initialize..."
+# Wait for backend health check
+print_info "Waiting for Backend API to be ready..."
 for i in {1..30}; do
     if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-        print_status "Backend is running at http://localhost:8000"
+        print_status "Backend API & Voice Agent online at http://localhost:8000"
         break
     fi
-    if [ $i -eq 30 ]; then
-        print_error "Backend failed to start after 30 seconds"
-        kill $BACKEND_PID 2>/dev/null || true
+    if [ "$i" -eq 30 ]; then
+        print_error "Backend failed to initialize. Check terminal logs."
         exit 1
     fi
-    sleep 1
+    sleep 0.5
 done
 
-cd ..
+# ==============================================================================
+# 4. START FRONTEND APPLICATION
+# ==============================================================================
+echo -e "\n${BLUE}[4/4] Launching Frontend Development Server...${NC}"
 
-# ============================================================
-# 6. START FRONTEND SERVER
-# ============================================================
+# Clear any dead process on ports 3000 & 5173
+fuser -k 3000/tcp 2>/dev/null || true
+fuser -k 5173/tcp 2>/dev/null || true
 
-echo -e "\n${BLUE}[6/6] Starting Frontend Development Server...${NC}"
-
-npm run dev &
+npm run dev -- --host > /dev/null 2>&1 &
 FRONTEND_PID=$!
+PIDS+=($FRONTEND_PID)
 
-# Wait for frontend to start
-print_info "Waiting for frontend to initialize..."
-sleep 3
+# Dynamically determine the active frontend port
+FRONTEND_PORT=3000
+print_info "Waiting for Frontend to be ready..."
+for i in {1..25}; do
+    if curl -s http://localhost:3000 > /dev/null 2>&1; then
+        FRONTEND_PORT=3000
+        print_status "Frontend server ready on port 3000"
+        break
+    elif curl -s http://localhost:5173 > /dev/null 2>&1; then
+        FRONTEND_PORT=5173
+        print_status "Frontend server ready on port 5173"
+        break
+    elif curl -s http://localhost:3001 > /dev/null 2>&1; then
+        FRONTEND_PORT=3001
+        print_status "Frontend server ready on port 3001"
+        break
+    fi
+    sleep 0.5
+done
 
-# ============================================================
-# READY TO USE
-# ============================================================
+# ==============================================================================
+# 🎉 SYSTEM READY - SHOW URLS
+# ==============================================================================
 
 echo ""
-echo "╔════════════════════════════════════════════════════════════╗"
-echo "║                                                            ║"
-echo "║   ✅  AI SALES VOICE AGENT - READY TO USE                 ║"
-echo "║                                                            ║"
-echo "╚════════════════════════════════════════════════════════════╝"
+echo -e "${GREEN}${BOLD}================================================================${NC}"
+echo -e "${GREEN}${BOLD}  ✨ ALL VIDUR SERVICES ARE RUNNING AND READY FOR USE!          ${NC}"
+echo -e "${GREEN}${BOLD}================================================================${NC}"
 echo ""
-echo "  🎨 Frontend:      http://localhost:5173"
-echo "  📡 Backend API:   http://localhost:8000"
-echo "  📚 API Docs:      http://localhost:8000/docs"
-echo "  🔍 Health Check:  http://localhost:8000/health"
+echo -e "  ${CYAN}${BOLD}👉 FRONTEND APPLICATION URL:${NC}  ${BOLD}${GREEN}http://localhost:${FRONTEND_PORT}${NC}"
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo -e "  📡 Backend API Server:     ${CYAN}http://localhost:8000${NC}"
+echo -e "  📚 Interactive API Docs:   ${CYAN}http://localhost:8000/docs${NC}"
+echo -e "  🩺 Health Telemetry:       ${CYAN}http://localhost:8000/health${NC}"
+echo -e "  💾 Database Mode:          ${CYAN}Local SQLite (100% Offline / Zero Cloud)${NC}"
 echo ""
-echo "  📖 HOW TO USE:"
+echo -e "  ${YELLOW}💡 QUICK DEMO INSTRUCTIONS:${NC}"
+echo -e "  1. Click or open: ${BOLD}http://localhost:${FRONTEND_PORT}${NC}"
+echo -e "  2. Go to ${BOLD}AI Calling${NC} or click 'AI Call' on any pre-seeded Lead"
+echo -e "  3. Click 'Start AI Call' → Microphone activates"
+echo -e "  4. ${BOLD}You act as the Customer!${NC} Speak into your mic to test real voice"
+echo -e "  5. Real-time STT and LLM speech stream live into the transcript"
+echo -e "  6. Click 'Export PDF' on any completed call or analytics view"
 echo ""
-echo "  1. Open http://localhost:5173 in your browser"
-echo "  2. Go to Dashboard → Lead Discovery"
-echo "  3. Click 'AI Call' on any lead"
-echo "  4. Click 'Start Call' to load AI models"
-echo "  5. Click 'Launch' to begin REAL voice conversation"
-echo "  6. Speak into your microphone - you're the customer!"
-echo "  7. AI responds through your speakers"
+echo -e "${GREEN}${BOLD}================================================================${NC}"
+echo -e "  ${YELLOW}Press Ctrl+C to gracefully stop all services.${NC}"
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "  ⚠️  IMPORTANT:"
-echo ""
-echo "  • Make sure your microphone is working"
-echo "  • Grant browser microphone permissions if asked"
-echo "  • Ollama must be running (ollama serve)"
-echo "  • For multilingual voice, configure Sarvam API key in backend/.env"
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "  🛑 Press Ctrl+C to stop both servers"
-echo ""
+
+# Optional browser auto-open if --open is passed
+if [[ "$*" == *"--open"* ]]; then
+    xdg-open "http://localhost:${FRONTEND_PORT}" 2>/dev/null || true
+fi
 
 # Wait for processes
 wait
