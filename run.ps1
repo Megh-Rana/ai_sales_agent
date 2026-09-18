@@ -34,12 +34,23 @@ if (-not (Test-Path -Path "node_modules")) {
     Write-Host "[*] Dependencies already installed." -ForegroundColor Green
 }
 
-# 3. Open browser
+# 3. Check and Start Backend Voice API (Port 8000)
+Write-Host "[*] Checking Python and Backend Voice API..." -ForegroundColor Yellow
+$backendConn = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue
+if (-not $backendConn) {
+    Write-Host "[*] Starting Python Voice Agent API Server on http://localhost:8000..." -ForegroundColor Green
+    Start-Process -FilePath "python" -ArgumentList "backend\api_server.py" -WindowStyle Minimized
+    Start-Sleep -Seconds 2
+} else {
+    Write-Host "[*] Backend Voice API already running on port 8000." -ForegroundColor Green
+}
+
+# 4. Open browser
 Write-Host ""
 Write-Host "[*] Opening application in browser (http://localhost:3000)..." -ForegroundColor Cyan
 Start-Process "http://localhost:3000"
 
-# 4. Start Vite Dev Server
+# 5. Start Vite Dev Server
 Write-Host "[*] Starting Vite development server..." -ForegroundColor Green
 Write-Host "    Press Ctrl+C to stop the server." -ForegroundColor Gray
 Write-Host "===================================================" -ForegroundColor Cyan

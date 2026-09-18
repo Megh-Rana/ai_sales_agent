@@ -9,7 +9,7 @@ export interface LeadBuyingSignal {
 }
 
 export interface LeadSignalSource {
-  platform: 'IndiaMART' | 'LinkedIn' | 'G2 Crowd' | 'RFP Portal' | 'TechStack' | 'Job Board' | 'Crunchbase';
+  platform: 'IndiaMART' | 'LinkedIn' | 'G2 Crowd' | 'RFP Portal' | 'TechStack' | 'Job Board' | 'Crunchbase' | 'Company Website';
   originalRequirement: string;
   sourceUrl: string;
   discoveredAt: string;

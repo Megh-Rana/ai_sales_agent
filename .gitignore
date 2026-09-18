@@ -53,10 +53,21 @@ dist-ssr/
 
 # Environment variables
 .env
+.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
+backend/.env.*
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+backend/*.db
+backend/*.sqlite
+
 
 # ─── Backend Python ──────────────────────────────────────────
 # Python virtual environments
@@ -94,3 +105,8 @@ backend/samples/
 
 # PyCharm
 backend/.idea/
+
+# Scratch & QA Test Logs
+scratch/
+*_results.json
+*_report.json

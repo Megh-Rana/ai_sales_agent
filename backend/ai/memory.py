@@ -68,7 +68,7 @@ class ConversationMemory:
             if turn.role == "agent":
                 messages.append({"role": "assistant", "content": turn.text})
             else:
-                messages.append({"role": "user", "content": turn.text})
+                messages.append({"role": "user", "content": f"<prospect_speech>\n{turn.text}\n</prospect_speech>"})
         return messages
 
     def get_context_string(self, max_turns: int = 10) -> str:

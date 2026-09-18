@@ -38,12 +38,17 @@ if not exist "node_modules\" (
     echo [*] Dependencies already installed.
 )
 
-:: 3. Launch browser in the background
+:: 3. Launch Backend Voice API Server (Port 8000)
+echo [*] Starting Backend Voice Agent API on port 8000...
+start "Vidur Backend Voice API" /min cmd /c "python backend\api_server.py"
+timeout /t 2 /nobreak >nul
+
+:: 4. Launch browser in the background
 echo.
 echo [*] Opening application in browser (http://localhost:3000)...
 start "" "http://localhost:3000"
 
-:: 4. Start Vite development server
+:: 5. Start Vite development server
 echo [*] Starting Vite development server...
 echo     Press Ctrl+C to stop the server anytime.
 echo.
@@ -55,3 +60,4 @@ if %errorlevel% neq 0 (
     echo [!] Vite server exited with error code %errorlevel%.
     pause
 )
+

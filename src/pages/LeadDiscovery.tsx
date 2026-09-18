@@ -1,7 +1,10 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Layers, CheckCircle2 } from 'lucide-react';
 import { DiscoveredLead, DiscoveryFilterState } from '../types/leads';
-import { mockDiscoveredLeads } from '../data/leads';
+import { mockDiscoveredLeads, getDiscoveredLeads, saveDiscoveredLeads, registerDiscoveredLead } from '../data/leads';
+import { leadDiscoveryService } from '../services/leadService';
 import { DiscoveryHeader } from '../components/leads/DiscoveryHeader';
 import { DiscoveryControls } from '../components/leads/DiscoveryControls';
 import { DiscoveryFilterDrawer } from '../components/leads/DiscoveryFilterDrawer';
@@ -41,8 +44,11 @@ function parseContractValue(val: string): number {
 }
 
 export const LeadDiscovery: React.FC = () => {
+  const navigate = useNavigate();
+
   // State
   const [filters, setFilters] = useState<DiscoveryFilterState>(initialFilters);
+  const [allLeads, setAllLeads] = useState<DiscoveredLead[]>(() => getDiscoveredLeads());
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -90,11 +96,45 @@ export const LeadDiscovery: React.FC = () => {
     });
   };
 
-  // Telemetry Scan simulation
-  const triggerScan = useCallback(() => {
+  // Autonomous Telemetry & Website Lead Scan
+  const triggerScan = useCallback(async () => {
     setIsScanning(true);
     setIsError(false);
-  }, []);
+
+    try {
+      const discovered = await leadDiscoveryService.discoverLeads({
+        query: filters.query,
+        limit: 6,
+      });
+
+      if (discovered && discovered.length > 0) {
+        setAllLeads((prev) => {
+          const existingIds = new Set(prev.map((l) => l.id.toLowerCase()));
+          const newUnique = discovered.filter((l) => !existingIds.has(l.id.toLowerCase()));
+          const updated = [...newUnique, ...prev];
+          saveDiscoveredLeads(updated);
+          return updated;
+        });
+
+        discovered.forEach(registerDiscoveredLead);
+
+        const targetDesc = filters.query.trim()
+          ? `Extracted intelligence from web sources for: "${filters.query}"`
+          : 'Scanned live telemetry streams and synthesized high-intent leads.';
+
+        toast.success(`Discovered ${discovered.length} commercial leads!`, {
+          description: targetDesc,
+          duration: 4500,
+        });
+      }
+    } catch (err: any) {
+      console.error('Lead discovery scan error:', err);
+      setIsError(true);
+      toast.error('Discovery scan interrupted', {
+        description: err?.message || 'Unable to reach discovery pipeline.',
+      });
+    }
+  }, [filters.query]);
 
   const handleScanComplete = () => {
     setIsScanning(false);
@@ -102,12 +142,13 @@ export const LeadDiscovery: React.FC = () => {
 
   // Filter & Sort Logic
   const filteredLeads = useMemo(() => {
-    return mockDiscoveredLeads.filter((lead: DiscoveredLead) => {
+    return allLeads.filter((lead: DiscoveredLead) => {
       // 1. Text Query Filter
       if (filters.query.trim()) {
         const q = filters.query.toLowerCase();
         const matchesQuery =
           lead.companyName.toLowerCase().includes(q) ||
+          (lead.companyDomain && lead.companyDomain.toLowerCase().includes(q)) ||
           lead.requirement.toLowerCase().includes(q) ||
           (lead.detailedPain && lead.detailedPain.toLowerCase().includes(q)) ||
           lead.industry.toLowerCase().includes(q) ||
@@ -205,16 +246,20 @@ export const LeadDiscovery: React.FC = () => {
 
   // Actions
   const handleInitiateCall = (lead: DiscoveredLead) => {
+    registerDiscoveredLead(lead);
     const contactName = lead.decisionMakerContact?.name || lead.companyName;
-    showFeedback(`Initiating AI outbound call sequence for ${contactName} at ${lead.companyName}...`);
+    toast.info(`Launching voice workspace for ${contactName} at ${lead.companyName}...`);
+    navigate(`/calls/${lead.id}?leadId=${lead.id}`);
   };
 
   const handleAddToPipeline = (lead: DiscoveredLead) => {
+    registerDiscoveredLead(lead);
     showFeedback(`Opportunity "${lead.companyName}" added to active pipeline.`);
+    toast.success(`"${lead.companyName}" added to active pipeline`);
   };
 
   const handleCallFromCard = (leadId: string) => {
-    const targetLead = mockDiscoveredLeads.find((l) => l.id === leadId);
+    const targetLead = allLeads.find((l) => l.id === leadId) || mockDiscoveredLeads.find((l) => l.id === leadId);
     if (targetLead) {
       handleInitiateCall(targetLead);
     }

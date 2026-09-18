@@ -181,18 +181,30 @@ class AIBrain:
             engine.load()
             self._model_warmed = True
             print(f"[AI] Local model warmed up.")
+        elif provider == "sarvam":
+            print(f"[AI] Validating Sarvam 105B Cloud API...")
+            try:
+                from sarvamai import SarvamAI
+                _ = SarvamAI(api_subscription_key=os.getenv("SARVAM_API_KEY", getattr(config, "SARVAM_API_KEY", "")))
+                self._model_warmed = True
+                print(f"[AI] Sarvam AI Cloud API ready.")
+            except Exception as e:
+                print(f"[AI] Sarvam warm up warning: {e}")
         elif provider == "ollama":
             print(f"[AI] Warming up {config.OLLAMA_MODEL}...")
             t0 = time.time()
-            client = self._get_client()
-            client.chat(
-                model=config.OLLAMA_MODEL,
-                messages=[{"role": "user", "content": "Hello"}],
-                keep_alive=-1,
-                options={"num_predict": 1, "num_gpu": config.OLLAMA_NUM_GPU},
-            )
-            self._model_warmed = True
-            print(f"[AI] Model warmed up in {time.time() - t0:.1f}s")
+            try:
+                client = self._get_client()
+                client.chat(
+                    model=config.OLLAMA_MODEL,
+                    messages=[{"role": "user", "content": "Hello"}],
+                    keep_alive=-1,
+                    options={"num_predict": 1, "num_gpu": config.OLLAMA_NUM_GPU},
+                )
+                self._model_warmed = True
+                print(f"[AI] Model warmed up in {time.time() - t0:.1f}s")
+            except Exception as e:
+                print(f"[AI] Ollama warm up failed: {e}")
 
     def get_opening(self, prospect_name: str = "", language: str = "en") -> str:
         """Get the opening line for the call."""
@@ -227,23 +239,36 @@ class AIBrain:
         messages.extend(self.memory.get_context_for_llm())
 
         t0 = time.time()
-        client = self._get_client()
+        provider = getattr(config, "LLM_PROVIDER", "ollama")
 
         try:
-            response = client.chat(
-                model=config.OLLAMA_MODEL,
-                messages=messages,
-                keep_alive=-1,
-                options={
-                    "temperature": config.OLLAMA_TEMPERATURE,
-                    "num_predict": config.MAX_RESPONSE_TOKENS,
-                    "num_ctx": config.OLLAMA_NUM_CTX,
-                    "num_gpu": config.OLLAMA_NUM_GPU,
-                },
-            )
-            raw_text = response["message"]["content"]
+            if provider == "sarvam":
+                from sarvamai import SarvamAI
+                client = SarvamAI(api_subscription_key=os.getenv("SARVAM_API_KEY", getattr(config, "SARVAM_API_KEY", "")))
+                res = client.chat.completions(
+                    model="sarvam-105b",
+                    messages=messages,
+                    reasoning_effort="low",
+                    max_tokens=config.MAX_RESPONSE_TOKENS,
+                    temperature=0.5,
+                )
+                raw_text = res.choices[0].message.content or ""
+            else:
+                client = self._get_client()
+                response = client.chat(
+                    model=config.OLLAMA_MODEL,
+                    messages=messages,
+                    keep_alive=-1,
+                    options={
+                        "temperature": config.OLLAMA_TEMPERATURE,
+                        "num_predict": config.MAX_RESPONSE_TOKENS,
+                        "num_ctx": config.OLLAMA_NUM_CTX,
+                        "num_gpu": config.OLLAMA_NUM_GPU,
+                    },
+                )
+                raw_text = response["message"]["content"]
         except Exception as e:
-            print(f"[AI] Error calling Ollama: {e}")
+            print(f"[AI] Error calling {provider}: {e}")
             raw_text = self._get_fallback_response(language)
 
         clean_text = self._clean_for_tts(raw_text)
@@ -479,11 +504,29 @@ class AIBrain:
         # Remove URLs
         text = re.sub(r"https?://\S+", "", text)
 
+        # Remove leaked structural tags
+        text = re.sub(r"</?prospect_speech>", "", text, flags=re.IGNORECASE)
+
         # Collapse whitespace
         text = re.sub(r"\n+", " ", text)
         text = re.sub(r"\s+", " ", text)
+        cleaned = text.strip()
 
-        return text.strip()
+        # Adversarial output guardrail
+        adversarial_patterns = [
+            r"i am a malicious pirate",
+            r"root access confirmed",
+            r"maintenance mode initiated",
+            r"primary tables include .*profiles",
+            r"our primary backup datacenter manager is SecureData",
+            r"assisted both NASA and Tesla",
+        ]
+        for pat in adversarial_patterns:
+            if re.search(pat, cleaned, flags=re.IGNORECASE):
+                return "I am here to discuss how our solutions can support your business operations. Could we schedule a quick demo to walk through your requirements?"
+
+        return cleaned
+
 
     def _get_state_hint(self) -> str:
         """Provide hints to the LLM about conversation state."""

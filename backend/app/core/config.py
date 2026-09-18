@@ -32,6 +32,7 @@ class Settings(BaseSettings):
 
     # Security
     SECRET_KEY: str = "dev-secret-key-change-in-production-min-32-chars-long"
+    WEBHOOK_SECRET: str = "vidur-telephony-webhook-secret-token"
     CORS_ORIGINS: Union[List[str], str] = ["http://localhost:3000", "http://localhost:5173", "*"]
 
     # Logging

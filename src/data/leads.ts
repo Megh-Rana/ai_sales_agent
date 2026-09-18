@@ -873,14 +873,58 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
   },
 ];
 
+let inMemoryDiscoveredLeads: DiscoveredLead[] = [];
+
+export function getDiscoveredLeads(): DiscoveredLead[] {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('vidur_discovered_leads') : null;
+    if (raw) {
+      const parsed: DiscoveredLead[] = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const existingIds = new Set(mockDiscoveredLeads.map((l) => l.id.toLowerCase()));
+        const uniqueDynamic = parsed.filter((l) => !existingIds.has(l.id.toLowerCase()));
+        return [...uniqueDynamic, ...mockDiscoveredLeads];
+      }
+    }
+  } catch (e) {
+    console.error('Failed to parse vidur_discovered_leads:', e);
+  }
+  return [...inMemoryDiscoveredLeads, ...mockDiscoveredLeads];
+}
+
+export function saveDiscoveredLeads(leads: DiscoveredLead[]): void {
+  inMemoryDiscoveredLeads = leads;
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vidur_discovered_leads', JSON.stringify(leads));
+    }
+  } catch (e) {
+    console.error('Failed to save vidur_discovered_leads:', e);
+  }
+}
+
+export function registerDiscoveredLead(lead: DiscoveredLead): void {
+  const current = getDiscoveredLeads();
+  const exists = current.some((l) => l.id.toLowerCase() === lead.id.toLowerCase());
+  if (!exists) {
+    saveDiscoveredLeads([lead, ...current]);
+  }
+}
+
 export function getLeadDetails(rawLeadId: string | undefined): DiscoveredLead | null {
   if (!rawLeadId) return null;
   const leadId = rawLeadId.trim();
-  const baseLead = mockDiscoveredLeads.find(
+  const allLeads = getDiscoveredLeads();
+  const baseLead = allLeads.find(
     (l) => l.id.toLowerCase() === leadId.toLowerCase() || l.id.toLowerCase() === `lead-${leadId.toLowerCase()}`
   );
 
   if (!baseLead) return null;
+
+  // If already fully enriched (e.g. from website discovery), return directly
+  if (baseLead.companyIntelligence && baseLead.decisionMaker && baseLead.recommendedPitch) {
+    return baseLead;
+  }
 
   // Custom detailed data for flagship leads
   if (baseLead.id === 'lead-101') {

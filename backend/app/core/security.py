@@ -79,13 +79,6 @@ async def get_current_user(
     identifying the authenticated user and their UUID.
     """
     if not authorization:
-        settings = get_settings()
-        if settings.ENVIRONMENT == "development" or not settings.SUPABASE_JWT_SECRET:
-            return AuthenticatedUser(
-                id=UUID("00000000-0000-0000-0000-000000000001"),
-                email="demo-owner@cloudscale.example.internal",
-                role="authenticated",
-            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing Authorization header. Expected Bearer token.",

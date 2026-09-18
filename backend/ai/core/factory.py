@@ -51,9 +51,8 @@ def get_ai_provider(
     ).lower()
 
     if target_provider not in _PROVIDER_MAP:
-        raise ValueError(
-            f"Invalid AI provider '{target_provider}'. Supported providers are: {list(_PROVIDER_MAP.keys())}"
-        )
+        print(f"[Warning] AI provider '{target_provider}' not in supported providers {list(_PROVIDER_MAP.keys())}. Falling back to 'ollama'.")
+        target_provider = "ollama"
 
     provider_cls = _PROVIDER_MAP[target_provider]
     instance = provider_cls(model=model, **kwargs)

@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from ai.core.providers.base import BaseAIProvider
 from ai.core.providers.mock import MockProvider
+from ai.core.factory import get_ai_provider
 from evaluation.schemas import (
     EvaluationCase,
     EvaluationResult,
@@ -51,7 +52,7 @@ class EvaluationRunner:
     """
 
     def __init__(self, provider: Optional[BaseAIProvider] = None):
-        self.provider = provider or MockProvider()
+        self.provider = provider or get_ai_provider()
         self.lead_scoring_service = LeadScoringService()
 
     async def run_case(self, case: EvaluationCase) -> EvaluationResult:

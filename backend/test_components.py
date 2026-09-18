@@ -16,6 +16,14 @@ import sys
 import os
 import numpy as np
 
+# Ensure Windows terminal handles UTF-8 (emojis and Indic scripts) without UnicodeEncodeError
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
 

@@ -8,6 +8,7 @@ import {
   ArrowUpDown,
   Zap,
   Flame,
+  Globe,
 } from 'lucide-react';
 import { DiscoveryFilterState, SortOption } from '../../types/leads';
 import { Button } from '../ui/Button';
@@ -30,6 +31,14 @@ const PRESET_REQUIREMENTS = [
   'Pricing / Vendor RFP Issued',
   'Series-A/B GTM Expansion',
   'Patient Intake IVR Software',
+];
+
+const SUGGESTED_WEBSITES = [
+  'zomato.com',
+  'razorpay.com',
+  'shadowfax.in',
+  'delhivery.com',
+  'freshworks.com',
 ];
 
 const FRESHNESS_OPTIONS: { value: DiscoveryFilterState['freshness']; label: string }[] = [
@@ -101,8 +110,8 @@ export const DiscoveryControls: React.FC<DiscoveryControlsProps> = ({
           <input
             ref={searchInputRef}
             type="text"
-            aria-label="Search by buyer requirement or pain point"
-            placeholder="Search by buyer requirement or pain point (e.g. 'Looking for warehouse automation' or 'Replacing legacy telephony')..."
+            aria-label="Search by company website or buyer requirement"
+            placeholder="Enter company website URL (e.g. razorpay.com, logistics.in) or requirement keywords to discover live leads..."
             value={filters.query}
             onChange={(e) => onFilterChange({ query: e.target.value })}
             onKeyDown={(e) => {
@@ -146,29 +155,60 @@ export const DiscoveryControls: React.FC<DiscoveryControlsProps> = ({
         </Button>
       </div>
 
-      {/* Suggested Commercial Requirement Presets */}
-      <div className="flex flex-wrap items-center gap-1.5 text-xs">
-        <span className="text-[11px] font-mono text-foreground-tertiary flex items-center gap-1 mr-1">
-          <Zap className="w-3 h-3 text-signal-high" />
-          <span>Intent Triggers:</span>
-        </span>
-        {PRESET_REQUIREMENTS.map((preset) => {
-          const isSelected = filters.query.toLowerCase() === preset.toLowerCase();
-          return (
-            <button
-              key={preset}
-              type="button"
-              onClick={() => handleApplyPreset(preset)}
-              className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all ${
-                isSelected
-                  ? 'bg-primary-muted text-primary border-primary font-semibold shadow-2xs'
-                  : 'bg-surface-1 text-foreground-secondary border-border-subtle hover:border-border-default hover:text-foreground'
-              }`}
-            >
-              {preset}
-            </button>
-          );
-        })}
+      {/* Suggested Websites & Commercial Requirement Presets */}
+      <div className="flex flex-col gap-2">
+        {/* Quick Website Discovery Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-[11px] font-mono text-foreground-tertiary flex items-center gap-1 mr-1">
+            <Globe className="w-3 h-3 text-primary" />
+            <span>Discover Website:</span>
+          </span>
+          {SUGGESTED_WEBSITES.map((site) => {
+            const isSelected = filters.query.toLowerCase() === site.toLowerCase();
+            return (
+              <button
+                key={site}
+                type="button"
+                onClick={() => {
+                  onFilterChange({ query: site });
+                  setTimeout(() => onDiscover(), 50);
+                }}
+                className={`text-[11px] font-mono px-2 py-0.5 rounded-lg border transition-all ${
+                  isSelected
+                    ? 'bg-primary-muted text-primary border-primary font-semibold shadow-2xs'
+                    : 'bg-surface-1 text-foreground-secondary border-border-subtle hover:border-primary/50 hover:text-primary'
+                }`}
+              >
+                {site}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Intent Triggers Presets */}
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-[11px] font-mono text-foreground-tertiary flex items-center gap-1 mr-1">
+            <Zap className="w-3 h-3 text-signal-high" />
+            <span>Intent Triggers:</span>
+          </span>
+          {PRESET_REQUIREMENTS.map((preset) => {
+            const isSelected = filters.query.toLowerCase() === preset.toLowerCase();
+            return (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => handleApplyPreset(preset)}
+                className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all ${
+                  isSelected
+                    ? 'bg-primary-muted text-primary border-primary font-semibold shadow-2xs'
+                    : 'bg-surface-1 text-foreground-secondary border-border-subtle hover:border-border-default hover:text-foreground'
+                }`}
+              >
+                {preset}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Secondary Discovery Filter Controls Bar */}

@@ -5,6 +5,7 @@ import { RoutePlaceholder } from './pages/RoutePlaceholder';
 import { NotFound } from './pages/NotFound';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Dashboard } from './pages/Dashboard';
 import { BusinessOnboarding } from './pages/BusinessOnboarding';
 import { LeadDiscovery } from './pages/LeadDiscovery';
@@ -48,8 +49,9 @@ function AppContent() {
         <Route
           path="*"
           element={
-            <AppShell>
-              <Routes>
+            <ProtectedRoute>
+              <AppShell>
+                <Routes>
                 {/* Default Redirect */}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
@@ -191,7 +193,8 @@ function AppContent() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AppShell>
-          }
+          </ProtectedRoute>
+        }
         />
       </Routes>
     </BrowserRouter>

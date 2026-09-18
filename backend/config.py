@@ -1,15 +1,22 @@
 """
 Central configuration for the AI Sales Voice Agent pipeline.
-Tuned for RTX 5050 Laptop GPU (8GB VRAM).
 """
-
+import sys
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # loads .env from project root
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
-# ─── Paths ──────────────────────────────────────────────────────────
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(PROJECT_ROOT)
+load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
+load_dotenv(os.path.join(REPO_ROOT, ".env"))
+
 VOICE_PROFILES_DIR = os.path.join(PROJECT_ROOT, "voice_profiles")
 SAMPLES_DIR = os.path.join(PROJECT_ROOT, "samples")
 RECORDINGS_DIR = os.path.join(PROJECT_ROOT, "recordings")
@@ -59,17 +66,20 @@ SARVAM_LANG_MAP = {
 # LLM Provider options: "ollama" (Local Ollama gemma3:4b - superior local Hindi & English quality),
 #                       "sarvam" (Sarvam 105B Cloud API),
 #                       "param" (HF Param-1-7B 4-bit)
-LLM_PROVIDER = "ollama"
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
+AI_PROVIDER = os.getenv("AI_PROVIDER", "ollama")
 
 # Param-1-7B HuggingFace Model ID
 PARAM_MODEL_ID = "arunvenkat17/Param-1-7B-GodMode-4bit"
 
 # Ollama options
-OLLAMA_MODEL = "gemma3:4b"
-OLLAMA_HOST = "http://localhost:11434"
-OLLAMA_TEMPERATURE = 0.5
-OLLAMA_NUM_CTX = 2048        # Context window — 2K is plenty for short sales calls
-OLLAMA_NUM_GPU = 99          # All layers on GPU
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma3:4b")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.5"))
+OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "2048"))        # Context window — 2K is plenty for short sales calls
+# Set to 0 on Windows by default to avoid CUDA DLL stack buffer overrun (0xc0000409)
+OLLAMA_NUM_GPU = int(os.getenv("OLLAMA_NUM_GPU", "0"))
+
 
 # ─── Streaming Pipeline ──────────────────────────────────────────────
 # Enables LLM → TTS sentence-level streaming:

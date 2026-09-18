@@ -1,14 +1,17 @@
+import hmac
 import math
 from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from app.core.config import get_settings
 from app.core.security import AuthenticatedUser, get_current_user
 from app.db.database import get_db
 from app.schemas.call import CallCreate, CallResponse, CallUpdate
 from app.schemas.common import PaginatedResponse
 from app.schemas.webhook import CallWebhookPayload, CallWebhookResponse
 from app.services.call_service import CallService
+
 
 router = APIRouter(prefix="/calls", tags=["Calls"])
 
@@ -124,12 +127,21 @@ def update_call(
 def call_webhook(
     call_id: UUID,
     payload: CallWebhookPayload,
+    x_webhook_secret: Optional[str] = Header(None, alias="X-Webhook-Secret"),
     db: Session = Depends(get_db),
 ):
     """
     Receives voice provider telemetry events (e.g. call.started, call.completed).
-    Enforces webhook idempotency and state transition validation.
+    Enforces webhook authentication, idempotency and state transition validation.
     """
+    settings = get_settings()
+    expected_secret = getattr(settings, "WEBHOOK_SECRET", None) or settings.SECRET_KEY
+    if not x_webhook_secret or not hmac.compare_digest(x_webhook_secret, expected_secret):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized: Invalid or missing telephony webhook authentication secret.",
+        )
+
     try:
         return CallService.process_call_webhook(db, call_id, payload)
     except ValueError as e:
@@ -137,3 +149,4 @@ def call_webhook(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+

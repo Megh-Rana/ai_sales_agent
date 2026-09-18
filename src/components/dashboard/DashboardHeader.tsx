@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass } from 'lucide-react';
+import { Compass, Calendar } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { AnimatedBadge } from '../ui/21st';
@@ -61,6 +61,24 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               }`}
             >
               {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Date Range Selector Pill Buttons */}
+        <div className="flex items-center p-1 bg-surface-1 rounded-lg border border-border-subtle text-xs">
+          <Calendar className="w-3.5 h-3.5 mx-1.5 text-foreground-tertiary" />
+          {['Today', '7D', '30D', 'Quarter'].map((range, idx) => (
+            <button
+              key={range}
+              type="button"
+              className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                idx === 1
+                  ? 'bg-surface-elevated text-foreground font-semibold shadow-xs'
+                  : 'text-foreground-secondary hover:text-foreground'
+              }`}
+            >
+              {range}
             </button>
           ))}
         </div>

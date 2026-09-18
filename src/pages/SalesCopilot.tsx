@@ -118,7 +118,9 @@ export const SalesCopilot: React.FC = () => {
     }
   }, [leadId]);
 
-  const activeContext = getCopilotContextForLead(selectedLeadId) || contexts[0];
+  const activeContext = leadId
+    ? getCopilotContextForLead(leadId)
+    : (getCopilotContextForLead(selectedLeadId) || contexts[0]);
 
   const handleSelectLead = (newLeadId: string) => {
     setSelectedLeadId(newLeadId);
@@ -126,23 +128,25 @@ export const SalesCopilot: React.FC = () => {
   };
 
   const handleRecordOutcome = (targetLeadId: string, outcome: CopilotOutcomeType) => {
-    toast.success(`Updated conversation outcome record for ${activeContext.companyName}.`);
+    if (activeContext) {
+      toast.success(`Updated conversation outcome record for ${activeContext.companyName}.`);
+    }
   };
 
   if (!activeContext) {
     return (
-      <div className="min-h-screen bg-background text-foreground p-6 sm:p-8 text-center flex flex-col items-center justify-center">
+      <div className="min-h-[60vh] bg-background text-foreground p-6 sm:p-8 text-center flex flex-col items-center justify-center">
         <AlertTriangle className="w-10 h-10 text-amber-400 mb-3" />
-        <h2 className="text-xl sm:text-2xl font-bold mb-2">No Conversation Intelligence Context Found</h2>
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">No Context Found</h2>
         <p className="text-sm text-foreground-tertiary mt-1 max-w-md">
-          Select a valid lead or opportunity to launch Sales Copilot.
+          The requested lead was not found. Select a lead from your pipeline to launch Sales Copilot.
         </p>
         <button
           type="button"
-          onClick={() => navigate('/opportunities')}
-          className="mt-6 px-5 py-2.5 bg-amber-400 text-black font-semibold rounded-xl text-sm hover:bg-amber-300 transition-colors"
+          onClick={() => navigate('/leads/discover')}
+          className="mt-6 px-5 py-2.5 bg-primary text-white font-semibold rounded-xl text-sm hover:bg-primary-hover transition-colors"
         >
-          Return to Opportunity Radar
+          Select a lead
         </button>
       </div>
     );

@@ -39,13 +39,6 @@ active_sessions: Dict[str, Dict] = {}
 active_connections: Dict[str, List[WebSocket]] = {}
 main_loop: Optional[asyncio.AbstractEventLoop] = None
 
-# Mount CRM and Database API router from backend.zip
-try:
-    from app.api.api import api_router
-    app.include_router(api_router)
-except Exception as e:
-    print(f"[Warning] Failed to mount app.api.api_router: {e}")
-
 @app.on_event("startup")
 async def on_startup():
     global main_loop
@@ -77,7 +70,24 @@ class CallStartResponse(BaseModel):
     message: str
     instruction: str
 
-# ─── Health Check ──────────────────────────────────────────────────
+class CallMessageRequest(BaseModel):
+    sessionId: Optional[str] = None
+    message: str
+    language: Optional[str] = "en"
+
+class CallMessageResponse(BaseModel):
+    sessionId: str
+    response: str
+    language: str
+    timestamp: float
+
+class DiscoverLeadsRequest(BaseModel):
+    query: Optional[str] = ""
+    sources: Optional[List[str]] = []
+    industry: Optional[str] = None
+    limit: Optional[int] = 6
+
+# ─── Health Check & Discovery ──────────────────────────────────────
 @app.get("/")
 async def root():
     return {
@@ -90,6 +100,35 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy", "timestamp": time.time()}
+
+# ─── Website Lead Discovery ────────────────────────────────────────
+@app.post("/api/leads/discover")
+@app.post("/api/discover-leads")
+async def discover_leads_endpoint(req: DiscoverLeadsRequest):
+    """
+    Autonomous lead discovery from websites, domains, and requirement queries.
+    """
+    try:
+        from ai.services.website_discovery import discovery_service
+        leads = discovery_service.discover_leads(query=req.query or "", limit=req.limit or 6)
+        return {"leads": leads, "count": len(leads), "query": req.query}
+    except Exception as e:
+        print(f"[ERROR] Failed to discover leads: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to discover leads: {str(e)}")
+
+@app.get("/api/leads/discover")
+@app.get("/api/discover-leads")
+async def discover_leads_get_endpoint(query: Optional[str] = "", limit: Optional[int] = 6):
+    """
+    GET variant for lead discovery.
+    """
+    try:
+        from ai.services.website_discovery import discovery_service
+        leads = discovery_service.discover_leads(query=query or "", limit=limit or 6)
+        return {"leads": leads, "count": len(leads), "query": query}
+    except Exception as e:
+        print(f"[ERROR] Failed to discover leads: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to discover leads: {str(e)}")
 
 # ─── Real Voice Call Management ───────────────────────────────────
 @app.post("/api/call/start", response_model=CallStartResponse)
@@ -342,6 +381,69 @@ async def get_call_status(session_id: str):
         "contactName": session["contactName"]
     }
 
+@app.post("/api/call/{session_id}/message", response_model=CallMessageResponse)
+async def send_call_message(session_id: str, request: CallMessageRequest):
+    """
+    Send a customer/prospect message to the active voice/chat agent session and get an AI response.
+    """
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    session = active_sessions[session_id]
+    pipeline = session.get("pipeline")
+    if not pipeline:
+        raise HTTPException(status_code=500, detail="Pipeline not initialized for this session")
+
+    lang = request.language or session.get("language", "en")
+    user_text = request.message.strip()
+    if not user_text:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    now = time.time()
+    # Record prospect turn
+    prospect_item = {
+        "speaker": "prospect",
+        "text": user_text,
+        "timestamp": now,
+        "language": lang
+    }
+    session["transcript"].append(prospect_item)
+
+    # Generate AI agent response using pipeline.ai
+    agent_text = pipeline.ai.generate_response(user_text, language=lang)
+    
+    agent_item = {
+        "speaker": "agent",
+        "text": agent_text,
+        "timestamp": time.time(),
+        "language": lang
+    }
+    session["transcript"].append(agent_item)
+
+    # Broadcast updates to WebSocket clients if connected
+    if session_id in active_connections:
+        for ws in list(active_connections[session_id]):
+            try:
+                if main_loop and main_loop.is_running():
+                    asyncio.run_coroutine_threadsafe(
+                        ws.send_json({
+                            "type": "transcript",
+                            "item": agent_item,
+                            "sessionId": session_id,
+                            "duration": int(time.time() - session.get("start_time", now))
+                        }),
+                        main_loop
+                    )
+            except Exception:
+                pass
+
+    return CallMessageResponse(
+        sessionId=session_id,
+        response=agent_text,
+        language=lang,
+        timestamp=now
+    )
+
 @app.post("/api/call/{session_id}/end")
 async def end_call(session_id: str):
     """End the voice call and get summary"""
@@ -513,6 +615,14 @@ async def analyze_lead_intelligence(req: IntelligenceAnalyzeRequest):
         }
     except Exception as e:
         return {"status": "error", "detail": str(e)}
+
+# Mount CRM and Database API router from backend.zip
+try:
+    from app.api.api import api_router
+    app.include_router(api_router)
+except Exception as e:
+    print(f"[Warning] Failed to mount app.api.api_router: {e}")
+
 
 
 if __name__ == "__main__":

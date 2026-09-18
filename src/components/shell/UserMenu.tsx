@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { mockUser } from '../../services/mockShellData';
 import { Avatar } from '../ui/Avatar';
 import { useTheme } from '../../context/ThemeContext';
+import { authService } from '../../services/authService';
 
 export interface UserMenuProps {
   onOpenShortcuts?: () => void;
@@ -28,6 +29,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenShortcuts }) => {
   const handleNavigate = (path: string) => {
     setIsOpen(false);
     navigate(path);
+  };
+
+  const handleSignOut = () => {
+    setIsOpen(false);
+    authService.logout();
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -158,7 +165,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenShortcuts }) => {
 
               <div className="pt-1 border-t border-border-subtle">
                 <button
-                  onClick={() => handleNavigate('/login')}
+                  onClick={handleSignOut}
                   className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-danger hover:bg-danger-muted transition-colors font-medium text-left"
                 >
                   <LogOut className="w-4 h-4 shrink-0" />
