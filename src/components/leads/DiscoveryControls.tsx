@@ -26,17 +26,17 @@ export interface DiscoveryControlsProps {
 }
 
 const PRESET_REQUIREMENTS = [
-  'Warehouse Automation & Dispatch',
-  'Legacy Telephony & Dialer Migration',
-  'Pricing / Vendor RFP Issued',
-  'Series-A/B GTM Expansion',
-  'Patient Intake IVR Software',
+  'Microsoft 365 SharePoint services',
+  'sell milk dairy products',
+  'logistics fleet management',
+  'fintech payment solutions',
+  'healthcare diagnostics',
 ];
 
 const SUGGESTED_WEBSITES = [
-  'zomato.com',
+  'infosys.com',
   'razorpay.com',
-  'shadowfax.in',
+  'apollo247.com',
   'delhivery.com',
   'freshworks.com',
 ];

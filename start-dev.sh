@@ -1,13 +1,12 @@
 #!/bin/bash
 
 # ==============================================================================
-# 🚀 VIDUR | B2B AI SALES OPERATING SYSTEM - UNIFIED SERVICE LAUNCHER
-# Launches all services at once: Backend Voice Agent, CRM API & Frontend UI
+# 🚀 VIDUR | AI SALES PLATFORM - DEV LAUNCHER
+# Kills old processes, starts Backend API + Frontend UI
 # ==============================================================================
 
 set -e
 
-# Color definitions
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
@@ -15,28 +14,26 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 BOLD='\033[1m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$ROOT_DIR/backend"
 VENV_PYTHON="$BACKEND_DIR/venv/bin/python"
 
-print_status()  { echo -e "  ${GREEN}✓${NC} $1"; }
-print_warning() { echo -e "  ${YELLOW}⚠${NC} $1"; }
-print_error()   { echo -e "  ${RED}✗${NC} $1"; }
-print_info()    { echo -e "  ${CYAN}ℹ${NC} $1"; }
-
 PIDS=()
 
 cleanup() {
-    echo -e "\n\n${RED}🛑 Stopping all Vidur services...${NC}"
+    echo -e "\n${RED}🛑 Stopping all services...${NC}"
     for pid in "${PIDS[@]}"; do
-        if kill -0 "$pid" 2>/dev/null; then
-            kill "$pid" 2>/dev/null || true
-        fi
+        kill "$pid" 2>/dev/null || true
     done
+    # Kill any remaining child processes
     kill $(jobs -p) 2>/dev/null || true
-    echo -e "${GREEN}✓ All services stopped cleanly.${NC}"
+    # Free ports
+    fuser -k 8000/tcp 2>/dev/null || true
+    fuser -k 3000/tcp 2>/dev/null || true
+    fuser -k 5173/tcp 2>/dev/null || true
+    echo -e "${GREEN}✓ All services stopped.${NC}"
     exit 0
 }
 
@@ -44,156 +41,137 @@ trap cleanup INT TERM EXIT
 
 echo ""
 echo -e "${PURPLE}${BOLD}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${PURPLE}${BOLD}║       🎙️  VIDUR AI SALES OPERATING SYSTEM LAUNCHER           ║${NC}"
-echo -e "${PURPLE}${BOLD}║       Autonomous Voice Calling • Local CRM • PWA Ready       ║${NC}"
+echo -e "${PURPLE}${BOLD}║       🎙️  VIDUR AI SALES PLATFORM - DEV LAUNCHER             ║${NC}"
 echo -e "${PURPLE}${BOLD}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
 # ==============================================================================
-# 1. PREREQUISITE & ENVIRONMENT CHECKS
+# 1. KILL OLD PROCESSES & FREE PORTS
 # ==============================================================================
-echo -e "${BLUE}[1/4] Checking Environments & Dependencies...${NC}"
+echo -e "${BLUE}[1/4] Cleaning up old processes...${NC}"
+fuser -k 8000/tcp 2>/dev/null || true
+fuser -k 3000/tcp 2>/dev/null || true
+fuser -k 5173/tcp 2>/dev/null || true
+sleep 0.5
+echo -e "  ${GREEN}✓${NC} Ports 8000, 3000, 5173 freed"
 
-# Check Node.js
+# ==============================================================================
+# 2. CHECK DEPENDENCIES
+# ==============================================================================
+echo -e "\n${BLUE}[2/4] Checking dependencies...${NC}"
+
 if ! command -v node &> /dev/null; then
-    print_error "Node.js is not installed. Please install Node.js 18+"
+    echo -e "  ${RED}✗${NC} Node.js not found. Install Node.js 18+"
     exit 1
 fi
-print_status "Node.js $(node --version) found"
+echo -e "  ${GREEN}✓${NC} Node.js $(node --version)"
 
-# Check Python in venv
 if [ ! -f "$VENV_PYTHON" ]; then
-    print_warning "Backend virtualenv not found at backend/venv. Creating..."
+    echo -e "  ${YELLOW}⚠${NC} Python venv not found. Creating..."
     python3 -m venv "$BACKEND_DIR/venv"
-    "$VENV_PYTHON" -m pip install --upgrade pip
-    "$VENV_PYTHON" -m pip install -r "$BACKEND_DIR/requirements.txt"
+    "$VENV_PYTHON" -m pip install --upgrade pip -q
+    "$VENV_PYTHON" -m pip install -r "$BACKEND_DIR/requirements-api.txt" -q
+    "$VENV_PYTHON" -m pip install ddgs beautifulsoup4 lxml -q
 fi
-print_status "Python virtualenv verified ($("$VENV_PYTHON" --version))"
+echo -e "  ${GREEN}✓${NC} Python venv OK"
 
-# Setup CUDA Library Paths for faster-whisper CTranslate2 (if available)
-SITE_PACKAGES="$BACKEND_DIR/venv/lib/python3.14/site-packages"
+# Ensure ddgs and bs4 are installed
+"$VENV_PYTHON" -m pip install ddgs beautifulsoup4 lxml -q 2>/dev/null || true
+
+if [ ! -d "$ROOT_DIR/node_modules" ]; then
+    echo -e "  ${CYAN}ℹ${NC} Installing npm packages..."
+    cd "$ROOT_DIR" && npm install
+fi
+echo -e "  ${GREEN}✓${NC} Frontend packages OK"
+
+# ==============================================================================
+# 3. CLEAR PYTHON CACHE & START BACKEND
+# ==============================================================================
+echo -e "\n${BLUE}[3/4] Starting Backend API (port 8000)...${NC}"
+
+# Clear __pycache__ so Python picks up latest code
+find "$BACKEND_DIR" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+# Set up CUDA libs if available
+SITE_PACKAGES=$(find "$BACKEND_DIR/venv/lib/" -maxdepth 1 -type d -name "python*" | head -1)/site-packages
 NVIDIA_LIBS=""
 if [ -d "$SITE_PACKAGES/nvidia" ]; then
     for dir in "$SITE_PACKAGES"/nvidia/*/lib; do
-        if [ -d "$dir" ]; then
-            NVIDIA_LIBS="$dir:$NVIDIA_LIBS"
-        fi
+        [ -d "$dir" ] && NVIDIA_LIBS="$dir:$NVIDIA_LIBS"
     done
 fi
 export LD_LIBRARY_PATH="$NVIDIA_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-# Check Frontend node_modules
-if [ ! -d "$ROOT_DIR/node_modules" ]; then
-    print_info "Installing frontend npm dependencies..."
-    npm install
-fi
-print_status "Frontend packages verified"
-
-# ==============================================================================
-# 2. LOCAL DATABASE VERIFICATION
-# ==============================================================================
-echo -e "\n${BLUE}[2/4] Verifying Local Database...${NC}"
-if [ ! -f "$BACKEND_DIR/sales_platform.db" ]; then
-    print_info "Initializing local SQLite database with demo data..."
-    (cd "$BACKEND_DIR" && "$VENV_PYTHON" seed.py)
-    print_status "Local database seeded successfully"
-else
-    print_status "Local database ready: $BACKEND_DIR/sales_platform.db"
-fi
-
-# ==============================================================================
-# 3. START BACKEND SERVICES (Voice Engine, CRM API, WebSocket)
-# ==============================================================================
-echo -e "\n${BLUE}[3/4] Launching Backend Services on port 8000...${NC}"
-
-# Kill any lingering process on port 8000 if present
-fuser -k 8000/tcp 2>/dev/null || true
-
 cd "$BACKEND_DIR"
-"$VENV_PYTHON" api_server.py > /dev/null 2>&1 &
+"$VENV_PYTHON" -m uvicorn api_server:app --host 0.0.0.0 --port 8000 --reload &
 BACKEND_PID=$!
 PIDS+=($BACKEND_PID)
 cd "$ROOT_DIR"
 
-# Wait for backend health check
-print_info "Waiting for Backend API to be ready..."
-for i in {1..30}; do
+# Wait for backend health
+for i in {1..20}; do
     if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-        print_status "Backend API & Voice Agent online at http://localhost:8000"
+        echo -e "  ${GREEN}✓${NC} Backend API online at ${CYAN}http://localhost:8000${NC}"
         break
     fi
-    if [ "$i" -eq 30 ]; then
-        print_error "Backend failed to initialize. Check terminal logs."
+    if [ "$i" -eq 20 ]; then
+        echo -e "  ${RED}✗${NC} Backend failed to start. Check logs."
         exit 1
     fi
     sleep 0.5
 done
 
 # ==============================================================================
-# 4. START FRONTEND APPLICATION
+# 4. START FRONTEND
 # ==============================================================================
-echo -e "\n${BLUE}[4/4] Launching Frontend Development Server...${NC}"
+echo -e "\n${BLUE}[4/4] Starting Frontend (port 3000 or 5173)...${NC}"
 
-# Clear any dead process on ports 3000 & 5173
-fuser -k 3000/tcp 2>/dev/null || true
-fuser -k 5173/tcp 2>/dev/null || true
-
-npm run dev -- --host > /dev/null 2>&1 &
+npm run dev -- --host &
 FRONTEND_PID=$!
 PIDS+=($FRONTEND_PID)
 
-# Dynamically determine the active frontend port
-FRONTEND_PORT=3000
-print_info "Waiting for Frontend to be ready..."
-for i in {1..25}; do
+# Detect frontend port
+FRONTEND_PORT=""
+for i in {1..20}; do
     if curl -s http://localhost:3000 > /dev/null 2>&1; then
-        FRONTEND_PORT=3000
-        print_status "Frontend server ready on port 3000"
-        break
+        FRONTEND_PORT=3000; break
     elif curl -s http://localhost:5173 > /dev/null 2>&1; then
-        FRONTEND_PORT=5173
-        print_status "Frontend server ready on port 5173"
-        break
-    elif curl -s http://localhost:3001 > /dev/null 2>&1; then
-        FRONTEND_PORT=3001
-        print_status "Frontend server ready on port 3001"
-        break
+        FRONTEND_PORT=5173; break
     fi
     sleep 0.5
 done
 
-# ==============================================================================
-# 🎉 SYSTEM READY - SHOW URLS
-# ==============================================================================
+if [ -z "$FRONTEND_PORT" ]; then
+    FRONTEND_PORT="3000"
+    echo -e "  ${YELLOW}⚠${NC} Frontend may still be starting..."
+else
+    echo -e "  ${GREEN}✓${NC} Frontend online at ${CYAN}http://localhost:${FRONTEND_PORT}${NC}"
+fi
 
+# ==============================================================================
+# 🎉 READY
+# ==============================================================================
 echo ""
 echo -e "${GREEN}${BOLD}================================================================${NC}"
-echo -e "${GREEN}${BOLD}  ✨ ALL VIDUR SERVICES ARE RUNNING AND READY FOR USE!          ${NC}"
+echo -e "${GREEN}${BOLD}  ✨ ALL SERVICES RUNNING!                                      ${NC}"
 echo -e "${GREEN}${BOLD}================================================================${NC}"
 echo ""
-echo -e "  ${CYAN}${BOLD}👉 FRONTEND APPLICATION URL:${NC}  ${BOLD}${GREEN}http://localhost:${FRONTEND_PORT}${NC}"
+echo -e "  ${BOLD}Frontend:${NC}  ${GREEN}http://localhost:${FRONTEND_PORT}${NC}"
+echo -e "  ${BOLD}Backend:${NC}   ${CYAN}http://localhost:8000${NC}"
+echo -e "  ${BOLD}API Docs:${NC}  ${CYAN}http://localhost:8000/docs${NC}"
 echo ""
-echo -e "  📡 Backend API Server:     ${CYAN}http://localhost:8000${NC}"
-echo -e "  📚 Interactive API Docs:   ${CYAN}http://localhost:8000/docs${NC}"
-echo -e "  🩺 Health Telemetry:       ${CYAN}http://localhost:8000/health${NC}"
-echo -e "  💾 Database Mode:          ${CYAN}Local SQLite (100% Offline / Zero Cloud)${NC}"
+echo -e "  ${YELLOW}How to demo Lead Discovery:${NC}"
+echo -e "  1. Open ${BOLD}http://localhost:${FRONTEND_PORT}/leads/discover${NC}"
+echo -e "  2. Type a query like ${BOLD}\"sell milk\"${NC} or ${BOLD}\"Microsoft 365 SharePoint\"${NC}"
+echo -e "  3. Leads are fetched from real web search (DuckDuckGo)"
+echo -e "  4. Click any lead → view details → Start AI Call"
 echo ""
-echo -e "  ${YELLOW}💡 QUICK DEMO INSTRUCTIONS:${NC}"
-echo -e "  1. Click or open: ${BOLD}http://localhost:${FRONTEND_PORT}${NC}"
-echo -e "  2. Go to ${BOLD}AI Calling${NC} or click 'AI Call' on any pre-seeded Lead"
-echo -e "  3. Click 'Start AI Call' → Microphone activates"
-echo -e "  4. ${BOLD}You act as the Customer!${NC} Speak into your mic to test real voice"
-echo -e "  5. Real-time STT and LLM speech stream live into the transcript"
-echo -e "  6. Click 'Export PDF' on any completed call or analytics view"
-echo ""
-echo -e "${GREEN}${BOLD}================================================================${NC}"
-echo -e "  ${YELLOW}Press Ctrl+C to gracefully stop all services.${NC}"
+echo -e "  ${YELLOW}Press Ctrl+C to stop all services.${NC}"
 echo ""
 
-# Optional browser auto-open if --open is passed
+# Auto-open browser
 if [[ "$*" == *"--open"* ]]; then
     xdg-open "http://localhost:${FRONTEND_PORT}" 2>/dev/null || true
 fi
 
-# Wait for processes
 wait

@@ -74,6 +74,29 @@ export const AICalling: React.FC = () => {
 
   const lead = getLeadDetails(resolvedLeadId);
 
+  // Guard: if no lead found, show a user-friendly error instead of crashing
+  if (!lead) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="text-center space-y-4 p-8 max-w-md">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto" />
+          <h2 className="text-lg font-bold">No Lead Selected</h2>
+          <p className="text-sm text-foreground-tertiary">
+            Please go to Lead Discovery first, discover some leads, and then click "AI Call" on a specific lead.
+          </p>
+          <Button
+            onClick={() => navigate('/leads/discover')}
+            variant="primary"
+            size="md"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Go to Lead Discovery
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const [session, setSession] = useState<CallSession>(() => {
     return createMockCallSession(resolvedLeadId, rawId || undefined, 'English');
   });
@@ -119,7 +142,7 @@ export const AICalling: React.FC = () => {
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'transcript') {
+          if (data.type === 'transcript' && data.text) {
             const speakerRole: 'ai_agent' | 'prospect' = data.speaker === 'agent' ? 'ai_agent' : 'prospect';
             const totalSecs = Math.floor(data.timestamp ?? 0);
             const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
@@ -127,7 +150,7 @@ export const AICalling: React.FC = () => {
 
             setSession((prev) => {
               // Avoid duplicate messages
-              const exists = prev.transcript.some(t => t.text.trim() === data.text.trim());
+              const exists = prev.transcript.some(t => (t.text || '').trim() === (data.text || '').trim());
               if (exists) return prev;
 
               const newItem: TranscriptItem = {
@@ -629,7 +652,7 @@ export const AICalling: React.FC = () => {
             contactName={session.contactName}
             contactRole={session.contactRole}
             contactPhone={session.contactPhone}
-            location={lead.location}
+            location={lead?.location || 'India'}
             connectingStageText={connectingStageText}
             onCancelCall={handleCancelConnecting}
           />
@@ -744,8 +767,8 @@ export const AICalling: React.FC = () => {
         companyName={session.companyName}
         contactName={session.contactName}
         contactRole={session.contactRole}
-        objective={`Understand their ${lead.industry.toLowerCase()} requirement and qualify implementation timeline.`}
-        whyNow={lead.whyNow}
+        objective={`Understand their ${lead?.industry?.toLowerCase() || 'business'} requirement and qualify implementation timeline.`}
+        whyNow={lead?.whyNow || 'Active lead discovered via AI discovery.'}
         selectedLanguage={session.language}
         onLanguageChange={(lang) => setSession((prev) => ({ ...prev, language: lang }))}
       />

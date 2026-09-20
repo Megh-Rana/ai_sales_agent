@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { mockOpportunities } from '../data/mockOpportunities';
+import { getQueuedLeads } from '../data/leads';
 import { SalesOpportunity, OpportunityFilterState } from '../types/opportunities';
 import { OpportunityHeader } from '../components/opportunities/OpportunityHeader';
 import { OpportunityCard } from '../components/opportunities/OpportunityCard';
@@ -11,10 +12,58 @@ import { OpportunityErrorState } from '../components/opportunities/OpportunityEr
 import { Flame, Sparkles, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Convert queued DiscoveredLeads into SalesOpportunity format
+function buildOpportunitiesFromQueue(): SalesOpportunity[] {
+  const queued = getQueuedLeads();
+  return queued.map((lead) => ({
+    id: `opp-${lead.id}`,
+    leadId: lead.id,
+    companyName: lead.companyName,
+    companyDomain: lead.companyDomain,
+    industry: lead.industry,
+    location: lead.location,
+    contactName: lead.decisionMakerContact?.name || 'Decision Maker',
+    contactRole: lead.decisionMakerContact?.role || 'Executive',
+    contactPhone: (lead as any).decisionMaker?.phone || '',
+    contactEmail: (lead as any).decisionMaker?.email || '',
+    phoneAvailable: lead.decisionMakerContact?.phoneAvailable || false,
+    intentScore: lead.intentScore,
+    estimatedValue: lead.estimatedValue || '₹20 Lakh / yr',
+    priority: lead.intentScore >= 85 ? 'HIGH' as const : lead.intentScore >= 70 ? 'MEDIUM' as const : 'LOW' as const,
+    type: 'BUYING_SIGNAL' as const,
+    state: 'action_required' as const,
+    isEmerging: false,
+    whyNow: {
+      headline: lead.whyNow || 'Queued from AI Lead Discovery',
+      evidence: lead.scoreReasons || [],
+      recencyLabel: 'Just now',
+      timestamp: new Date().toISOString(),
+    },
+    signals: lead.buyingSignals?.map((s) => ({
+      id: s.id, title: s.description?.slice(0, 60) || s.type, category: s.type,
+      recency: s.timestamp, impactScore: s.impactScore,
+    })) || [],
+    recommendedAction: {
+      label: 'Start AI Call',
+      actionType: 'call' as const,
+      route: `/calls/call-${lead.id}?leadId=${lead.id}`,
+      suggestedOpening: lead.suggestedOpeningHook,
+    },
+    timeline: [
+      { id: 'q-1', timestamp: 'Just now', title: 'Queued from Discovery', description: `Lead queued for outreach from AI Discovery.`, type: 'intent' as const },
+    ],
+    updatedAt: new Date().toISOString(),
+  }));
+}
+
 export const Opportunities: React.FC = () => {
   const navigate = useNavigate();
   const { id: paramOppId } = useParams<{ id?: string }>();
-  const [opportunities, setOpportunities] = useState<SalesOpportunity[]>(mockOpportunities);
+  const [opportunities, setOpportunities] = useState<SalesOpportunity[]>(() => {
+    const fromQueue = buildOpportunitiesFromQueue();
+    // Queued leads first, then mock data
+    return [...fromQueue, ...mockOpportunities];
+  });
   const [selectedOpp, setSelectedOpp] = useState<SalesOpportunity | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

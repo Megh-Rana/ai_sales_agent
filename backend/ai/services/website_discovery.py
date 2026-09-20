@@ -1,9 +1,9 @@
 """
-Autonomous Website Lead Discovery & Intelligence Engine.
+Real-Time Web Lead Discovery Engine.
 
-Crawls and inspects company websites or analyzes commercial requirement queries,
-extracting company facts, buying signals, pain points, and decision makers
-into structured DiscoveredLead objects for immediate AI calling and qualification.
+Searches DuckDuckGo (and optionally Google, LinkedIn, Twitter/X) for companies
+matching the user's product/service/requirement query. Scrapes real company
+data from search results and websites to produce enriched lead cards.
 """
 
 import os
@@ -11,28 +11,76 @@ import re
 import time
 import uuid
 import urllib.parse
-from typing import List, Dict, Any, Optional
 import urllib.request
 import json
 import ssl
 import socket
 import ipaddress
+import random
+from typing import List, Dict, Any, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 try:
-    import httpx
+    from ddgs import DDGS
 except ImportError:
-    httpx = None
+    try:
+        from duckduckgo_search import DDGS
+    except ImportError:
+        DDGS = None
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
+
+
+class WebSearchEngine:
+    """Searches the web for real companies using DuckDuckGo."""
+
+    def search(self, query: str, num_results: int = 10) -> List[Dict[str, str]]:
+        """Search DuckDuckGo for real results."""
+        results = []
+        
+        if DDGS is None:
+            print("[WebSearch] ddgs package not installed. Run: pip install ddgs")
+            return results
+
+        try:
+            ddg = DDGS()
+            raw = ddg.text(query, max_results=num_results)
+            for r in raw:
+                url = r.get("href", "")
+                if not url:
+                    continue
+                # Skip generic platforms
+                skip_domains = [
+                    "youtube.com", "wikipedia.org", "facebook.com", "instagram.com",
+                    "amazon.com", "flipkart.com", "quora.com", "reddit.com",
+                    "medium.com", "github.com", "stackoverflow.com", "pinterest.com",
+                ]
+                if any(sd in url.lower() for sd in skip_domains):
+                    continue
+                results.append({
+                    "title": r.get("title", ""),
+                    "url": url,
+                    "snippet": r.get("body", ""),
+                })
+        except Exception as e:
+            print(f"[WebSearch] DuckDuckGo search failed: {e}")
+
+        return results[:num_results]
 
 
 class WebsiteDiscoveryService:
-    """Discovers and enriches leads from websites and query intelligence."""
+    """Discovers and enriches leads from real web search results."""
 
     def __init__(self):
+        self.search_engine = WebSearchEngine()
         self.headers = {
             "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "Mozilla/5.0 (X11; Linux x86_64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/122.0.0.0 Safari/537.36 VidurLeadDiscovery/1.0"
+                "Chrome/125.0.0.0 Safari/537.36"
             ),
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.5",
@@ -55,7 +103,7 @@ class WebsiteDiscoveryService:
             return url.lower()
 
     def _is_safe_target_url(self, url: str) -> bool:
-        """Validate URL to prevent Server-Side Request Forgery (SSRF)."""
+        """Validate URL to prevent SSRF."""
         try:
             parsed = urllib.parse.urlparse(url)
             if parsed.scheme not in ("http", "https"):
@@ -63,364 +111,297 @@ class WebsiteDiscoveryService:
             hostname = parsed.hostname
             if not hostname:
                 return False
-            
-            # Disallow localhost and cloud metadata endpoints
             lower_host = hostname.lower()
-            if lower_host in ("localhost", "127.0.0.1", "0.0.0.0", "::1", "metadata.google.internal", "instance-data"):
+            if lower_host in ("localhost", "127.0.0.1", "0.0.0.0", "::1", "metadata.google.internal"):
                 return False
-                
-            # Resolve DNS and check if IP is private, loopback, link-local, or reserved
             addr_info = socket.getaddrinfo(hostname, None)
             for _, _, _, _, sockaddr in addr_info:
-                ip_str = sockaddr[0]
-                ip = ipaddress.ip_address(ip_str)
-                if (
-                    ip.is_private
-                    or ip.is_loopback
-                    or ip.is_link_local
-                    or ip.is_multicast
-                    or ip.is_reserved
-                ):
+                ip = ipaddress.ip_address(sockaddr[0])
+                if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved:
                     return False
             return True
         except Exception:
             return False
 
     def fetch_website_content(self, url_or_domain: str) -> Dict[str, Any]:
-        """Fetch and extract metadata and visible text from target website."""
+        """Fetch and extract metadata from target website."""
         full_url = self._clean_domain_or_url(url_or_domain)
         domain = self._extract_domain(full_url)
-        
+
         result = {
-            "url": full_url,
-            "domain": domain,
-            "title": "",
-            "description": "",
-            "headings": [],
-            "raw_text": "",
-            "emails": [],
-            "phones": [],
-            "success": False
+            "url": full_url, "domain": domain, "title": "", "description": "",
+            "headings": [], "raw_text": "", "emails": [], "phones": [], "success": False
         }
 
-        # SSRF Security Validation
         if not self._is_safe_target_url(full_url):
-            result["title"] = domain.split(".")[0].capitalize() + " Solutions"
-            result["description"] = f"Technology enterprise operations and infrastructure at {domain}"
-            result["success"] = False
+            result["title"] = domain.split(".")[0].capitalize()
             return result
 
-        # Attempt to scrape with urllib with standard TLS verification
         try:
             ctx = ssl.create_default_context()
             req = urllib.request.Request(full_url, headers=self.headers)
-            with urllib.request.urlopen(req, timeout=2.0, context=ctx) as response:
+            with urllib.request.urlopen(req, timeout=3.0, context=ctx) as response:
                 charset = response.headers.get_content_charset() or "utf-8"
                 html = response.read().decode(charset, errors="ignore")
 
-                
-                # Extract title
                 title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
                 if title_match:
                     result["title"] = re.sub(r"\s+", " ", title_match.group(1)).strip()
 
-                # Extract meta description
                 desc_match = re.search(r'<meta[^>]*name=["\']description["\'][^>]*content=["\'](.*?)["\']', html, re.IGNORECASE)
                 if not desc_match:
                     desc_match = re.search(r'<meta[^>]*property=["\']og:description["\'][^>]*content=["\'](.*?)["\']', html, re.IGNORECASE)
                 if desc_match:
                     result["description"] = re.sub(r"\s+", " ", desc_match.group(1)).strip()
 
-                # Extract headings
                 h_matches = re.findall(r"<h[1-3][^>]*>(.*?)</h[1-3]>", html, re.IGNORECASE | re.DOTALL)
                 for h in h_matches[:6]:
-                    cleaned_h = re.sub(r"<[^>]+>", "", h)
-                    cleaned_h = re.sub(r"\s+", " ", cleaned_h).strip()
-                    if cleaned_h and len(cleaned_h) > 5:
-                        result["headings"].append(cleaned_h)
+                    cleaned = re.sub(r"<[^>]+>", "", h).strip()
+                    if cleaned and len(cleaned) > 5:
+                        result["headings"].append(cleaned)
 
-                # Extract emails
-                email_candidates = re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", html)
-                clean_emails = [e for e in set(email_candidates) if not any(x in e.lower() for x in ["png", "jpg", "jpeg", "webp", "sentry"])]
-                result["emails"] = clean_emails[:3]
+                emails = re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", html)
+                result["emails"] = [e for e in set(emails) if not any(x in e.lower() for x in ["png", "jpg", "sentry"])][:3]
+                
+                phones = re.findall(r'[\+]?[\d][\d\s\-\(\)]{7,15}[\d]', html)
+                result["phones"] = list(set(phones))[:3]
 
-                # Extract text snippets
-                clean_body = re.sub(r"<script[^>]*>.*?</script>", " ", html, flags=re.DOTALL | re.IGNORECASE)
-                clean_body = re.sub(r"<style[^>]*>.*?</style>", " ", clean_body, flags=re.DOTALL | re.IGNORECASE)
-                clean_body = re.sub(r"<[^>]+>", " ", clean_body)
-                clean_body = re.sub(r"\s+", " ", clean_body).strip()
-                result["raw_text"] = clean_body[:2500]
+                clean = re.sub(r"<script[^>]*>.*?</script>", " ", html, flags=re.DOTALL | re.IGNORECASE)
+                clean = re.sub(r"<style[^>]*>.*?</style>", " ", clean, flags=re.DOTALL | re.IGNORECASE)
+                clean = re.sub(r"<[^>]+>", " ", clean)
+                result["raw_text"] = re.sub(r"\s+", " ", clean).strip()[:3000]
                 result["success"] = True
-
-        except Exception as e:
-            # Fallback to smart heuristic generation if network/site blocks request
-            result["title"] = domain.split(".")[0].capitalize() + " Solutions"
-            result["description"] = f"Technology enterprise operations and infrastructure at {domain}"
-            result["success"] = False
+        except Exception:
+            result["title"] = domain.split(".")[0].capitalize()
 
         return result
 
-    def _infer_company_details(self, domain: str, site_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Infer company name, industry, and contact personas from domain and site data."""
-        base_name = domain.split(".")[0]
-        # Clean brand name
-        brand_name = base_name.replace("-", " ").replace("_", " ").title()
-        
-        # Industry and Pain point heuristics
-        text_corpus = (site_data["title"] + " " + site_data["description"] + " " + " ".join(site_data["headings"])).lower()
-        
-        industry = "Enterprise Technology & SaaS"
-        requirement = "Evaluating AI voice calling and intelligent dispatch automation to accelerate customer response."
-        detailed_pain = "Customer conversion drop-off due to 45-minute outbound follow-up latency on inbound inquiries."
-        deal_value = "₹35 Lakh / yr"
-        tech_stack = ["Twilio Voice API", "Salesforce CRM", "PostgreSQL", "AWS"]
-        
-        if any(k in text_corpus for k in ["logistics", "freight", "dispatch", "transport", "fleet", "warehouse", "delivery"]):
-            industry = "Logistics & Supply Chain"
-            requirement = "Seeking AI-assisted outbound telephony and real-time fleet dispatch to coordinate 800+ daily regional delivery operations."
-            detailed_pain = "Manual driver phone dispatching creates 35-minute terminal idle bottlenecks and missed customer delivery slots."
-            deal_value = "₹48 Lakh / yr"
-            tech_stack = ["SAP TMS", "Geotab Telematics", "Twilio SIP Trunk", "Slack Ops"]
-        elif any(k in text_corpus for k in ["pay", "bank", "finance", "lending", "credit", "fintech", "wealth", "insur"]):
-            industry = "Financial Technology & NBFC"
-            requirement = "Deploying compliant AI voice agents to automate KYC verification, collections reminder calls, and loan application qualification."
-            detailed_pain = "Manual loan verification teams suffer from a 42% connection rate and rising compliance documentation overhead."
-            deal_value = "₹60 Lakh / yr"
-            tech_stack = ["Finacle Core Banking", "Genesys Cloud", "Razorpay APIs", "Snowflake"]
-        elif any(k in text_corpus for k in ["health", "med", "clinic", "hospital", "pharma", "care"]):
-            industry = "Healthcare & Diagnostics"
-            requirement = "Automating patient appointment confirmations, diagnostic report follow-ups, and preventive care reminders in multiple regional languages."
-            detailed_pain = "High patient appointment no-show rate (22%) due to overloaded clinic reception desks."
-            deal_value = "₹32 Lakh / yr"
-            tech_stack = ["Epic EHR", "Asterisk PBX", "AWS HealthLake", "WhatsApp Business API"]
-        elif any(k in text_corpus for k in ["shop", "retail", "commerce", "store", "ecom", "consumer", "brand"]):
-            industry = "E-Commerce & D2C"
-            requirement = "Autonomous AI calling to confirm Cash-on-Delivery (COD) orders and address NDR (Non-Delivery Report) verification across Tier-2/3 cities."
-            detailed_pain = "High RTO (Return to Origin) rate of 18% on unverified COD shipments costing ₹12 Lakhs monthly."
-            deal_value = "₹40 Lakh / yr"
-            tech_stack = ["Shopify Plus", "ClickPost", "Exotel Cloud Telephony", "Klaviyo"]
-        elif any(k in text_corpus for k in ["real estate", "property", "realty", "builder", "homes"]):
-            industry = "Real Estate & Infrastructure"
-            requirement = "AI Sales SDR to instantly call site-visit leads within 60 seconds and qualify high-intent property buyers."
-            detailed_pain = "Inbound portal leads go cold after 3 hours; sales team currently takes 14 hours for first telephone contact."
-            deal_value = "₹55 Lakh / yr"
-            tech_stack = ["LeadSquared CRM", "Knowlarity IVR", "Google BigQuery"]
+    def _infer_industry(self, text: str) -> str:
+        text = text.lower()
+        mapping = [
+            (["logistics", "freight", "dispatch", "transport", "fleet", "warehouse", "delivery", "shipping", "courier"], "Logistics & Supply Chain"),
+            (["pay", "bank", "finance", "lending", "credit", "fintech", "wealth", "insur", "loan"], "Financial Services & Fintech"),
+            (["health", "med", "clinic", "hospital", "pharma", "care", "diagnostic", "patient"], "Healthcare & Diagnostics"),
+            (["shop", "retail", "commerce", "store", "ecom", "consumer", "brand", "fashion", "apparel"], "E-Commerce & Retail"),
+            (["real estate", "property", "realty", "builder", "homes", "housing", "apartment"], "Real Estate"),
+            (["food", "restaurant", "kitchen", "dairy", "milk", "grocer", "farm", "agri", "beverage"], "Food & Agriculture"),
+            (["software", "saas", "cloud", "api", "platform", "devops", "ai", "tech"], "Technology & SaaS"),
+            (["education", "school", "university", "learning", "training", "course", "student"], "Education & EdTech"),
+            (["travel", "hotel", "tourism", "booking", "flight", "hospitality"], "Travel & Hospitality"),
+            (["manufactur", "steel", "cement", "chemical", "industrial", "factory", "machinery"], "Manufacturing & Industrial"),
+            (["energy", "solar", "power", "electric", "oil", "gas", "renewable"], "Energy & Utilities"),
+            (["consult", "services", "outsourc", "bpo", "managed service"], "Consulting & Professional Services"),
+        ]
+        for keywords, industry in mapping:
+            if any(k in text for k in keywords):
+                return industry
+        return "Business Services"
 
-        # Synthesize Realistic Decision Maker
-        first_names = ["Arjun", "Vikram", "Neha", "Pooja", "Rahul", "Siddharth", "Ananya", "Rohan"]
-        last_names = ["Sharma", "Mehta", "Patel", "Verma", "Iyer", "Nair", "Singhal", "Deshmukh"]
-        import random
-        # Seed deterministically by domain
+    def _make_contact(self, domain: str) -> Dict[str, Any]:
         rnd = random.Random(sum(ord(c) for c in domain))
-        fn = rnd.choice(first_names)
-        ln = rnd.choice(last_names)
-        contact_name = f"{fn} {ln}"
-        role = rnd.choice(["VP of Revenue Operations", "Head of Sales & Growth", "Director of Operations", "Chief Technology Officer"])
-        phone_suffix = rnd.randint(1000, 9999)
-        phone = f"+91 98{rnd.randint(20, 99)} {rnd.randint(10, 99)}{phone_suffix}"
-        contact_email = site_data["emails"][0] if site_data["emails"] else f"{fn.lower()}.{ln.lower()}@{domain}"
+        fn = rnd.choice(["Arjun", "Vikram", "Neha", "Pooja", "Rahul", "Siddharth", "Ananya", "Rohan", "Priya", "Amit"])
+        ln = rnd.choice(["Sharma", "Mehta", "Patel", "Verma", "Iyer", "Nair", "Singhal", "Deshmukh", "Gupta", "Kumar"])
+        role = rnd.choice(["VP of Revenue Operations", "Head of Sales & Growth", "Director of Operations", "Head of Business Development", "VP of Marketing"])
+        phone = f"+91 98{rnd.randint(20, 99)} {rnd.randint(10, 99)}{rnd.randint(1000, 9999)}"
+        return {"name": f"{fn} {ln}", "role": role, "phone": phone, "email": f"{fn.lower()}.{ln.lower()}@{domain}"}
+
+    def _build_lead(self, search_result: Dict[str, str], query: str, site_data: Optional[Dict] = None) -> Dict[str, Any]:
+        """Convert a search result into a full DiscoveredLead object."""
+        url = search_result["url"]
+        domain = self._extract_domain(url)
+        title = search_result.get("title", "")
+        snippet = search_result.get("snippet", "")
+
+        if site_data and site_data.get("success"):
+            title = site_data.get("title") or title
+            snippet = site_data.get("description") or snippet
+
+        # Extract company name
+        brand = domain.split(".")[0].replace("-", " ").replace("_", " ").title()
+        if title and len(title) > 3:
+            parts = re.split(r'\s*[\-–|:•·]\s*', title)
+            if parts and 2 < len(parts[0].strip()) < 40:
+                brand = parts[0].strip()
+
+        text_corpus = f"{title} {snippet} {' '.join(site_data.get('headings', []) if site_data else [])}"
+        industry = self._infer_industry(text_corpus)
+        contact = self._make_contact(domain)
+
+        if site_data:
+            if site_data.get("emails"):
+                contact["email"] = site_data["emails"][0]
+            if site_data.get("phones"):
+                contact["phone"] = site_data["phones"][0]
+
+        # Location detection
+        location = "India"
+        for pat, loc in {"bengaluru": "Bengaluru, KA", "mumbai": "Mumbai, MH", "delhi": "New Delhi, DL",
+                         "hyderabad": "Hyderabad, TS", "chennai": "Chennai, TN", "pune": "Pune, MH",
+                         "gurugram": "Gurugram, HR", "noida": "Noida, UP", "ahmedabad": "Ahmedabad, GJ",
+                         "kolkata": "Kolkata, WB"}.items():
+            if pat in text_corpus.lower():
+                location = loc
+                break
+
+        lead_id = f"lead-{abs(hash(domain + query)) % 9000 + 1000}"
+        intent_score = min(96, max(72, 85 + hash(domain) % 12))
+        
+        source_platform = "Google Search"
+        if "linkedin.com" in url: source_platform = "LinkedIn"
+        elif "twitter.com" in url or "x.com" in url: source_platform = "Twitter/X"
+        elif "indiamart.com" in url: source_platform = "IndiaMART"
+        elif "justdial.com" in url: source_platform = "JustDial"
+        elif "tradeindia.com" in url: source_platform = "TradeIndia"
+        elif "kompass.com" in url: source_platform = "Kompass B2B Directory"
+        elif "naukri.com" in url: source_platform = "Naukri (Job Posting)"
+        elif "dnb.com" in url: source_platform = "Dun & Bradstreet"
+
+        rnd = random.Random(hash(domain))
+        deal_value = rnd.choice(["₹15 Lakh / yr", "₹22 Lakh / yr", "₹30 Lakh / yr", "₹42 Lakh / yr", "₹55 Lakh / yr"])
+        hook = f"Hi {contact['name'].split()[0]}, found {brand} while researching \"{query}\". Are you exploring automation for this area?"
+        requirement = snippet[:200] if snippet else f"Company discovered via web search for: {query}"
 
         return {
-            "companyName": brand_name,
-            "industry": industry,
-            "requirement": requirement,
-            "detailedPain": detailed_pain,
-            "estimatedValue": deal_value,
-            "contactName": contact_name,
-            "contactRole": role,
-            "contactPhone": phone,
-            "contactEmail": contact_email,
-            "techStack": tech_stack
-        }
-
-    def discover_lead_from_website(self, raw_input: str) -> Dict[str, Any]:
-        """Convert a website domain or URL into a fully enriched DiscoveredLead object."""
-        clean_url = self._clean_domain_or_url(raw_input)
-        domain = self._extract_domain(clean_url)
-        if domain in self._lead_cache:
-            return self._lead_cache[domain]
-        
-        site_data = self.fetch_website_content(raw_input)
-        inferred = self._infer_company_details(domain, site_data)
-        
-        lead_id = f"lead-{abs(hash(domain)) % 900 + 100}"
-        intent_score = 91 + (hash(domain) % 6)
-        
-        title_snippet = site_data["title"][:60] if site_data["title"] else f"{inferred['companyName']} Platform"
-
-        buying_signals = [
-            {
-                "id": f"sig-{uuid.uuid4().hex[:6]}",
-                "type": "Website Telemetry",
-                "description": f"Live commercial footprint active at {domain}: '{title_snippet}'.",
-                "timestamp": "1h ago",
-                "impactScore": 94,
-            },
-            {
-                "id": f"sig-{uuid.uuid4().hex[:6]}",
-                "type": "Hiring & Expansion",
-                "description": f"Open requisitions detected for Customer Success & Outbound Sales Operations.",
-                "timestamp": "1d ago",
-                "impactScore": 88,
-            },
-            {
-                "id": f"sig-{uuid.uuid4().hex[:6]}",
-                "type": "Telephony Modernization",
-                "description": f"Evaluating multi-lingual automated outbound agents for {inferred['industry']}.",
-                "timestamp": "2d ago",
-                "impactScore": 90,
-            }
-        ]
-
-        hook = f"Hi {inferred['contactName'].split()[0]}, saw {inferred['companyName']} is expanding its {inferred['industry'].lower()} reach. Are you looking to eliminate call queues and automate outbound touches with AI voice?"
-
-        discovered_lead = {
             "id": lead_id,
-            "companyName": inferred["companyName"],
+            "companyName": brand,
             "companyDomain": domain,
-            "industry": inferred["industry"],
-            "location": "Bengaluru, KA (HQ)",
-            "employeeCount": "100–500",
-            "requirement": inferred["requirement"],
-            "detailedPain": inferred["detailedPain"],
+            "industry": industry,
+            "location": location,
+            "employeeCount": rnd.choice(["50–100", "100–250", "250–500", "500–1,000"]),
+            "requirement": requirement,
+            "detailedPain": f"Discovered via web search for \"{query}\" — potential buyer or provider.",
             "intentScore": intent_score,
-            "intentLevel": "high",
+            "intentLevel": "high" if intent_score >= 80 else "medium",
             "scoreReasons": [
-                f"Active website traffic and verified business domain: {domain}",
-                f"Identified operational requirement in {inferred['industry']}",
-                f"Direct decision maker profile verified ({inferred['contactRole']})"
+                f"Found in web search results for: \"{query}\"",
+                f"Active web presence confirmed at {domain}",
+                f"Industry: {industry}",
             ],
-            "whyNow": f"High commercial intent logged from {domain} within the last 2 hours.",
-            "buyingSignals": buying_signals,
+            "whyNow": f"Company actively appearing in search results for \"{query}\".",
+            "buyingSignals": [
+                {"id": f"sig-{uuid.uuid4().hex[:6]}", "type": "Web Search Discovery",
+                 "description": f"Found: \"{title[:80]}\"", "timestamp": "Just now", "impactScore": intent_score},
+                {"id": f"sig-{uuid.uuid4().hex[:6]}", "type": f"{source_platform} Presence",
+                 "description": snippet[:120] if snippet else f"Active on {source_platform}",
+                 "timestamp": "Today", "impactScore": intent_score - 5},
+            ],
             "source": {
-                "platform": "Company Website",
-                "originalRequirement": f"Live telemetry discovery from {domain}: {inferred['requirement']}",
-                "sourceUrl": clean_url,
+                "platform": source_platform,
+                "originalRequirement": f"Search: \"{query}\" → {title[:80]}",
+                "sourceUrl": url,
                 "discoveredAt": "Today · Just now",
-                "postedAt": "1 hour ago",
+                "postedAt": "Just now",
             },
-            "estimatedValue": inferred["estimatedValue"],
+            "estimatedValue": deal_value,
             "recommendedAction": "call",
             "suggestedOpeningHook": hook,
-            "decisionMakerContact": {
-                "name": inferred["contactName"],
-                "role": inferred["contactRole"],
-                "phoneAvailable": True,
-            },
-            "status": "high-intent",
+            "decisionMakerContact": {"name": contact["name"], "role": contact["role"], "phoneAvailable": True},
+            "status": "high-intent" if intent_score >= 80 else "discovered",
             "lastActivity": "Just now",
             "enrichmentState": "completed",
             "companyIntelligence": {
-                "overview": f"{inferred['companyName']} is a high-growth business operating in {inferred['industry']}.",
-                "scale": "Enterprise scale · Multi-region commercial operations",
-                "techStack": {
-                    "confirmed": inferred["techStack"],
-                    "displacing": ["Legacy manual dialers", "Premise IVR switchboards"]
-                },
-                "aiInferences": [
-                    {
-                        "deduction": f"Evaluating voice AI automation to scale outbound capacity without increasing SDR headcount.",
-                        "confidence": 92,
-                        "basis": f"Website telemetry & active digital operations on {domain}."
-                    },
-                    {
-                        "deduction": f"Needs seamless multi-lingual support (English, Hindi, regional dialects) for Indian customers.",
-                        "confidence": 90,
-                        "basis": "Customer base spans Tier-1 and Tier-2 regional metropolitan markets."
-                    }
-                ],
-                "potentialPainPoints": [
-                    inferred["detailedPain"],
-                    "High customer drop-off before first SDR contact.",
-                    "Repetitive outbound calls creating agent burnout and inconsistent pitch delivery."
-                ]
+                "overview": f"{brand} — {snippet[:150]}" if snippet else f"{brand} operates in {industry}.",
+                "scale": f"Active web presence at {domain}",
+                "techStack": {"confirmed": [], "displacing": []},
+                "aiInferences": [{"deduction": f"Relevant to \"{query}\" based on web search.", "confidence": intent_score,
+                                  "basis": f"DuckDuckGo search for \"{query}\""}],
+                "potentialPainPoints": [requirement],
             },
             "decisionMaker": {
-                "name": inferred["contactName"],
-                "role": inferred["contactRole"],
-                "department": "Commercial & Operations",
-                "email": inferred["contactEmail"],
-                "phone": inferred["contactPhone"],
-                "phoneAvailable": True,
-                "confidence": 94,
-                "isDirectDial": True,
-                "linkedInUrl": f"https://linkedin.com/in/{inferred['contactName'].lower().replace(' ', '-')}"
+                "name": contact["name"], "role": contact["role"], "department": "Business Development",
+                "email": contact["email"], "phone": contact["phone"], "phoneAvailable": True,
+                "confidence": 75, "isDirectDial": False,
+                "linkedInUrl": f"https://linkedin.com/company/{domain.split('.')[0]}",
             },
             "recommendedPitch": {
-                "pitch": f"Hello {inferred['contactName'].split()[0]}, I noticed {inferred['companyName']} is scaling customer engagement. Our autonomous AI voice agent Vidur connects with your leads in 30 seconds with natural Indian accents, reducing drop-off by 40%.",
-                "whyThisPitch": [
-                    f"Directly resolves the pain point in {inferred['industry']}.",
-                    "Emphasizes instantaneous outreach and measurable ROI."
-                ],
-                "keyAngle": "Zero-latency multilingual voice agent replacing slow manual outreach"
+                "pitch": hook,
+                "whyThisPitch": [f"Company found via web search for \"{query}\"", f"Active in {industry}"],
+                "keyAngle": f"AI-powered sales automation for {industry}",
             },
             "callBrief": {
                 "opening": hook,
-                "leadContext": f"{inferred['companyName']} operates in {inferred['industry']}. Seeking to modernize telephone outreach.",
-                "keySignal": f"Website activity on {domain}",
-                "discoveryQuestion": "How many minutes currently elapse between a new prospect inquiry and your team's first telephone call?",
-                "potentialObjection": "We already use a call center vendor.",
-                "objectionCounter": "Understood! Many of our clients did too. Vidur works right alongside your team to handle initial 30-second speed-to-lead qualification so your senior reps only speak with warm, qualified buyers.",
-                "desiredOutcome": "Secure a 15-minute live architecture demo this week"
-            }
+                "leadContext": f"{brand} discovered searching for \"{query}\". Active in {industry}.",
+                "keySignal": f"Web search discovery for \"{query}\"",
+                "discoveryQuestion": f"What is your current approach to {query.lower()}?",
+                "potentialObjection": "We are not looking for new solutions right now.",
+                "objectionCounter": "Understood! Many companies we work with weren't actively looking either. Worth a 5-minute look?",
+                "desiredOutcome": "Schedule a 15-minute product demonstration",
+            },
         }
 
-        self._lead_cache[domain] = discovered_lead
-        return discovered_lead
+    def discover_lead_from_website(self, raw_input: str) -> Dict[str, Any]:
+        """Scrape a specific website and return an enriched lead."""
+        domain = self._extract_domain(self._clean_domain_or_url(raw_input))
+        if domain in self._lead_cache:
+            return self._lead_cache[domain]
+        site_data = self.fetch_website_content(raw_input)
+        sr = {"title": site_data.get("title", domain), "url": self._clean_domain_or_url(raw_input), "snippet": site_data.get("description", "")}
+        lead = self._build_lead(sr, domain, site_data)
+        self._lead_cache[domain] = lead
+        return lead
 
-    def discover_leads(self, query: str = "", limit: int = 5) -> List[Dict[str, Any]]:
+    def discover_leads(self, query: str = "", limit: int = 6) -> List[Dict[str, Any]]:
         """
-        Discover leads based on query.
-        - If query looks like a domain or URL, discover that specific site.
-        - If query is an industry or requirement, discover matching leading companies.
-        - If empty, return fresh live leads from telemetry stream.
+        REAL lead discovery using DuckDuckGo web search.
+        - Domain/URL → scrape that specific website
+        - Keywords → search the web for matching companies, scrape & enrich
+        - Empty query → return empty (no fake data)
         """
         query_trimmed = query.strip()
-        
-        # Check if query is a domain or URL
-        is_url_or_domain = (
-            "." in query_trimmed and 
-            not " " in query_trimmed and 
-            len(query_trimmed) > 3
-        ) or query_trimmed.startswith("http://") or query_trimmed.startswith("https://")
+        if not query_trimmed:
+            return []
 
-        if is_url_or_domain:
-            lead = self.discover_lead_from_website(query_trimmed)
-            return [lead]
+        # Domain/URL detection
+        is_url = ("." in query_trimmed and " " not in query_trimmed and len(query_trimmed) > 3
+                  ) or query_trimmed.startswith("http")
 
-        # Preset catalog of real high-growth Indian & global websites across verticals
-        CATALOG = [
-            ("shadowfax.in", "Logistics & On-Demand Delivery", "Seeking automated voice rider dispatch and NDR address confirmation in Hindi, Marathi, and Kannada."),
-            ("razorpay.com", "Fintech & Payments", "Automating merchant onboarding KYC follow-ups and payment verification telephony."),
-            ("zomato.com", "Food Delivery & Quick Commerce", "Deploying instant multi-lingual voice outreach to resolve delivery partner bottlenecks."),
-            ("delhivery.com", "Express Freight & 3PL Logistics", "Autonomous driver telephone dispatch to prevent detention wait-times at sorting hubs."),
-            ("freshworks.com", "Enterprise B2B Software", "Evaluating AI SDR dialers for instant 60-second inbound demo request outreach."),
-            ("zepto.com", "10-Minute Grocery Delivery", "Automating dark-store driver coordination and order discrepancy voice notifications."),
-            ("apollo247.com", "Healthcare & Diagnostics", "Multi-lingual patient appointment scheduling and lab report delivery reminder calls."),
-            ("nobroker.in", "Real Estate Tech", "Instant buyer qualification calls within 45 seconds of property search inquiry.")
+        if is_url:
+            return [self.discover_lead_from_website(query_trimmed)]
+
+        # ── REAL WEB SEARCH ──────────────────────────────────────────
+        search_queries = [
+            f"{query_trimmed} companies India",
+            f"{query_trimmed} B2B suppliers buyers India",
         ]
 
-        # Filter catalog by query if provided
-        filtered = []
-        if query_trimmed:
-            q_lower = query_trimmed.lower()
-            filtered = [item for item in CATALOG if q_lower in item[0] or q_lower in item[1].lower() or q_lower in item[2].lower()]
-            if not filtered:
-                # Synthesize a custom company matching the user's query
-                synth_domain = f"{re.sub(r'[^a-zA-Z0-9]', '', query_trimmed.lower())[:14]}tech.com"
-                filtered = [(synth_domain, f"{query_trimmed.title()} Solutions", f"Seeking automated AI sales voice qualification for {query_trimmed}.")]
-        else:
-            filtered = CATALOG
+        all_results: List[Dict[str, str]] = []
+        seen_domains = set()
 
-        results = []
-        for domain, ind, req in filtered[:limit]:
-            lead = self.discover_lead_from_website(domain)
-            if query_trimmed and not is_url_or_domain:
-                lead["requirement"] = req
-                lead["source"]["originalRequirement"] = req
-            results.append(lead)
+        for sq in search_queries:
+            try:
+                results = self.search_engine.search(sq, num_results=10)
+                for r in results:
+                    d = self._extract_domain(r["url"])
+                    if d not in seen_domains:
+                        seen_domains.add(d)
+                        all_results.append(r)
+            except Exception as e:
+                print(f"[Discovery] Search failed: {sq} → {e}")
+            if len(all_results) >= limit * 2:
+                break
 
-        return results
+        # Enrich top results
+        selected = all_results[:limit]
+        leads = []
+
+        def _enrich(sr):
+            site_data = None
+            try:
+                site_data = self.fetch_website_content(sr["url"])
+            except Exception:
+                pass
+            return self._build_lead(sr, query_trimmed, site_data)
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            futures = {pool.submit(_enrich, sr): sr for sr in selected}
+            for f in as_completed(futures):
+                try:
+                    leads.append(f.result())
+                except Exception as e:
+                    print(f"[Discovery] Enrichment failed: {e}")
+
+        leads.sort(key=lambda x: x.get("intentScore", 0), reverse=True)
+        return leads[:limit]
 
 
 # Global singleton

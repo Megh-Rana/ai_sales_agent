@@ -641,12 +641,32 @@ export function createMockCallSession(
   customCallId?: string,
   language: CallLanguage = 'English'
 ): CallSession {
-  const lead = getLeadDetails(leadId) || mockDiscoveredLeads[0];
+  const lead = getLeadDetails(leadId) || {
+    id: leadId || 'lead-unknown',
+    companyName: 'Unknown Company',
+    companyDomain: 'unknown.com',
+    industry: 'Business Services',
+    location: 'India',
+    employeeCount: '—',
+    requirement: '',
+    detailedPain: '',
+    intentScore: 0,
+    intentLevel: 'low' as const,
+    scoreReasons: [],
+    whyNow: '',
+    buyingSignals: [],
+    source: { platform: '', originalRequirement: '', sourceUrl: '', discoveredAt: '', postedAt: '' },
+    estimatedValue: '',
+    recommendedAction: 'call' as const,
+    suggestedOpeningHook: '',
+    decisionMakerContact: { name: 'Contact', role: 'Executive', phoneAvailable: false },
+    status: 'discovered' as const,
+  };
   const callId = customCallId || `call-${lead.id.replace('lead-', '')}`;
 
-  const decisionMaker = lead.decisionMakerContact?.name || lead.decisionMaker?.name || 'David Reynolds';
-  const role = lead.decisionMakerContact?.role || lead.decisionMaker?.role || 'Operations Leader';
-  const phone = lead.decisionMaker?.phone || '+1 (312) 555-0184';
+  const decisionMaker = lead.decisionMakerContact?.name || (lead as any).decisionMaker?.name || 'Contact';
+  const role = lead.decisionMakerContact?.role || (lead as any).decisionMaker?.role || 'Executive';
+  const phone = (lead as any).decisionMaker?.phone || '+91 00000 00000';
 
   return {
     callId,

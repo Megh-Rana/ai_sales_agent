@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Layers, CheckCircle2 } from 'lucide-react';
 import { DiscoveredLead, DiscoveryFilterState } from '../types/leads';
-import { mockDiscoveredLeads, getDiscoveredLeads, saveDiscoveredLeads, registerDiscoveredLead } from '../data/leads';
+import { mockDiscoveredLeads, getDiscoveredLeads, saveDiscoveredLeads, registerDiscoveredLead, addLeadToQueue, isLeadQueued } from '../data/leads';
 import { leadDiscoveryService } from '../services/leadService';
 import { DiscoveryHeader } from '../components/leads/DiscoveryHeader';
 import { DiscoveryControls } from '../components/leads/DiscoveryControls';
@@ -48,7 +48,7 @@ export const LeadDiscovery: React.FC = () => {
 
   // State
   const [filters, setFilters] = useState<DiscoveryFilterState>(initialFilters);
-  const [allLeads, setAllLeads] = useState<DiscoveredLead[]>(() => getDiscoveredLeads());
+  const [allLeads, setAllLeads] = useState<DiscoveredLead[]>([]);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -126,6 +126,8 @@ export const LeadDiscovery: React.FC = () => {
           description: targetDesc,
           duration: 4500,
         });
+      } else {
+        toast.info('No leads found for this query. Try different keywords.', { duration: 3000 });
       }
     } catch (err: any) {
       console.error('Lead discovery scan error:', err);
@@ -133,12 +135,40 @@ export const LeadDiscovery: React.FC = () => {
       toast.error('Discovery scan interrupted', {
         description: err?.message || 'Unable to reach discovery pipeline.',
       });
+    } finally {
+      setIsScanning(false);
     }
   }, [filters.query]);
 
-  const handleScanComplete = () => {
-    setIsScanning(false);
-  };
+  // Animation complete callback — no-op now, API response controls scanning state
+  const handleScanComplete = () => {};
+
+  // ── Debounced Auto-Discovery ──────────────────────────────
+  // When user types a query, auto-trigger discovery after 800ms of inactivity
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Clear previous debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    const trimmedQuery = filters.query.trim();
+
+    // Only auto-discover if there's a meaningful query (2+ chars)
+    if (trimmedQuery.length >= 2 && !isScanning) {
+      debounceTimerRef.current = setTimeout(() => {
+        triggerScan();
+      }, 800);
+    }
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [filters.query]);
 
   // Filter & Sort Logic
   const filteredLeads = useMemo(() => {
@@ -212,7 +242,7 @@ export const LeadDiscovery: React.FC = () => {
       }
       return 0;
     });
-  }, [filters]);
+  }, [filters, allLeads]);
 
   // Split into Priority Opportunities (Tier 1: Intent >= 85)
   const priorityLeads = useMemo(() => {
@@ -254,12 +284,18 @@ export const LeadDiscovery: React.FC = () => {
 
   const handleAddToPipeline = (lead: DiscoveredLead) => {
     registerDiscoveredLead(lead);
-    showFeedback(`Opportunity "${lead.companyName}" added to active pipeline.`);
-    toast.success(`"${lead.companyName}" added to active pipeline`);
+    addLeadToQueue(lead.id);
+    // Update lead status in local state
+    setAllLeads((prev) => prev.map((l) => l.id === lead.id ? { ...l, status: 'queued' as any } : l));
+    showFeedback(`"${lead.companyName}" queued for AI calling pipeline!`);
+    toast.success(`"${lead.companyName}" added to calling queue`, {
+      description: 'This lead is now visible in Opportunities & Action Center.',
+      duration: 3000,
+    });
   };
 
   const handleCallFromCard = (leadId: string) => {
-    const targetLead = allLeads.find((l) => l.id === leadId) || mockDiscoveredLeads.find((l) => l.id === leadId);
+    const targetLead = allLeads.find((l) => l.id === leadId);
     if (targetLead) {
       handleInitiateCall(targetLead);
     }
@@ -279,8 +315,8 @@ export const LeadDiscovery: React.FC = () => {
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {/* Header */}
         <DiscoveryHeader
-          totalFeeds={42}
-          lastScannedAt="2 minutes ago"
+          totalFeeds={allLeads.length}
+          lastScannedAt={allLeads.length > 0 ? 'Just now' : 'Not scanned yet'}
           onRescan={triggerScan}
           isScanning={isScanning}
         />

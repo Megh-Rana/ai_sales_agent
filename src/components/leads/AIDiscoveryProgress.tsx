@@ -61,17 +61,14 @@ export const AIDiscoveryProgress: React.FC<AIDiscoveryProgressProps> = ({
       timeoutId = setTimeout(() => {
         setCurrentStageIdx((prev) => prev + 1);
       }, STAGES[currentStageIdx].durationMs);
-    } else if (currentStageIdx === STAGES.length - 1 && !isFinished) {
-      timeoutId = setTimeout(() => {
-        setIsFinished(true);
-        onComplete();
-      }, STAGES[currentStageIdx].durationMs);
     }
+    // Last stage: just stay here, don't call onComplete.
+    // The parent controls when scanning ends (via API response).
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [currentStageIdx, isFinished, onComplete]);
+  }, [currentStageIdx]);
 
   const progressPercent = Math.min(
     100,
