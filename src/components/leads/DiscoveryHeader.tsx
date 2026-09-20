@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, Radio } from 'lucide-react';
+import { RefreshCw, Radio, Upload } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 export interface DiscoveryHeaderProps {
@@ -7,6 +7,7 @@ export interface DiscoveryHeaderProps {
   lastScannedAt?: string;
   onRescan: () => void;
   isScanning?: boolean;
+  onOpenImport?: () => void;
   className?: string;
 }
 
@@ -15,6 +16,7 @@ export const DiscoveryHeader: React.FC<DiscoveryHeaderProps> = ({
   lastScannedAt = '4 minutes ago',
   onRescan,
   isScanning = false,
+  onOpenImport,
   className = '',
 }) => {
   return (
@@ -43,6 +45,17 @@ export const DiscoveryHeader: React.FC<DiscoveryHeaderProps> = ({
 
       {/* Action Toolbar */}
       <div className="flex items-center gap-2.5 shrink-0">
+        {onOpenImport && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onOpenImport}
+            leftIcon={<Upload className="w-3.5 h-3.5 text-primary" />}
+            className="border-border-default hover:border-primary/40 font-medium"
+          >
+            Import Leads (CSV / Excel)
+          </Button>
+        )}
         <Button
           variant="secondary"
           size="sm"

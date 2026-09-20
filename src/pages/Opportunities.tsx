@@ -1,13 +1,15 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getQueuedLeads } from '../data/leads';
+import { getQueuedLeads, registerDiscoveredLead, addLeadToQueue } from '../data/leads';
 import { SalesOpportunity, OpportunityFilterState } from '../types/opportunities';
+import { DiscoveredLead } from '../types/leads';
 import { OpportunityHeader } from '../components/opportunities/OpportunityHeader';
 import { OpportunityCard } from '../components/opportunities/OpportunityCard';
 import { OpportunityDetailDrawer } from '../components/opportunities/OpportunityDetailDrawer';
 import { OpportunitySkeleton } from '../components/opportunities/OpportunitySkeleton';
 import { OpportunityEmptyState } from '../components/opportunities/OpportunityEmptyState';
 import { OpportunityErrorState } from '../components/opportunities/OpportunityErrorState';
+import { ImportLeadsModal } from '../components/leads/ImportLeadsModal';
 import { Flame, Sparkles, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -76,6 +78,7 @@ export const Opportunities: React.FC = () => {
   const [opportunities, setOpportunities] = useState<SalesOpportunity[]>(() => buildOpportunitiesFromQueue());
   const [selectedOpp, setSelectedOpp] = useState<SalesOpportunity | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'urgent' | 'warming'>('all');
@@ -83,6 +86,15 @@ export const Opportunities: React.FC = () => {
   const refreshFromQueue = useCallback(() => {
     setOpportunities(buildOpportunitiesFromQueue());
   }, []);
+
+  const handleLeadsImported = (imported: DiscoveredLead[], autoQueue: boolean) => {
+    imported.forEach((lead) => {
+      registerDiscoveredLead(lead);
+      addLeadToQueue(lead.id);
+    });
+    refreshFromQueue();
+    window.dispatchEvent(new CustomEvent('vidur_queue_updated'));
+  };
 
   useEffect(() => {
     refreshFromQueue();
@@ -199,6 +211,7 @@ export const Opportunities: React.FC = () => {
         onFilterChange={setFilters}
         onRefresh={handleRefresh}
         isRefreshing={isLoading}
+        onOpenImport={() => setIsImportModalOpen(true)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
@@ -299,6 +312,13 @@ export const Opportunities: React.FC = () => {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         onUpdateState={handleUpdateState}
+      />
+
+      {/* IMPORT LEADS MODAL (CSV & EXCEL) */}
+      <ImportLeadsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onLeadsImported={handleLeadsImported}
       />
     </div>
   );

@@ -14,6 +14,7 @@ import { PriorityOpportunityCard } from '../components/leads/PriorityOpportunity
 import { LeadResultRow } from '../components/leads/LeadResultRow';
 import { NoResultsIntelligence } from '../components/leads/NoResultsIntelligence';
 import { DiscoveryErrorState } from '../components/leads/DiscoveryErrorState';
+import { ImportLeadsModal } from '../components/leads/ImportLeadsModal';
 
 const initialFilters: DiscoveryFilterState = {
   query: '',
@@ -50,9 +51,31 @@ export const LeadDiscovery: React.FC = () => {
   const [filters, setFilters] = useState<DiscoveryFilterState>(initialFilters);
   const [allLeads, setAllLeads] = useState<DiscoveredLead[]>(() => getDiscoveredLeads());
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isError, setIsError] = useState(false);
   const [activeFeedback, setActiveFeedback] = useState<string | null>(null);
+
+  const handleLeadsImported = (imported: DiscoveredLead[], autoQueue: boolean) => {
+    setAllLeads((prev) => {
+      const existingIds = new Set(prev.map((l) => l.id.toLowerCase()));
+      const newUnique = imported.filter((l) => !existingIds.has(l.id.toLowerCase()));
+      const updated = [...newUnique, ...prev];
+      saveDiscoveredLeads(updated);
+      return updated;
+    });
+
+    imported.forEach((lead) => {
+      registerDiscoveredLead(lead);
+      if (autoQueue) {
+        addLeadToQueue(lead.id);
+      }
+    });
+
+    if (autoQueue) {
+      window.dispatchEvent(new CustomEvent('vidur_queue_updated'));
+    }
+  };
 
   // Active filter count
   const activeFilterCount = useMemo(() => {
@@ -319,6 +342,7 @@ export const LeadDiscovery: React.FC = () => {
           lastScannedAt={allLeads.length > 0 ? 'Just now' : 'Not scanned yet'}
           onRescan={triggerScan}
           isScanning={isScanning}
+          onOpenImport={() => setIsImportModalOpen(true)}
         />
 
         {/* Search & Discovery Controls */}
@@ -440,6 +464,13 @@ export const LeadDiscovery: React.FC = () => {
         onApplyFilters={handleFilterUpdate}
         onClearAll={handleClearAllFilters}
         activeFilterCount={activeFilterCount}
+      />
+
+      {/* Import Leads Modal (CSV & Excel) */}
+      <ImportLeadsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onLeadsImported={handleLeadsImported}
       />
     </div>
   );

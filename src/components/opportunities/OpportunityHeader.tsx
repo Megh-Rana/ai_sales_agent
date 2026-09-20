@@ -1,5 +1,5 @@
 import React from 'react';
-import { Radar, Flame, Sparkles, Filter, Search, RefreshCw, Layers } from 'lucide-react';
+import { Radar, Flame, Sparkles, Filter, Search, RefreshCw, Layers, Upload } from 'lucide-react';
 import { OpportunityFilterState, OpportunityCategoryType } from '../../types/opportunities';
 
 interface OpportunityHeaderProps {
@@ -10,6 +10,7 @@ interface OpportunityHeaderProps {
   onFilterChange: (newFilters: OpportunityFilterState) => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  onOpenImport?: () => void;
   activeTab: 'all' | 'urgent' | 'warming';
   onTabChange: (tab: 'all' | 'urgent' | 'warming') => void;
 }
@@ -22,6 +23,7 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
   onFilterChange,
   onRefresh,
   isRefreshing = false,
+  onOpenImport,
   activeTab,
   onTabChange,
 }) => {
@@ -55,11 +57,22 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
 
         {/* Header Action Buttons */}
         <div className="flex items-center gap-2 shrink-0">
+          {onOpenImport && (
+            <button
+              type="button"
+              onClick={onOpenImport}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-foreground-secondary bg-surface-1 border border-border-subtle hover:bg-surface-hover hover:text-foreground hover:border-primary/40 rounded-lg transition-colors cursor-pointer"
+              title="Import leads from CSV or Excel spreadsheet"
+            >
+              <Upload className="w-3.5 h-3.5 text-primary" />
+              <span>Import Leads</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-foreground-secondary bg-surface-1 border border-border-subtle hover:bg-surface-hover hover:text-foreground rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-foreground-secondary bg-surface-1 border border-border-subtle hover:bg-surface-hover hover:text-foreground rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
             title="Scan for live market signals"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-amber-400' : ''}`} />
