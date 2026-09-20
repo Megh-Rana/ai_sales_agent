@@ -48,7 +48,7 @@ export const LeadDiscovery: React.FC = () => {
 
   // State
   const [filters, setFilters] = useState<DiscoveryFilterState>(initialFilters);
-  const [allLeads, setAllLeads] = useState<DiscoveredLead[]>([]);
+  const [allLeads, setAllLeads] = useState<DiscoveredLead[]>(() => getDiscoveredLeads());
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isError, setIsError] = useState(false);

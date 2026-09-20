@@ -14,6 +14,8 @@ export interface CallStartRequest {
   companyInfo?: string;
   services?: string;
   goal?: string;
+  sellerCompanyName?: string;
+  sellerOfferings?: string;
 }
 
 export interface CallStartResponse {

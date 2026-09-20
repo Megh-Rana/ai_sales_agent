@@ -18,11 +18,13 @@ export interface CallHeaderProps {
   session: CallSession;
   formatDuration: (seconds: number) => string;
   onOpenTakeoverModal?: () => void;
+  sellerName?: string;
 }
 
 export const CallHeader: React.FC<CallHeaderProps> = ({
   session,
   formatDuration,
+  sellerName,
 }) => {
   // Map CallState & AudioStatus to standard AIStatus AIState
   const getAIStateMapping = (): { state: AIState; customText: string } => {
@@ -92,6 +94,12 @@ export const CallHeader: React.FC<CallHeaderProps> = ({
 
               {/* Status Badge */}
               <AIStatus state={aiStatusInfo.state} customText={aiStatusInfo.customText} />
+
+              {sellerName && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                  Calling from: {sellerName}
+                </span>
+              )}
             </div>
 
             {/* Contact Details Row */}

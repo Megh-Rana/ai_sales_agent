@@ -63,6 +63,8 @@ class CallStartRequest(BaseModel):
     goal: Optional[str] = None
     agentName: Optional[str] = "Alex"
     agentGender: Optional[str] = "female"
+    sellerCompanyName: Optional[str] = "Vidur AI"
+    sellerOfferings: Optional[str] = None
 
 class CallStartResponse(BaseModel):
     sessionId: str
@@ -140,25 +142,29 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
     session_id = str(uuid.uuid4())
     
     try:
-        # Prepare company context
-        company_info = request.companyInfo or f"{request.companyName} — a business prospect interested in our solutions"
-        services = request.services or "AI-powered sales automation, voice agents, and CRM integration"
-        goal = request.goal or f"Understand {request.contactName}'s requirements and schedule a product demo"
-        
-        # Create the actual voice pipeline
+        # Context: SELLER company is calling PROSPECT company
+        seller_name = request.sellerCompanyName or "Vidur AI"
+        prospect_company = request.companyName
+        prospect_name = request.contactName
+
+        services = request.sellerOfferings or request.services or "commercial supply, products, and AI automation solutions"
+        company_info = f"{seller_name} — offering {services}. We are calling {prospect_name} at {prospect_company} to explore supplying our solutions for their requirement."
+        goal = request.goal or f"Introduce {seller_name} to {prospect_name} at {prospect_company}, understand their requirement, and propose how {seller_name} can supply them."
+
+        # Create the voice pipeline with SELLER company as caller
         pipeline = PipelineOrchestrator(
             company_info=company_info,
             products_services=services,
             campaign_goal=goal,
             agent_name=request.agentName or "Alex",
-            company_name=request.companyName,
+            company_name=seller_name,
         )
-        
+
         # Set voice gender
         pipeline.tts.set_gender(request.agentGender or "female")
-        
+
         # Load all models (STT, TTS, LLM)
-        print(f"\n[Session {session_id}] Loading AI models for {request.companyName}...")
+        print(f"\n[Session {session_id}] AI Agent calling from '{seller_name}' to prospect '{prospect_company}' ({prospect_name})...")
         pipeline.load_all()
         
         # Create message queue for real-time updates
@@ -254,9 +260,9 @@ async def launch_voice_call(session_id: str):
 
                 pipeline.on_transcript = handle_live_transcript
 
-                # Get opening message
-                opening = pipeline.ai.get_opening(prospect_name=contact_name)
-                print(f"🤖 Agent: {opening}\n")
+                # Get opening message from seller agent to prospect
+                opening = pipeline.ai.get_opening(prospect_name=contact_name, prospect_company=session.get("companyName", ""))
+                print(f"🤖 Agent ({pipeline.ai.company_name}): {opening}\n")
                 
                 # Add opening to transcript
                 opening_item = {

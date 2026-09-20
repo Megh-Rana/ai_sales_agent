@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useI18n } from '../i18n/i18nContext';
 import { ActionPriorityLevel, NextBestActionItem } from '../types/actions';
 import {
-  mockNextBestActions,
   mockActionSummary,
   mockStalledDeals,
   mockLiveSignals,
@@ -42,7 +41,7 @@ function buildActionsFromQueue(): NextBestActionItem[] {
     contactName: lead.decisionMakerContact?.name || 'Decision Maker',
     contactRole: lead.decisionMakerContact?.role || 'Executive',
     intentScore: lead.intentScore,
-    estimatedValue: lead.estimatedValue || '₹20L',
+    estimatedValue: lead.estimatedValue || '₹25L',
     priority: lead.intentScore >= 85 ? 'CRITICAL' as const : 'HIGH' as const,
     category: 'CALL' as const,
     title: `AI Call: ${lead.companyName} — ${lead.requirement?.slice(0, 60) || lead.industry}`,
@@ -53,7 +52,7 @@ function buildActionsFromQueue(): NextBestActionItem[] {
       timeframe: 'Action required now',
     },
     primaryActionLabel: 'Start AI Call',
-    primaryActionTarget: `/calls/call-${lead.id}?leadId=${lead.id}`,
+    primaryActionTarget: `/calls/${lead.id}?leadId=${lead.id}`,
     primaryActionType: 'call' as const,
     status: 'active' as const,
     createdAt: new Date().toISOString(),
@@ -64,12 +63,24 @@ export const ActionCenter: React.FC = () => {
   const { t } = useI18n();
   const [activePriority, setActivePriority] = useState<'ALL' | ActionPriorityLevel>('ALL');
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [actionsList, setActionsList] = useState<NextBestActionItem[]>(() => {
-    const fromQueue = buildActionsFromQueue();
-    return [...fromQueue, ...mockNextBestActions];
-  });
+  const [actionsList, setActionsList] = useState<NextBestActionItem[]>(() => buildActionsFromQueue());
   const [viewState, setViewState] = useState<'normal' | 'loading' | 'empty' | 'error'>('normal');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const reloadActions = useCallback(() => {
+    setActionsList(buildActionsFromQueue());
+  }, []);
+
+  useEffect(() => {
+    reloadActions();
+    const onQueueChange = () => reloadActions();
+    window.addEventListener('vidur_queue_updated', onQueueChange);
+    window.addEventListener('storage', onQueueChange);
+    return () => {
+      window.removeEventListener('vidur_queue_updated', onQueueChange);
+      window.removeEventListener('storage', onQueueChange);
+    };
+  }, [reloadActions]);
 
   const filteredActions = useMemo(() => {
     return actionsList.filter((item) => {

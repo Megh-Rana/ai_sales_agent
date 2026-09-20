@@ -7,7 +7,7 @@ import { authService } from '../services/authService';
 import { toast } from 'sonner';
 
 export const Login: React.FC = () => {
-  const [email, setEmail] = useState('neel@acmetech.io');
+  const [email, setEmail] = useState('megh@acmetech.io');
   const [password, setPassword] = useState('password123');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

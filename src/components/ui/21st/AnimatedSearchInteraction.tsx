@@ -30,7 +30,7 @@ export const AnimatedSearchInteraction: React.FC<AnimatedSearchInteractionProps>
     { id: '3', title: 'CloudScale Inc', subtitle: 'DevOps & Infra • AI Call Completed', type: 'company', score: 82 },
   ];
 
-  const filtered = query.trim()
+  const filtered = (query || '').trim()
     ? mockResults.filter(
         (r) =>
           r.title.toLowerCase().includes(query.toLowerCase()) ||

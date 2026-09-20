@@ -12,7 +12,7 @@ import {
   QualificationDimension,
   CurrentObjective
 } from '../types/calls';
-import { getLeadDetails } from '../data/leads';
+import { getLeadDetails, getSellerBusinessProfile } from '../data/leads';
 import {
   createMockCallSession,
   buildDynamicScriptForLead,
@@ -69,33 +69,11 @@ export const AICalling: React.FC = () => {
     if (rawId.startsWith('call-lead-')) return rawId.replace('call-', '');
     if (rawId.startsWith('call-')) return `lead-${rawId.replace('call-', '')}`;
     if (rawId.startsWith('lead-')) return rawId;
-    return 'lead-101';
+    return rawId || 'lead-101';
   }, [queryLeadId, rawId]);
 
   const lead = getLeadDetails(resolvedLeadId);
-
-  // Guard: if no lead found, show a user-friendly error instead of crashing
-  if (!lead) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center space-y-4 p-8 max-w-md">
-          <AlertCircle className="w-12 h-12 text-red-400 mx-auto" />
-          <h2 className="text-lg font-bold">No Lead Selected</h2>
-          <p className="text-sm text-foreground-tertiary">
-            Please go to Lead Discovery first, discover some leads, and then click "AI Call" on a specific lead.
-          </p>
-          <Button
-            onClick={() => navigate('/leads/discover')}
-            variant="primary"
-            size="md"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go to Lead Discovery
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const seller = getSellerBusinessProfile();
 
   const [session, setSession] = useState<CallSession>(() => {
     return createMockCallSession(resolvedLeadId, rawId || undefined, 'English');
@@ -142,30 +120,102 @@ export const AICalling: React.FC = () => {
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'transcript' && data.text) {
-            const speakerRole: 'ai_agent' | 'prospect' = data.speaker === 'agent' ? 'ai_agent' : 'prospect';
-            const totalSecs = Math.floor(data.timestamp ?? 0);
-            const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
-            const secs = (totalSecs % 60).toString().padStart(2, '0');
+          if (!data) return;
+
+          // Handle full transcript initialization on connect
+          if (data.type === 'init' && Array.isArray(data.transcript)) {
+            setSession((prev) => {
+              const formatted: TranscriptItem[] = data.transcript
+                .filter((t: any) => t && (typeof t.text === 'string' || typeof t.item?.text === 'string'))
+                .map((t: any, idx: number) => {
+                  const itemObj = t.item || t;
+                  const safeText = String(itemObj.text || '').trim();
+                  const isAgent = itemObj.speaker === 'agent' || itemObj.speaker === 'ai_agent';
+                  return {
+                    id: `${itemObj.speaker || 'init'}-${idx}-${Date.now()}`,
+                    speaker: (isAgent ? 'ai_agent' : 'prospect') as 'ai_agent' | 'prospect',
+                    speakerName: isAgent ? `${seller.name} AI Agent` : 'You (Customer) · Live Mic',
+                    text: safeText,
+                    timestamp: `00:${(idx * 4).toString().padStart(2, '0')}`,
+                    isFinal: true
+                  };
+                })
+                .filter((t: TranscriptItem) => t.text.length > 0);
+
+              return formatted.length > 0 ? { ...prev, transcript: formatted } : prev;
+            });
+            return;
+          }
+
+          // Handle single turn transcript event (can be in data.item or data directly)
+          if (data.type === 'transcript') {
+            const payload = data.item || data;
+            const rawText = String(payload?.text || '').trim();
+            if (!rawText) return;
+
+            const isAgent = payload.speaker === 'agent' || payload.speaker === 'ai_agent';
+            const speakerRole: 'ai_agent' | 'prospect' = isAgent ? 'ai_agent' : 'prospect';
 
             setSession((prev) => {
-              // Avoid duplicate messages
-              const exists = prev.transcript.some(t => (t.text || '').trim() === (data.text || '').trim());
+              // Avoid duplicate messages safely
+              const exists = prev.transcript.some(t => {
+                const existingText = String(t?.text || '').trim();
+                return existingText === rawText;
+              });
               if (exists) return prev;
 
+              const totalSecs = prev.duration || 0;
+              const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+              const secs = (totalSecs % 60).toString().padStart(2, '0');
+
               const newItem: TranscriptItem = {
-                id: `${data.speaker}-${Date.now()}-${Math.random()}`,
+                id: `${payload.speaker || 'turn'}-${Date.now()}-${Math.random()}`,
                 speaker: speakerRole,
-                speakerName: speakerRole === 'ai_agent' ? 'Vidur AI Agent' : 'You (Customer) · Live Mic',
-                text: data.text,
+                speakerName: speakerRole === 'ai_agent' ? `${seller.name} AI Agent` : 'You (Customer) · Live Mic',
+                text: rawText,
                 timestamp: `${mins}:${secs}`,
                 isFinal: true
               };
 
+              // Dynamically capture buying signals from customer's speech
+              let updatedEvents = prev.intelligenceEvents;
+              let updatedQual = prev.qualification;
+
+              if (speakerRole === 'prospect') {
+                const lower = rawText.toLowerCase();
+                const hasIntent = ['need', 'want', 'buy', 'supply', 'milk', 'price', 'cost', 'quote', 'requirement', 'volume', 'supplier'].some(k => lower.includes(k));
+                if (hasIntent) {
+                  const newEvent: IntelligenceEvent = {
+                    id: `live-sig-${Date.now()}`,
+                    type: 'buying_signal',
+                    title: 'Live Voice Intent Captured',
+                    description: `Customer stated: "${rawText.slice(0, 75)}"`,
+                    quote: rawText,
+                    timestamp: `${mins}:${secs}`,
+                    impactScore: 92,
+                    whyItMatters: 'Spoken commercial requirement received via microphone.'
+                  };
+                  updatedEvents = [newEvent, ...prev.intelligenceEvents];
+                  if (updatedQual.Need) {
+                    updatedQual = {
+                      ...updatedQual,
+                      Need: {
+                        ...updatedQual.Need,
+                        status: 'confirmed',
+                        detail: `Confirmed: ${rawText.slice(0, 40)}`,
+                        evidence: rawText
+                      }
+                    };
+                  }
+                }
+              }
+
               return {
                 ...prev,
                 audioStatus: speakerRole === 'ai_agent' ? 'ai_speaking' : 'prospect_speaking',
-                transcript: [...prev.transcript, newItem]
+                transcript: [...prev.transcript, newItem],
+                intelligenceEvents: updatedEvents,
+                qualification: updatedQual
               };
             });
           }
@@ -200,27 +250,40 @@ export const AICalling: React.FC = () => {
           return;
         }
 
-        // Update transcript — guard against malformed items
+        // Update transcript safely from HTTP polling
         if (Array.isArray(status.transcript) && status.transcript.length > 0) {
-          setSession((prev) => ({
-            ...prev,
-            transcript: status.transcript
-              .filter(t => t && t.speaker && t.text)
-              .map(t => {
-                const totalSecs = Math.floor((t.timestamp ?? 0));
-                const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
-                const secs = (totalSecs % 60).toString().padStart(2, '0');
-                const speakerRole: 'ai_agent' | 'prospect' = t.speaker === 'agent' ? 'ai_agent' : 'prospect';
+          setSession((prev) => {
+            const mapped: TranscriptItem[] = status.transcript
+              .filter(t => t && (typeof t.text === 'string' || typeof (t as any).item?.text === 'string'))
+              .map((t, idx) => {
+                const itemObj = (t as any).item || t;
+                const safeText = String(itemObj.text || '').trim();
+                const isAgent = itemObj.speaker === 'agent' || itemObj.speaker === 'ai_agent';
+                const speakerRole: 'ai_agent' | 'prospect' = isAgent ? 'ai_agent' : 'prospect';
+                let relSecs = idx * 4;
+                if (typeof itemObj.timestamp === 'number' && itemObj.timestamp < 1000000) {
+                  relSecs = Math.floor(itemObj.timestamp);
+                } else if (typeof status.duration === 'number') {
+                  relSecs = Math.min(status.duration, idx * 5);
+                }
+                const mins = Math.floor(relSecs / 60).toString().padStart(2, '0');
+                const secs = (relSecs % 60).toString().padStart(2, '0');
                 return {
-                  id: `${t.speaker}-${t.timestamp ?? Date.now()}`,
+                  id: `${itemObj.speaker || 'poll'}-${idx}`,
                   speaker: speakerRole,
-                  speakerName: speakerRole === 'ai_agent' ? 'Vidur AI Agent' : 'You (Customer) · Live Mic',
-                  text: t.text,
+                  speakerName: speakerRole === 'ai_agent' ? `${seller.name} AI Agent` : 'You (Customer) · Live Mic',
+                  text: safeText,
                   timestamp: `${mins}:${secs}`,
                   isFinal: true,
                 };
               })
-          }));
+              .filter(t => t.text.length > 0);
+
+            if (mapped.length > prev.transcript.length) {
+              return { ...prev, transcript: mapped };
+            }
+            return prev;
+          });
         }
 
         // Update duration
@@ -243,7 +306,7 @@ export const AICalling: React.FC = () => {
         console.error('Failed to poll status:', error);
       }
     }, 700);
-  }, []);
+  }, [seller.name]);
 
   const safeTimeout = useCallback((fn: () => void, ms: number) => {
     const t = setTimeout(() => {
@@ -400,9 +463,11 @@ export const AICalling: React.FC = () => {
         contactRole: session.contactRole,
         contactPhone: session.contactPhone,
         language: langCode,
-        companyInfo: `${session.companyName} - ${lead?.industry ?? 'Technology'}`,
-        services: lead?.buyingSignals?.map(s => s.description).join(', '),
-        goal: `Understand ${session.contactName}'s requirements and qualify for demo`
+        sellerCompanyName: seller.name,
+        sellerOfferings: seller.offerings,
+        companyInfo: `${seller.name} (${seller.offerings})`,
+        services: seller.offerings,
+        goal: `Introduce ${seller.name}'s solutions to ${session.contactName} at ${session.companyName} and explore supplying their requirement.`
       });
 
       setBackendSessionId(startResponse.sessionId);
@@ -712,26 +777,28 @@ export const AICalling: React.FC = () => {
       {(session.status === 'LIVE' || session.status === 'PAUSED') && (
         <div className="space-y-4 animate-in fade-in duration-300">
           {isRealVoiceCall && (
-            <div className="p-3 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-between gap-3 shadow-xs">
+            <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-2.5">
-                <span className="relative flex h-3 w-3">
+                <span className="relative flex h-3 w-3 shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                 </span>
-                <span className="text-xs font-semibold text-foreground">
-                  Hackathon Live Demo: <strong className="text-primary">You are the Customer</strong>
-                </span>
-                <span className="text-[11px] text-foreground-secondary hidden sm:inline">
-                  • Speak into your microphone to converse with Vidur AI. Speech-to-text and LLM answers stream below.
-                </span>
+                <div className="space-y-0.5">
+                  <div className="text-xs font-semibold text-foreground">
+                    Caller: <strong className="text-primary">{seller.name} AI Agent</strong> ➔ Pitching to: <strong className="text-primary">{session.companyName}</strong>
+                  </div>
+                  <div className="text-[11px] text-foreground-secondary">
+                    You are acting as the Customer (<strong className="text-foreground">{session.contactName}</strong>). Speak into your microphone to answer the AI caller.
+                  </div>
+                </div>
               </div>
-              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-surface-elevated text-signal-qualified border border-signal-qualified/30 font-bold shrink-0">
-                MIC ACTIVE
+              <span className="text-[10px] font-mono px-2.5 py-1 rounded bg-surface-elevated text-signal-qualified border border-signal-qualified/30 font-bold shrink-0 self-start sm:self-center">
+                MIC ACTIVE (CUSTOMER)
               </span>
             </div>
           )}
 
-          <CallHeader session={session} formatDuration={formatDuration} />
+          <CallHeader session={session} formatDuration={formatDuration} sellerName={seller.name} />
           <CallWaveform status={session.audioStatus} isMuted={session.isMuted} />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">

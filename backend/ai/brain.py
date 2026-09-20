@@ -206,15 +206,24 @@ class AIBrain:
             except Exception as e:
                 print(f"[AI] Ollama warm up failed: {e}")
 
-    def get_opening(self, prospect_name: str = "", language: str = "en") -> str:
-        """Get the opening line for the call."""
+    def get_opening(self, prospect_name: str = "", prospect_company: str = "", language: str = "en") -> str:
+        """Get the opening line for the call where the agent calls the prospect from the seller company."""
         lang = language if language in OPENING_SCRIPT else "en"
-        reason = self.campaign_goal.lower().rstrip(".")
-        opening = OPENING_SCRIPT[lang].format(
-            agent_name=self.agent_name,
-            company_name=self.company_name,
-            reason=reason,
-        )
+        first_name = prospect_name.split()[0] if prospect_name and prospect_name.lower() not in ("contact", "decision maker", "executive") else ""
+        name_prefix = f"Hi {first_name}, " if first_name else "Hi, "
+        
+        if lang == "en":
+            opening = f"{name_prefix}this is {self.agent_name} calling from {self.company_name}. Do you have a quick minute to chat?"
+        elif lang == "hi":
+            name_hi = f"नमस्ते {first_name} जी, " if first_name else "नमस्ते, "
+            opening = f"{name_hi}मैं {self.agent_name}, {self.company_name} से बोल रहा हूँ। क्या आपके पास एक मिनट है बात करने के लिए?"
+        elif lang == "gu":
+            opening = f"નમસ્તે, હું {self.agent_name}, {self.company_name} તરફથી વાત કરું છું. એક મિનિટ છે?"
+        elif lang == "mr":
+            opening = f"नमस्कार, मी {self.agent_name}, {self.company_name} कडून बोलतोय. एक मिनिट आहे का?"
+        else:
+            opening = f"{name_prefix}this is {self.agent_name} calling from {self.company_name}. Do you have a quick minute?"
+
         self.memory.add_turn("agent", opening, language)
         self._prev_language = language
         return opening

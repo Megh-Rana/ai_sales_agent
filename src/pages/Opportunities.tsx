@@ -1,6 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { mockOpportunities } from '../data/mockOpportunities';
 import { getQueuedLeads } from '../data/leads';
 import { SalesOpportunity, OpportunityFilterState } from '../types/opportunities';
 import { OpportunityHeader } from '../components/opportunities/OpportunityHeader';
@@ -22,35 +21,35 @@ function buildOpportunitiesFromQueue(): SalesOpportunity[] {
     companyDomain: lead.companyDomain,
     industry: lead.industry,
     location: lead.location,
-    contactName: lead.decisionMakerContact?.name || 'Decision Maker',
-    contactRole: lead.decisionMakerContact?.role || 'Executive',
-    contactPhone: (lead as any).decisionMaker?.phone || '',
-    contactEmail: (lead as any).decisionMaker?.email || '',
-    phoneAvailable: lead.decisionMakerContact?.phoneAvailable || false,
+    contactName: lead.decisionMakerContact?.name || (lead as any).decisionMaker?.name || 'Decision Maker',
+    contactRole: lead.decisionMakerContact?.role || (lead as any).decisionMaker?.role || 'Executive',
+    contactPhone: (lead as any).decisionMaker?.phone || '+91 98201 54890',
+    contactEmail: (lead as any).decisionMaker?.email || `contact@${lead.companyDomain || 'company.com'}`,
+    phoneAvailable: true,
     intentScore: lead.intentScore,
-    estimatedValue: lead.estimatedValue || '₹20 Lakh / yr',
+    estimatedValue: lead.estimatedValue || '₹25 Lakh / yr',
     priority: lead.intentScore >= 85 ? 'HIGH' as const : lead.intentScore >= 70 ? 'MEDIUM' as const : 'LOW' as const,
     type: 'BUYING_SIGNAL' as const,
     state: 'action_required' as const,
     isEmerging: false,
     whyNow: {
-      headline: lead.whyNow || 'Queued from AI Lead Discovery',
-      evidence: lead.scoreReasons || [],
-      recencyLabel: 'Just now',
+      headline: lead.whyNow || `Active requirement discovered for ${lead.companyName}`,
+      evidence: lead.scoreReasons || [lead.requirement],
+      recencyLabel: 'Today',
       timestamp: new Date().toISOString(),
     },
     signals: lead.buyingSignals?.map((s) => ({
       id: s.id, title: s.description?.slice(0, 60) || s.type, category: s.type,
-      recency: s.timestamp, impactScore: s.impactScore,
+      recency: s.timestamp || 'Today', impactScore: s.impactScore || 88,
     })) || [],
     recommendedAction: {
       label: 'Start AI Call',
       actionType: 'call' as const,
-      route: `/calls/call-${lead.id}?leadId=${lead.id}`,
+      route: `/calls/${lead.id}?leadId=${lead.id}`,
       suggestedOpening: lead.suggestedOpeningHook,
     },
     timeline: [
-      { id: 'q-1', timestamp: 'Just now', title: 'Queued from Discovery', description: `Lead queued for outreach from AI Discovery.`, type: 'intent' as const },
+      { id: 'q-1', timestamp: 'Today', title: 'Queued from Discovery', description: `Lead queued for AI outreach.`, type: 'intent' as const },
     ],
     updatedAt: new Date().toISOString(),
   }));
@@ -59,16 +58,27 @@ function buildOpportunitiesFromQueue(): SalesOpportunity[] {
 export const Opportunities: React.FC = () => {
   const navigate = useNavigate();
   const { id: paramOppId } = useParams<{ id?: string }>();
-  const [opportunities, setOpportunities] = useState<SalesOpportunity[]>(() => {
-    const fromQueue = buildOpportunitiesFromQueue();
-    // Queued leads first, then mock data
-    return [...fromQueue, ...mockOpportunities];
-  });
+  const [opportunities, setOpportunities] = useState<SalesOpportunity[]>(() => buildOpportunitiesFromQueue());
   const [selectedOpp, setSelectedOpp] = useState<SalesOpportunity | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'urgent' | 'warming'>('all');
+
+  const refreshFromQueue = useCallback(() => {
+    setOpportunities(buildOpportunitiesFromQueue());
+  }, []);
+
+  useEffect(() => {
+    refreshFromQueue();
+    const onQueueChange = () => refreshFromQueue();
+    window.addEventListener('vidur_queue_updated', onQueueChange);
+    window.addEventListener('storage', onQueueChange);
+    return () => {
+      window.removeEventListener('vidur_queue_updated', onQueueChange);
+      window.removeEventListener('storage', onQueueChange);
+    };
+  }, [refreshFromQueue]);
 
   useEffect(() => {
     if (paramOppId) {

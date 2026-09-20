@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { DiscoveredLead } from '../../types/leads';
 import { Button } from '../ui/Button';
+import { getSellerBusinessProfile } from '../../data/leads';
 
 export interface PreCallViewProps {
   lead: DiscoveredLead;
@@ -29,6 +30,7 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
   onStartCallFlow
 }) => {
   const navigate = useNavigate();
+  const seller = getSellerBusinessProfile();
 
   const decisionMakerName =
     lead.decisionMakerContact?.name || lead.decisionMaker?.name || 'David Reynolds';
@@ -57,6 +59,27 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
         <div className="flex items-center gap-2 text-[11px] font-mono text-foreground-tertiary">
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           <span>Pre-Call Strategic Briefing</span>
+        </div>
+      </div>
+
+      {/* Seller Persona Banner */}
+      <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+            AI
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <span>Calling Identity:</span>
+              <span className="text-primary font-bold">{seller.name} AI Sales Agent</span>
+            </div>
+            <p className="text-[11px] text-foreground-secondary">
+              Pitching: <span className="text-foreground">{seller.offerings}</span> to solve {lead.companyName}'s requirement
+            </p>
+          </div>
+        </div>
+        <div className="text-[11px] font-mono text-foreground-tertiary bg-surface-elevated/70 px-2.5 py-1 rounded border border-border-subtle shrink-0">
+          Seller ➔ Prospect Pitch
         </div>
       </div>
 

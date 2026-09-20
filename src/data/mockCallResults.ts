@@ -548,7 +548,7 @@ export const mockCallResultsMap: Record<string, CallResultData> = {
 
 export function getCallResultData(rawCallId: string | undefined): CallResultData {
   if (!rawCallId) return mockCallResultsMap['call-101'];
-  const cleanId = rawCallId.trim().toLowerCase();
+  const cleanId = String(rawCallId).trim().toLowerCase();
 
   if (mockCallResultsMap[cleanId]) {
     return mockCallResultsMap[cleanId];

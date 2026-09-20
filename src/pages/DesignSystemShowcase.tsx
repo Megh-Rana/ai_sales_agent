@@ -256,7 +256,7 @@ export const DesignSystemShowcase: React.FC = () => {
               <Badge variant="neutral">DISCOVERED</Badge>
             </div>
             <div className="flex items-center gap-4 pt-2">
-              <Avatar type="user" name="Neel Sharma" size="md" />
+              <Avatar type="user" name="Megh Rana" size="md" />
               <Avatar type="company" name="Acme Labs" size="md" />
               <Avatar type="ai" size="md" />
             </div>
