@@ -22,6 +22,7 @@ import { Opportunities } from './pages/Opportunities';
 import { SalesCopilot } from './pages/SalesCopilot';
 import { RevenueCommandCenter } from './pages/RevenueCommandCenter';
 import { DesignSystemShowcase } from './pages/DesignSystemShowcase';
+import { AdminPortal } from './pages/AdminPortal';
 import { Toaster } from 'sonner';
 import { PWAInstallBanner } from './components/pwa/PWAInstallBanner';
 
@@ -151,43 +152,17 @@ function AppContent() {
                   }
                 />
 
-                {/* Admin Sub-routes */}
-                <Route
-                  path="/admin"
-                  element={
-                    <RoutePlaceholder title="Administration Portal" description="Global platform monitoring, user management, and system health." badge="Administration" />
-                  }
-                />
-                <Route
-                  path="/admin/users"
-                  element={
-                    <RoutePlaceholder title="Global User Management" description="Provision accounts, reset access, and audit user activity." badge="Admin" />
-                  }
-                />
-                <Route
-                  path="/admin/campaigns"
-                  element={
-                    <RoutePlaceholder title="System Campaign Monitoring" description="Global cadence performance, volume throttling, and queue health." badge="Admin" />
-                  }
-                />
-                <Route
-                  path="/admin/voice-usage"
-                  element={
-                    <RoutePlaceholder title="AI Voice Usage Telemetry" description="SIP latency, call duration analytics, and telephony costs." badge="Admin" />
-                  }
-                />
-                <Route
-                  path="/admin/audit-logs"
-                  element={
-                    <RoutePlaceholder title="System Audit Logs" description="Immutable security audit trail of all administrative events." badge="Admin" />
-                  }
-                />
-                <Route
-                  path="/admin/fraud"
-                  element={
-                    <RoutePlaceholder title="Fraud & Anomaly Detection" description="Automated threat monitoring and abuse prevention rules." badge="Admin" />
-                  }
-                />
+                {/* Admin Routes */}
+                <Route path="/admin" element={<AdminPortal />} />
+                <Route path="/admin/users" element={<AdminPortal />} />
+                <Route path="/admin/subscriptions" element={<AdminPortal />} />
+                <Route path="/admin/billing" element={<AdminPortal />} />
+                <Route path="/admin/campaigns" element={<AdminPortal />} />
+                <Route path="/admin/voice-usage" element={<AdminPortal />} />
+                <Route path="/admin/voice" element={<AdminPortal />} />
+                <Route path="/admin/audit-logs" element={<AdminPortal />} />
+                <Route path="/admin/fraud" element={<AdminPortal />} />
+                <Route path="/admin/settings" element={<AdminPortal />} />
 
                 {/* 404 Route */}
                 <Route path="*" element={<NotFound />} />
