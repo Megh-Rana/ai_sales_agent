@@ -77,8 +77,8 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma3:4b")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.5"))
 OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "2048"))        # Context window — 2K is plenty for short sales calls
-# Set to 0 on Windows by default to avoid CUDA DLL stack buffer overrun (0xc0000409)
-OLLAMA_NUM_GPU = int(os.getenv("OLLAMA_NUM_GPU", "0"))
+# Set to 0 on Windows to avoid CUDA DLL issues; on Linux/CUDA use 99 for full GPU offload
+OLLAMA_NUM_GPU = int(os.getenv("OLLAMA_NUM_GPU", "0" if sys.platform == "win32" else "99"))
 
 
 # ─── Streaming Pipeline ──────────────────────────────────────────────

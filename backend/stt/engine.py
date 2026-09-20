@@ -20,11 +20,26 @@ class STTEngine:
         self._loaded = False
 
     def load(self):
-        """Load local Whisper model if whisper provider is active."""
+        """Load local Whisper model if whisper provider is active or warm it in background."""
         provider = getattr(config, "STT_PROVIDER", "sarvam")
         if provider == "sarvam":
             print(f"[STT] Sarvam Speech-to-Text ({config.SARVAM_STT_MODEL}) ready")
             self._loaded = True
+            # Pre-warm local Whisper in background so any cloud timeout falls back instantaneously
+            if self.model is None:
+                import threading
+                def _warm_whisper():
+                    try:
+                        from faster_whisper import WhisperModel
+                        self.model = WhisperModel(
+                            config.STT_MODEL_SIZE,
+                            device=config.STT_DEVICE,
+                            compute_type=config.STT_COMPUTE_TYPE,
+                        )
+                        print("[STT] Local Whisper fallback pre-warmed on GPU")
+                    except Exception as ex:
+                        print(f"[STT] Whisper pre-warm notice: {ex}")
+                threading.Thread(target=_warm_whisper, daemon=True).start()
             return
 
         if self._loaded:
@@ -77,7 +92,7 @@ class STTEngine:
                 headers=headers,
                 files=files,
                 data=data,
-                timeout=10.0,
+                timeout=4.5,
             )
             res.raise_for_status()
             resp = res.json()

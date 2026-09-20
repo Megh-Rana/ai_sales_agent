@@ -235,7 +235,7 @@ class PipelineOrchestrator:
                     with sd.OutputStream(samplerate=sr, channels=1, dtype="float32") as stream:
                         while True:
                             try:
-                                chunk = audio_q.get(timeout=15.0)
+                                chunk = audio_q.get(timeout=45.0)
                             except queue.Empty:
                                 print("[Audio] Playback timeout")
                                 break

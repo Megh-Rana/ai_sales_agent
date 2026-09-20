@@ -179,7 +179,7 @@ class TTSEngine:
         with ThreadPoolExecutor(max_workers=2, thread_name_prefix="tts") as pool:
             while True:
                 try:
-                    item = sentence_q.get(timeout=30.0)
+                    item = sentence_q.get(timeout=45.0)
                 except queue.Empty:
                     print("\n[TTS] Timeout waiting for sentence from LLM")
                     break
