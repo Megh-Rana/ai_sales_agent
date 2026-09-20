@@ -30,7 +30,7 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
   onStartCallFlow
 }) => {
   const navigate = useNavigate();
-  const seller = getSellerBusinessProfile();
+  const seller = getSellerBusinessProfile(lead.requirement);
 
   const decisionMakerName =
     lead.decisionMakerContact?.name || lead.decisionMaker?.name || 'David Reynolds';

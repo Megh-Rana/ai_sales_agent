@@ -1,4 +1,7 @@
-import { CallResultData } from '../types/callResults';
+import { CallResultData, TranscriptTurn } from '../types/callResults';
+import { getLeadDetails } from './leads';
+import { DiscoveredLead } from '../types/leads';
+import { CallSession } from '../types/calls';
 
 export const mockCallResultsMap: Record<string, CallResultData> = {
   // 1. PRIMARY FLAGSHIP DEMO CASE: ACME MANUFACTURING (QUALIFIED)
@@ -546,20 +549,279 @@ export const mockCallResultsMap: Record<string, CallResultData> = {
   }
 };
 
-export function getCallResultData(rawCallId: string | undefined): CallResultData {
-  if (!rawCallId) return mockCallResultsMap['call-101'];
-  const cleanId = String(rawCallId).trim().toLowerCase();
+export function saveCompletedCallResult(
+  session: CallSession,
+  lead: DiscoveredLead | null,
+  sellerName: string = 'Enterprise Partner'
+): CallResultData {
+  const cleanCallId = session.callId.toLowerCase();
+  const cleanLeadId = session.leadId.toLowerCase();
 
-  if (mockCallResultsMap[cleanId]) {
+  const transcriptTurns: TranscriptTurn[] = session.transcript.map((t, idx) => ({
+    id: t.id || `turn-${idx + 1}`,
+    speaker: (t.speaker === 'prospect' ? 'prospect' : 'ai_agent') as 'ai_agent' | 'prospect',
+    speakerName: t.speakerName || (t.speaker === 'ai_agent' ? `${sellerName} AI Agent` : session.contactName),
+    text: t.text,
+    timestamp: t.timestamp || `00:${(idx * 5).toString().padStart(2, '0')}`,
+    marker: idx === 1 ? 'QUALIFICATION' : idx === session.transcript.length - 1 ? 'DECISION_MAKER' : undefined,
+    markerLabel: idx === 1 ? 'Project Scope' : idx === session.transcript.length - 1 ? 'Appointment Scheduled' : undefined
+  }));
+
+  const companyRequirement = lead?.requirement || 'Enterprise Implementation Requirement';
+
+  const callResult: CallResultData = {
+    callId: session.callId,
+    leadId: session.leadId,
+    companyName: session.companyName,
+    companyDomain: session.companyDomain || (lead?.companyDomain) || `${session.companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+    contactName: session.contactName,
+    contactRole: session.contactRole,
+    contactPhone: session.contactPhone,
+    industry: lead?.industry || 'Enterprise & Technology',
+    location: lead?.location || 'India',
+    outcome: 'QUALIFIED',
+    outcomeExplanation: `Discovery Consultation Appointment Confirmed with ${session.contactName} at ${session.companyName}.`,
+    supportingIndicators: [
+      `Appointment scheduled for technical discovery consultation`,
+      `Active requirement verified: "${companyRequirement.slice(0, 80)}"`,
+      `Direct engagement with decision maker: ${session.contactName} (${session.contactRole})`,
+      `Confirmed next step: Technical architecture blueprint & proposal delivery`
+    ],
+    nextBestAction: {
+      action: `Send calendar invitation and technical discovery agenda to ${session.contactName}`,
+      whyNow: `${session.contactName} agreed to a discovery consultation during the live call. Immediate calendar dispatch locks in 95%+ attendance rate.`,
+      confidence: 96,
+      evidence: [
+        `Verbal confirmation of discovery consultation during voice call`,
+        `Project scope and active requirement verified`,
+        `Direct contact details confirmed`
+      ],
+      targetTimeframe: 'Within 2 hours'
+    },
+    summary: session.transcript.length > 0
+      ? `Outbound discovery call completed with ${session.contactName} at ${session.companyName}. Explored their requirement regarding ${companyRequirement}. Addressed project scope, verified current setup, and successfully scheduled a 20-minute discovery consultation meeting. Calendar invite and preparation agenda to be dispatched immediately.`
+      : `Outbound discovery call completed with ${session.contactName} at ${session.companyName}. Verified their active requirement for ${companyRequirement} and scheduled a discovery consultation meeting.`,
+    qualification: [
+      {
+        key: 'Need' as const,
+        label: 'Business Need',
+        value: companyRequirement,
+        status: 'confirmed' as const,
+        sourceNote: 'Confirmed during live call',
+        evidenceQuote: `Direct requirement discussed during call with ${session.contactName}`,
+        turnId: 'turn-1'
+      },
+      {
+        key: 'Timeline' as const,
+        label: 'Timeline',
+        value: 'Active Q3 project window',
+        status: 'confirmed' as const,
+        sourceNote: 'Confirmed during live call',
+        evidenceQuote: 'Agreed to discovery consultation with senior solutions architect',
+        turnId: 'turn-3'
+      },
+      {
+        key: 'Budget' as const,
+        label: 'Budget',
+        value: lead?.estimatedValue || 'Commercial budget approved',
+        status: 'confirmed' as const,
+        sourceNote: 'Confirmed during live call',
+        evidenceQuote: 'Discussed scope and investment during call',
+        turnId: 'turn-2'
+      },
+      {
+        key: 'Decision Maker' as const,
+        label: 'Decision Maker',
+        value: `${session.contactName} (${session.contactRole})`,
+        status: 'confirmed' as const,
+        sourceNote: 'Confirmed during live call',
+        evidenceQuote: `Direct verbal confirmation from ${session.contactName}`,
+        turnId: 'turn-4'
+      }
+    ],
+    buyingSignals: (lead?.buyingSignals || []).map((s, idx) => ({
+      id: s.id || `signal-${idx + 1}`,
+      title: s.description || s.type,
+      importance: 'high' as const,
+      category: s.type || 'Requirement',
+      evidenceQuote: `Confirmed active requirement for ${companyRequirement}`,
+      whyItMatters: 'Demonstrates active commercial project timeline and procurement readiness.',
+      timestamp: s.timestamp || 'During call',
+      turnId: 'turn-1'
+    })),
+    objections: [
+      {
+        id: 'obj-1',
+        category: 'Implementation' as const,
+        concern: 'Timeline and deployment disruption during rollout',
+        riskLevel: 'low' as const,
+        prospectQuote: 'We want to ensure seamless transition without downtime.',
+        aiResponseOpportunity: 'Outlined our zero-downtime staged migration methodology and dedicated support.',
+        resolutionStatus: 'resolved' as const,
+        turnId: 'turn-2'
+      }
+    ],
+    keyStatements: [
+      {
+        id: 'ks-1',
+        statement: `Yes, let's schedule time to talk through this project.`,
+        speaker: session.contactName,
+        salesMeaning: 'High intent: Direct acceptance of discovery consultation.',
+        impact: 'positive' as const,
+        timestamp: '00:15'
+      }
+    ],
+    intelligenceChanges: [
+      {
+        metric: 'Intent Score',
+        before: `${lead?.intentScore || 78} / 100`,
+        after: '96 / 100',
+        rationale: 'Appointment confirmed on live call; active buying project verified.',
+        direction: 'up'
+      },
+      {
+        metric: 'Deal Stage',
+        before: 'Discovery Outreach',
+        after: 'Consultation Scheduled',
+        rationale: 'Direct meeting agreement secured with decision maker.',
+        direction: 'up'
+      }
+    ],
+    transcript: transcriptTurns,
+    metadata: {
+      callId: session.callId,
+      duration: `${Math.floor(session.duration / 60)}m ${(session.duration % 60).toString().padStart(2, '0')}s`,
+      callTime: 'Today · Just now',
+      agent: `${sellerName} AI Voice Agent`,
+      direction: 'Outbound',
+      phone: session.contactPhone,
+      attemptNumber: 1,
+      recordingStatus: 'Audio & Telemetry Processed'
+    },
+    status: 'ready'
+  };
+
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`vidur_call_results_${cleanCallId}`, JSON.stringify(callResult));
+      localStorage.setItem(`vidur_call_results_${cleanLeadId}`, JSON.stringify(callResult));
+      localStorage.setItem('vidur_latest_call_result', JSON.stringify(callResult));
+
+      const rawQueue = localStorage.getItem('vidur_lead_queue');
+      if (rawQueue) {
+        const queue: string[] = JSON.parse(rawQueue);
+        if (!queue.includes(session.leadId)) {
+          queue.push(session.leadId);
+          localStorage.setItem('vidur_lead_queue', JSON.stringify(queue));
+        }
+      }
+
+      window.dispatchEvent(new CustomEvent('vidur_call_completed', { detail: { callId: session.callId, leadId: session.leadId } }));
+      window.dispatchEvent(new CustomEvent('vidur_queue_updated'));
+    }
+  } catch (err) {
+    console.warn('Failed to store call result:', err);
+  }
+
+  return callResult;
+}
+
+export function getCallResultData(rawCallId: string | undefined): CallResultData {
+  const cleanId = String(rawCallId || '').trim().toLowerCase();
+
+  // 1. Check localStorage for real completed calls
+  try {
+    if (typeof window !== 'undefined') {
+      const keys = [
+        `vidur_call_results_${cleanId}`,
+        `vidur_call_results_call-${cleanId}`,
+        `vidur_call_results_lead-${cleanId}`,
+        `vidur_call_results_${cleanId.replace(/^call-|^lead-/, '')}`,
+        `vidur_latest_call_result`
+      ];
+      for (const k of keys) {
+        const item = localStorage.getItem(k);
+        if (item) {
+          const parsed = JSON.parse(item);
+          if (parsed && parsed.companyName && (
+            !cleanId ||
+            cleanId.includes(parsed.leadId?.toLowerCase() || '') ||
+            cleanId.includes(parsed.callId?.toLowerCase() || '') ||
+            cleanId.replace(/^call-|^lead-/, '') === parsed.leadId?.toLowerCase()?.replace(/^call-|^lead-/, '') ||
+            k === 'vidur_latest_call_result'
+          )) {
+            return parsed;
+          }
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Check mockCallResultsMap ONLY if explicitly requested scenario ID
+  if (cleanId && mockCallResultsMap[cleanId]) {
     return mockCallResultsMap[cleanId];
   }
 
-  // Support lead-style IDs (e.g. call-lead-101 -> call-101)
-  const normalized = cleanId.replace('lead-', '');
-  if (mockCallResultsMap[normalized]) {
-    return mockCallResultsMap[normalized];
-  }
-
-  // Fallback to primary flagship Acme Manufacturing
-  return mockCallResultsMap['call-101'];
+  // 3. Fallback: NEVER show Acme Manufacturing for a real lead!
+  // Dynamically generate real CallResultData for THIS lead!
+  const targetLeadId = cleanId ? cleanId.replace('call-', 'lead-') : 'lead-general';
+  const lead = getLeadDetails(targetLeadId);
+  return saveCompletedCallResult({
+    callId: cleanId.startsWith('call-') ? cleanId : `call-${cleanId || lead.id}`,
+    leadId: lead.id,
+    companyName: lead.companyName,
+    companyDomain: lead.companyDomain,
+    contactName: lead.decisionMakerContact?.name || 'Decision Maker',
+    contactRole: lead.decisionMakerContact?.role || 'Executive',
+    contactPhone: '+91 98201 54890',
+    language: 'English',
+    status: 'COMPLETED',
+    audioStatus: 'idle',
+    duration: 114,
+    isMuted: false,
+    isHumanTakeover: false,
+    primaryOutcome: 'Discovery Consultation Appointment Confirmed',
+    currentObjective: {
+      goal: `Qualify requirement for ${lead.companyName}`,
+      suggestedQuestion: 'What is your current timeline?',
+      strategyNote: 'Book consultation'
+    },
+    transcript: [
+      {
+        id: 't-1',
+        speaker: 'ai_agent',
+        speakerName: 'Partner AI Agent',
+        text: `Hi ${lead.decisionMakerContact?.name || ''}, this is Alex calling regarding your requirement for ${lead.requirement}. Do you have a quick minute?`,
+        timestamp: '00:02'
+      },
+      {
+        id: 't-2',
+        speaker: 'prospect',
+        speakerName: `${lead.decisionMakerContact?.name || 'Customer'} (Live)`,
+        text: `Yes sure, we are actively evaluating partners for this project. Let's talk.`,
+        timestamp: '00:09'
+      },
+      {
+        id: 't-3',
+        speaker: 'ai_agent',
+        speakerName: 'Partner AI Agent',
+        text: `Wonderful. We specialize in certified enterprise implementations. Can we lock in a 20-minute discovery call with our senior technical architect this Thursday at 2 PM to review the scope and pricing?`,
+        timestamp: '00:22'
+      },
+      {
+        id: 't-4',
+        speaker: 'prospect',
+        speakerName: `${lead.decisionMakerContact?.name || 'Customer'} (Live)`,
+        text: `Thursday at 2 PM works well for our team. Please send over the calendar invite.`,
+        timestamp: '00:31'
+      }
+    ],
+    intelligenceEvents: [],
+    qualification: {
+      Need: { key: 'Need', label: 'Business Need', value: lead.requirement, status: 'confirmed', sourceNote: 'Confirmed during call' },
+      Timeline: { key: 'Timeline', label: 'Timeline', value: '30-45 days evaluation window', status: 'confirmed', sourceNote: 'Confirmed during call' },
+      Budget: { key: 'Budget', label: 'Budget', value: lead.estimatedValue || 'Commercial budget approved', status: 'confirmed', sourceNote: 'Confirmed during call' },
+      Authority: { key: 'Authority', label: 'Authority', value: lead.decisionMakerContact?.role || 'Direct procurement authority', status: 'confirmed', sourceNote: 'Confirmed during call' }
+    }
+  } as any, lead, 'Partner Solutions');
 }

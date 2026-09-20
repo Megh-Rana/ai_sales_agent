@@ -65,6 +65,7 @@ class CallStartRequest(BaseModel):
     agentGender: Optional[str] = "female"
     sellerCompanyName: Optional[str] = "Vidur AI"
     sellerOfferings: Optional[str] = None
+    requirement: Optional[str] = None
 
 class CallStartResponse(BaseModel):
     sessionId: str
@@ -143,13 +144,23 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
     
     try:
         # Context: SELLER company is calling PROSPECT company
-        seller_name = request.sellerCompanyName or "Vidur AI"
+        requirement = (request.requirement or request.services or "").strip()
+        seller_name = request.sellerCompanyName or "Enterprise Partner Solutions"
         prospect_company = request.companyName
         prospect_name = request.contactName
 
-        services = request.sellerOfferings or request.services or "commercial supply, products, and AI automation solutions"
-        company_info = f"{seller_name} — offering {services}. We are calling {prospect_name} at {prospect_company} to explore supplying our solutions for their requirement."
-        goal = request.goal or f"Introduce {seller_name} to {prospect_name} at {prospect_company}, understand their requirement, and propose how {seller_name} can supply them."
+        services = request.sellerOfferings or (f"certified implementation and enterprise solutions for {requirement}" if requirement else "enterprise solutions and consulting")
+        company_info = f"{seller_name} — specialized provider and certified partner for {services}. We are reaching out to {prospect_name} at {prospect_company} regarding their requirement for {requirement or services}."
+        
+        goal = (
+            f"You are calling {prospect_name} at {prospect_company} regarding their active requirement: '{requirement or services}'. "
+            f"You represent {seller_name} as an experienced specialist/partner. "
+            f"Follow this clear conversation flow: "
+            f"1. Explain why you're calling (their requirement for {requirement or services}) and that {seller_name} specializes in this exact solution. "
+            f"2. Ask 2-3 focused discovery questions to take all key details: current environment/tools, scale/team size, and target project timeline. "
+            f"3. PRIMARY GOAL: PROPOSE AND BOOK A FORMAL DISCOVERY/CONSULTATION APPOINTMENT (e.g. 'Can we schedule a 20-minute consultation with our senior solutions architect this Thursday at 2 PM or Friday at 11 AM to review your requirements?'). "
+            f"4. Once they pick or confirm a time, confirm their contact details (email/phone) for the calendar invite, thank them warmly, and conclude."
+        )
 
         # Create the voice pipeline with SELLER company as caller
         pipeline = PipelineOrchestrator(
@@ -164,7 +175,7 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
         pipeline.tts.set_gender(request.agentGender or "female")
 
         # Load all models (STT, TTS, LLM)
-        print(f"\n[Session {session_id}] AI Agent calling from '{seller_name}' to prospect '{prospect_company}' ({prospect_name})...")
+        print(f"\n[Session {session_id}] AI Agent calling from '{seller_name}' to prospect '{prospect_company}' ({prospect_name}) for requirement '{requirement}'...")
         pipeline.load_all()
         
         # Create message queue for real-time updates
@@ -178,6 +189,7 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
             "contactRole": request.contactRole,
             "contactPhone": request.contactPhone,
             "language": request.language,
+            "requirement": requirement,
             "pipeline": pipeline,
             "status": "ready",  # ready -> connecting -> live -> completed
             "created_at": time.time(),
@@ -260,8 +272,12 @@ async def launch_voice_call(session_id: str):
 
                 pipeline.on_transcript = handle_live_transcript
 
-                # Get opening message from seller agent to prospect
-                opening = pipeline.ai.get_opening(prospect_name=contact_name, prospect_company=session.get("companyName", ""))
+                # Get opening message from seller agent to prospect with requirement context
+                opening = pipeline.ai.get_opening(
+                    prospect_name=contact_name,
+                    prospect_company=session.get("companyName", ""),
+                    requirement=session.get("requirement", "")
+                )
                 print(f"🤖 Agent ({pipeline.ai.company_name}): {opening}\n")
                 
                 # Add opening to transcript

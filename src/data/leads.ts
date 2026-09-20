@@ -14,7 +14,7 @@ export interface SellerBusinessProfile {
   usp: string;
 }
 
-export function getSellerBusinessProfile(): SellerBusinessProfile {
+export function getSellerBusinessProfile(forRequirement?: string): SellerBusinessProfile {
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem('vidur_onboarding_draft_v1') : null;
     if (raw) {
@@ -34,12 +34,34 @@ export function getSellerBusinessProfile(): SellerBusinessProfile {
       }
     }
   } catch {}
+
+  const reqLower = (forRequirement || '').toLowerCase();
+  if (reqLower.includes('sharepoint') || reqLower.includes('microsoft') || reqLower.includes('m365') || reqLower.includes('cloud')) {
+    return {
+      name: 'CloudPoint Technologies',
+      website: 'cloudpoint.io',
+      industry: 'Enterprise Cloud & IT Consulting',
+      offerings: 'Enterprise SharePoint Implementation, Migration, and Microsoft 365 Architecture Consulting',
+      usp: 'Certified Microsoft Partner delivering zero-downtime enterprise SharePoint deployments and governance',
+    };
+  }
+
+  if (reqLower.includes('milk') || reqLower.includes('dairy')) {
+    return {
+      name: 'Amrit Commercial Dairy',
+      website: 'amritdairy.in',
+      industry: 'Dairy & Agricultural Supply',
+      offerings: 'Commercial A2 & Standardized Dairy Supply, Cold-Chain Procurement & Bulk Distribution',
+      usp: 'Consistent high-grade dairy supply with temperature-tracked cold chain logistics',
+    };
+  }
+
   return {
-    name: 'Vidur AI Sales',
-    website: 'vidur.ai',
-    industry: 'Commercial Sales & Outbound Telephony',
-    offerings: 'Autonomous AI Sales Voice Agents & Lead Discovery',
-    usp: 'High-speed automated buyer qualification and commercial deal closure',
+    name: 'Megh Enterprise Solutions',
+    website: 'meghenterprises.com',
+    industry: 'Enterprise Solutions & Services',
+    offerings: forRequirement ? `Specialized ${forRequirement} Services & Certified Implementation` : 'Enterprise Implementation & Commercial Supply Solutions',
+    usp: 'End-to-end specialized enterprise project execution and certified delivery',
   };
 }
 

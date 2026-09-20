@@ -14,45 +14,60 @@ import { toast } from 'sonner';
 // Convert queued DiscoveredLeads into SalesOpportunity format
 function buildOpportunitiesFromQueue(): SalesOpportunity[] {
   const queued = getQueuedLeads();
-  return queued.map((lead) => ({
-    id: `opp-${lead.id}`,
-    leadId: lead.id,
-    companyName: lead.companyName,
-    companyDomain: lead.companyDomain,
-    industry: lead.industry,
-    location: lead.location,
-    contactName: lead.decisionMakerContact?.name || (lead as any).decisionMaker?.name || 'Decision Maker',
-    contactRole: lead.decisionMakerContact?.role || (lead as any).decisionMaker?.role || 'Executive',
-    contactPhone: (lead as any).decisionMaker?.phone || '+91 98201 54890',
-    contactEmail: (lead as any).decisionMaker?.email || `contact@${lead.companyDomain || 'company.com'}`,
-    phoneAvailable: true,
-    intentScore: lead.intentScore,
-    estimatedValue: lead.estimatedValue || '₹25 Lakh / yr',
-    priority: lead.intentScore >= 85 ? 'HIGH' as const : lead.intentScore >= 70 ? 'MEDIUM' as const : 'LOW' as const,
-    type: 'BUYING_SIGNAL' as const,
-    state: 'action_required' as const,
-    isEmerging: false,
-    whyNow: {
-      headline: lead.whyNow || `Active requirement discovered for ${lead.companyName}`,
-      evidence: lead.scoreReasons || [lead.requirement],
-      recencyLabel: 'Today',
-      timestamp: new Date().toISOString(),
-    },
-    signals: lead.buyingSignals?.map((s) => ({
-      id: s.id, title: s.description?.slice(0, 60) || s.type, category: s.type,
-      recency: s.timestamp || 'Today', impactScore: s.impactScore || 88,
-    })) || [],
-    recommendedAction: {
-      label: 'Start AI Call',
-      actionType: 'call' as const,
-      route: `/calls/${lead.id}?leadId=${lead.id}`,
-      suggestedOpening: lead.suggestedOpeningHook,
-    },
-    timeline: [
-      { id: 'q-1', timestamp: 'Today', title: 'Queued from Discovery', description: `Lead queued for AI outreach.`, type: 'intent' as const },
-    ],
-    updatedAt: new Date().toISOString(),
-  }));
+  return queued.map((lead) => {
+    const hasCallResult = typeof window !== 'undefined' && !!(
+      localStorage.getItem(`vidur_call_results_${lead.id.toLowerCase()}`) ||
+      localStorage.getItem(`vidur_call_results_call-${lead.id.toLowerCase().replace('lead-', '')}`)
+    );
+
+    return {
+      id: `opp-${lead.id}`,
+      leadId: lead.id,
+      companyName: lead.companyName,
+      companyDomain: lead.companyDomain,
+      industry: lead.industry,
+      location: lead.location,
+      contactName: lead.decisionMakerContact?.name || (lead as any).decisionMaker?.name || 'Decision Maker',
+      contactRole: lead.decisionMakerContact?.role || (lead as any).decisionMaker?.role || 'Executive',
+      contactPhone: (lead as any).decisionMaker?.phone || '+91 98201 54890',
+      contactEmail: (lead as any).decisionMaker?.email || `contact@${lead.companyDomain || 'company.com'}`,
+      phoneAvailable: true,
+      intentScore: hasCallResult ? 96 : lead.intentScore,
+      estimatedValue: lead.estimatedValue || '₹25 Lakh / yr',
+      priority: hasCallResult ? ('HIGH' as const) : lead.intentScore >= 85 ? ('HIGH' as const) : lead.intentScore >= 70 ? ('MEDIUM' as const) : ('LOW' as const),
+      type: 'BUYING_SIGNAL' as const,
+      state: hasCallResult ? ('converted' as const) : ('action_required' as const),
+      isEmerging: false,
+      whyNow: {
+        headline: hasCallResult ? `Discovery consultation appointment booked with ${lead.companyName}` : (lead.whyNow || `Active requirement discovered for ${lead.companyName}`),
+        evidence: hasCallResult ? ['Verbal confirmation on live call', 'Project scope gathered', 'Calendar invite pending'] : (lead.scoreReasons || [lead.requirement]),
+        recencyLabel: 'Today',
+        timestamp: new Date().toISOString(),
+      },
+      signals: lead.buyingSignals?.map((s) => ({
+        id: s.id, title: s.description?.slice(0, 60) || s.type, category: s.type,
+        recency: s.timestamp || 'Today', impactScore: s.impactScore || 88,
+      })) || [],
+      recommendedAction: hasCallResult ? {
+        label: 'View Booked Appointment & Debrief',
+        actionType: 'meeting' as const,
+        route: `/calls/${lead.id}/results`,
+        suggestedOpening: 'Appointment confirmed with decision maker.',
+      } : {
+        label: 'Start AI Call',
+        actionType: 'call' as const,
+        route: `/calls/${lead.id}?leadId=${lead.id}`,
+        suggestedOpening: lead.suggestedOpeningHook,
+      },
+      timeline: hasCallResult ? [
+        { id: 'q-2', timestamp: 'Just now', title: 'Consultation Appointment Confirmed', description: 'Discovery meeting confirmed on live voice call.', type: 'call' as const },
+        { id: 'q-1', timestamp: 'Today', title: 'Queued from Discovery', description: 'Lead queued for AI outreach.', type: 'intent' as const },
+      ] : [
+        { id: 'q-1', timestamp: 'Today', title: 'Queued from Discovery', description: 'Lead queued for AI outreach.', type: 'intent' as const },
+      ],
+      updatedAt: new Date().toISOString(),
+    };
+  });
 }
 
 export const Opportunities: React.FC = () => {

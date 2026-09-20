@@ -32,31 +32,38 @@ import { Target, Zap, Clock, ShieldAlert, CheckCircle2 } from 'lucide-react';
 // Convert queued leads to NextBestActionItem format
 function buildActionsFromQueue(): NextBestActionItem[] {
   const queued = getQueuedLeads();
-  return queued.map((lead) => ({
-    id: `action-q-${lead.id}`,
-    leadId: lead.id,
-    companyName: lead.companyName,
-    companyDomain: lead.companyDomain,
-    industry: lead.industry,
-    contactName: lead.decisionMakerContact?.name || 'Decision Maker',
-    contactRole: lead.decisionMakerContact?.role || 'Executive',
-    intentScore: lead.intentScore,
-    estimatedValue: lead.estimatedValue || '₹25L',
-    priority: lead.intentScore >= 85 ? 'CRITICAL' as const : 'HIGH' as const,
-    category: 'CALL' as const,
-    title: `AI Call: ${lead.companyName} — ${lead.requirement?.slice(0, 60) || lead.industry}`,
-    requirementSummary: lead.requirement || 'Queued from Lead Discovery',
-    whyNow: {
-      headline: lead.whyNow || 'Queued from AI Discovery',
-      evidence: lead.scoreReasons || [],
-      timeframe: 'Action required now',
-    },
-    primaryActionLabel: 'Start AI Call',
-    primaryActionTarget: `/calls/${lead.id}?leadId=${lead.id}`,
-    primaryActionType: 'call' as const,
-    status: 'active' as const,
-    createdAt: new Date().toISOString(),
-  }));
+  return queued.map((lead) => {
+    const hasCallResult = typeof window !== 'undefined' && !!(
+      localStorage.getItem(`vidur_call_results_${lead.id.toLowerCase()}`) ||
+      localStorage.getItem(`vidur_call_results_call-${lead.id.toLowerCase().replace('lead-', '')}`)
+    );
+
+    return {
+      id: `action-q-${lead.id}`,
+      leadId: lead.id,
+      companyName: lead.companyName,
+      companyDomain: lead.companyDomain,
+      industry: lead.industry,
+      contactName: lead.decisionMakerContact?.name || 'Decision Maker',
+      contactRole: lead.decisionMakerContact?.role || 'Executive',
+      intentScore: hasCallResult ? 96 : lead.intentScore,
+      estimatedValue: lead.estimatedValue || '₹25L',
+      priority: hasCallResult ? ('CRITICAL' as const) : lead.intentScore >= 85 ? ('CRITICAL' as const) : ('HIGH' as const),
+      category: (hasCallResult ? 'MEETING' : 'CALL') as any,
+      title: hasCallResult ? `Appointment Booked: ${lead.companyName}` : `AI Call: ${lead.companyName} — ${lead.requirement?.slice(0, 60) || lead.industry}`,
+      requirementSummary: hasCallResult ? `Discovery consultation confirmed with ${lead.decisionMakerContact?.name || 'decision maker'}. Next: Send calendar invitation & solution brief.` : (lead.requirement || 'Queued from Lead Discovery'),
+      whyNow: {
+        headline: hasCallResult ? 'Discovery appointment confirmed during live call. Immediate invite dispatch required.' : (lead.whyNow || 'Queued from AI Discovery'),
+        evidence: hasCallResult ? ['Verbal confirmation on voice call', 'Scope details gathered', 'Calendar invite pending dispatch'] : (lead.scoreReasons || []),
+        timeframe: hasCallResult ? 'Immediate Dispatch' : 'Action required now',
+      },
+      primaryActionLabel: hasCallResult ? 'View Meeting Debrief & Proposal' : 'Start AI Call',
+      primaryActionTarget: hasCallResult ? `/calls/${lead.id}/results` : `/calls/${lead.id}?leadId=${lead.id}`,
+      primaryActionType: (hasCallResult ? 'meeting' : 'call') as any,
+      status: 'active' as const,
+      createdAt: new Date().toISOString(),
+    };
+  });
 }
 
 export const ActionCenter: React.FC = () => {

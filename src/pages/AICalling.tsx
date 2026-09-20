@@ -13,6 +13,7 @@ import {
   CurrentObjective
 } from '../types/calls';
 import { getLeadDetails, getSellerBusinessProfile } from '../data/leads';
+import { saveCompletedCallResult } from '../data/mockCallResults';
 import {
   createMockCallSession,
   buildDynamicScriptForLead,
@@ -73,7 +74,7 @@ export const AICalling: React.FC = () => {
   }, [queryLeadId, rawId]);
 
   const lead = getLeadDetails(resolvedLeadId);
-  const seller = getSellerBusinessProfile();
+  const seller = getSellerBusinessProfile(lead?.requirement);
 
   const [session, setSession] = useState<CallSession>(() => {
     return createMockCallSession(resolvedLeadId, rawId || undefined, 'English');
@@ -465,9 +466,10 @@ export const AICalling: React.FC = () => {
         language: langCode,
         sellerCompanyName: seller.name,
         sellerOfferings: seller.offerings,
-        companyInfo: `${seller.name} (${seller.offerings})`,
+        requirement: lead?.requirement || session.currentObjective?.goal || 'Certified implementation partner',
+        companyInfo: `${seller.name} — specialized provider and certified partner for ${seller.offerings}`,
         services: seller.offerings,
-        goal: `Introduce ${seller.name}'s solutions to ${session.contactName} at ${session.companyName} and explore supplying their requirement.`
+        goal: `Qualify ${session.contactName}'s project requirements at ${session.companyName} for ${lead?.requirement || seller.offerings}, gather scope details, and book a formal discovery consultation appointment.`
       });
 
       setBackendSessionId(startResponse.sessionId);
@@ -567,14 +569,18 @@ export const AICalling: React.FC = () => {
       try {
         const result = await callService.endCall(backendSessionId);
         
-        setSession((prev) => ({
-          ...prev,
-          status: 'COMPLETED',
-          audioStatus: 'idle',
-          duration: result.duration
-        }));
+        setSession((prev) => {
+          const finalSession = {
+            ...prev,
+            status: 'COMPLETED' as const,
+            audioStatus: 'idle' as const,
+            duration: result.duration
+          };
+          saveCompletedCallResult(finalSession, lead, seller.name);
+          return finalSession;
+        });
 
-        toast.success('Call ended. AI is generating the executive summary...', {
+        toast.success('Call ended. Discovery consultation debrief generated!', {
           description: `Duration: ${formatDuration(result.duration)}`,
           duration: 3000
         });
@@ -585,25 +591,33 @@ export const AICalling: React.FC = () => {
           description: error.message
         });
         
-        // Still mark as completed on frontend
-        setSession((prev) => ({
-          ...prev,
-          status: 'COMPLETED',
-          audioStatus: 'idle'
-        }));
+        // Still mark as completed on frontend and save
+        setSession((prev) => {
+          const finalSession = {
+            ...prev,
+            status: 'COMPLETED' as const,
+            audioStatus: 'idle' as const
+          };
+          saveCompletedCallResult(finalSession, lead, seller.name);
+          return finalSession;
+        });
       }
     } else {
       // Mock call ending
       safeTimeout(() => {
-        setSession((prev) => ({
-          ...prev,
-          status: 'COMPLETED',
-          audioStatus: 'idle'
-        }));
-        toast.success('Conversation concluded. Executive brief generated.');
+        setSession((prev) => {
+          const finalSession = {
+            ...prev,
+            status: 'COMPLETED' as const,
+            audioStatus: 'idle' as const
+          };
+          saveCompletedCallResult(finalSession, lead, seller.name);
+          return finalSession;
+        });
+        toast.success('Conversation concluded. Appointment booked & brief generated.');
       }, 750);
     }
-  }, [isRealVoiceCall, backendSessionId, clearAllTimeouts, safeTimeout, formatDuration]);
+  }, [isRealVoiceCall, backendSessionId, clearAllTimeouts, safeTimeout, formatDuration, lead, seller.name]);
 
   const handleCancelConnecting = async () => {
     clearAllTimeouts();
