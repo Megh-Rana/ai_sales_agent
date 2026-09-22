@@ -59,7 +59,7 @@ export interface QualificationDimension {
   evidence?: string;
 }
 
-export type CallLanguage = 'English' | 'Hindi' | 'Gujarati' | 'Hinglish';
+export type CallLanguage = 'English' | 'Hindi' | 'Gujarati' | 'Marathi';
 
 export interface CurrentObjective {
   goal: string;

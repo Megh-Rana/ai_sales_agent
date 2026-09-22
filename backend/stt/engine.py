@@ -20,23 +20,25 @@ class STTEngine:
         self._loaded = False
 
     def load(self):
-        """Load local Whisper model if whisper provider is active."""
+        """Load STT model — exclusively using Sarvam Cloud API (saaras:v3) when key is present."""
         provider = getattr(config, "STT_PROVIDER", "sarvam")
-        if provider == "sarvam":
+        if provider == "sarvam" and getattr(config, "HAS_SARVAM_KEY", False):
             print(f"[STT] Sarvam Speech-to-Text ({config.SARVAM_STT_MODEL}) ready")
             self._loaded = True
             return
 
-        if self._loaded:
+        if self._loaded and self.model is not None:
             return
         from faster_whisper import WhisperModel
 
-        print(f"[STT] Loading faster-whisper '{config.STT_MODEL_SIZE}' on {config.STT_DEVICE}...")
+        device = getattr(config, "STT_DEVICE", "cpu")
+        compute_type = getattr(config, "STT_COMPUTE_TYPE", "int8")
+        print(f"[STT] SARVAM_API_KEY not set or provider=whisper — loading faster-whisper '{config.STT_MODEL_SIZE}' on {device} ({compute_type})...")
         t0 = time.time()
         self.model = WhisperModel(
             config.STT_MODEL_SIZE,
-            device=config.STT_DEVICE,
-            compute_type=config.STT_COMPUTE_TYPE,
+            device=device,
+            compute_type=compute_type,
         )
         self._loaded = True
         print(f"[STT] Model loaded in {time.time() - t0:.1f}s")
@@ -100,10 +102,12 @@ class STTEngine:
     def _transcribe_whisper(self, audio: np.ndarray, language: str = None) -> dict:
         if self.model is None:
             from faster_whisper import WhisperModel
+            device = getattr(config, "STT_DEVICE", "cpu")
+            compute_type = getattr(config, "STT_COMPUTE_TYPE", "int8")
             self.model = WhisperModel(
                 config.STT_MODEL_SIZE,
-                device=config.STT_DEVICE,
-                compute_type=config.STT_COMPUTE_TYPE,
+                device=device,
+                compute_type=compute_type,
             )
 
         t0 = time.time()
@@ -154,7 +158,7 @@ class STTEngine:
             audio = audio.astype(np.float32)
 
         provider = getattr(config, "STT_PROVIDER", "sarvam")
-        if provider == "sarvam" and config.SARVAM_API_KEY:
+        if provider == "sarvam" and getattr(config, "HAS_SARVAM_KEY", False):
             return self._transcribe_sarvam(audio, language)
         return self._transcribe_whisper(audio, language)
 

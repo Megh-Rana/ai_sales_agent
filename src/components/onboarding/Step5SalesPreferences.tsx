@@ -15,14 +15,14 @@ const PRIMARY_LANGUAGES: { value: VoiceLanguage; label: string }[] = [
   { value: 'en-GB', label: 'English (UK Professional)' },
   { value: 'en-IN', label: 'English (Indian Professional)' },
   { value: 'hi-IN', label: 'Hindi (Conversational Business / हिंदी)' },
-  { value: 'hinglish', label: 'Hinglish (Metro Sales Hybrid)' },
+  { value: 'mr-IN', label: 'Marathi (मराठी)' },
   { value: 'gu-IN', label: 'Gujarati (Commercial / ગુજરાતી)' },
 ];
 
 const SECONDARY_LANGUAGES: { value: VoiceLanguage; label: string }[] = [
   { value: 'en-US', label: 'English (US)' },
   { value: 'hi-IN', label: 'Hindi (हिंदी)' },
-  { value: 'hinglish', label: 'Hinglish' },
+  { value: 'mr-IN', label: 'Marathi (मराठी)' },
   { value: 'gu-IN', label: 'Gujarati (ગુજરાતી)' },
 ];
 

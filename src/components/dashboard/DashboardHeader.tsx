@@ -3,6 +3,7 @@ import { Compass } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { AnimatedBadge } from '../ui/21st';
+import { useI18n } from '../../i18n/i18nContext';
 
 export interface DashboardHeaderProps {
   workspaceName: string;
@@ -24,11 +25,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   isScanning = false,
 }) => {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const filterOptions = [
-    { id: 'all', label: 'All High Intent' },
-    { id: 'call-ready', label: 'Call Ready' },
-    { id: 'needs-followup', label: 'Follow-ups Due' },
+    { id: 'all', label: t.dashboard?.filterAll || 'All High Intent' },
+    { id: 'call-ready', label: t.dashboard?.filterCallReady || 'Call Ready' },
+    { id: 'needs-followup', label: t.dashboard?.filterFollowup || 'Follow-ups Due' },
   ];
 
   return (
@@ -36,7 +38,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       {/* Left: Operational Context & Morning Briefing */}
       <div className="space-y-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-h1 font-bold text-foreground tracking-tight">Sales Workspace</h1>
+          <h1 className="text-h1 font-bold text-foreground tracking-tight">{t.dashboard?.title || 'Sales Workspace'}</h1>
           <AnimatedBadge label={`${workspaceName} · ${division}`} variant="hot" />
 
         </div>
@@ -73,7 +75,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           isLoading={isScanning}
           leftIcon={<Compass className="w-3.5 h-3.5 text-signal-high" />}
         >
-          Scan Buying Signals
+          {t.dashboard?.scanSignals || 'Scan Buying Signals'}
         </Button>
       </div>
     </div>

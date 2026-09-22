@@ -129,7 +129,7 @@ export const AdminVoiceUsage: React.FC = () => {
               const pct = data.total_minutes > 0 ? (mins / data.total_minutes) * 100 : 0;
               const labels: Record<string, string> = {
                 en: 'English (Indian / International)',
-                hi: 'Hindi (देवनागरी & Hinglish)',
+                hi: 'Hindi (हिन्दी)',
                 mr: 'Marathi (मराठी)',
                 gu: 'Gujarati (ગુજરાતી)',
               };

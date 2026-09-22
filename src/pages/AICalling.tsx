@@ -138,21 +138,26 @@ export const AICalling: React.FC = () => {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'transcript') {
-            const speakerRole: 'ai_agent' | 'prospect' = data.speaker === 'agent' ? 'ai_agent' : 'prospect';
-            const totalSecs = Math.floor(data.timestamp ?? 0);
+            const rawSpeaker = data.speaker || data.item?.speaker || 'agent';
+            const speakerRole: 'ai_agent' | 'prospect' = rawSpeaker === 'agent' ? 'ai_agent' : 'prospect';
+            const rawText = data.text ?? data.item?.text ?? '';
+            const textStr = (typeof rawText === 'string' ? rawText : String(rawText || '')).trim();
+            if (!textStr) return;
+
+            const totalSecs = Math.floor(data.timestamp ?? data.item?.timestamp ?? 0);
             const mins = Math.floor(totalSecs / 60).toString().padStart(2, '0');
             const secs = (totalSecs % 60).toString().padStart(2, '0');
 
             setSession((prev) => {
-              // Avoid duplicate messages
-              const exists = prev.transcript.some(t => t.text.trim() === data.text.trim());
+              // Avoid duplicate messages with safe optional chaining
+              const exists = prev.transcript.some(t => (t?.text ?? '').trim() === textStr);
               if (exists) return prev;
 
               const newItem: TranscriptItem = {
-                id: `${data.speaker}-${Date.now()}-${Math.random()}`,
+                id: `${rawSpeaker}-${Date.now()}-${Math.random()}`,
                 speaker: speakerRole,
                 speakerName: speakerRole === 'ai_agent' ? 'Vidur AI Agent' : 'You (Customer) · Live Mic',
-                text: data.text,
+                text: textStr,
                 timestamp: `${mins}:${secs}`,
                 isFinal: true
               };
@@ -334,7 +339,7 @@ export const AICalling: React.FC = () => {
             status: 'completed',
             duration: prev.duration || 180,
             outcome: 'meeting_booked',
-            transcript: prev.transcript.map(t => `${t.speaker}: ${t.text}`).join('\n')
+            transcript: prev.transcript.map(t => `${t.speaker}: ${t.text ?? ''}`).join('\n')
           });
           return {
             ...prev,
@@ -378,7 +383,7 @@ export const AICalling: React.FC = () => {
       'English':  'en',
       'Hindi':    'hi',
       'Gujarati': 'gu',
-      'Hinglish': 'hi',  // closest supported; Sarvam handles code-switching with hi-IN
+      'Marathi':  'mr',
     };
     const langCode = LANG_CODE_MAP[language] ?? 'en';
 
@@ -540,7 +545,7 @@ export const AICalling: React.FC = () => {
             status: 'completed',
             duration: prev.duration || 120,
             outcome: 'meeting_booked',
-            transcript: prev.transcript.map(t => `${t.speaker}: ${t.text}`).join('\n')
+            transcript: prev.transcript.map(t => `${t.speaker}: ${t.text ?? ''}`).join('\n')
           });
           return {
             ...prev,

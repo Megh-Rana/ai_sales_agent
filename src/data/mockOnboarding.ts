@@ -196,7 +196,7 @@ export const sampleB2BProfileData: OnboardingFormData = {
   },
   salesPreferences: {
     primaryLanguage: 'en-US',
-    supportedLanguages: ['en-US', 'hi-IN', 'hinglish'],
+    supportedLanguages: ['en-US', 'hi-IN', 'mr-IN'],
     agentDemeanor: 'consultative',
     leadSources: ['Supply Chain Job Postings', 'Warehouse Expansion Permits', 'G2 Category Intent'],
     callingPreference: 'standard',

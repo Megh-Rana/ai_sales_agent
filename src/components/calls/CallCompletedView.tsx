@@ -187,7 +187,7 @@ export const CallCompletedView: React.FC<CallCompletedViewProps> = ({
                 toast.error('Failed to download PDF report');
               }
             }}
-            className="w-full sm:w-auto text-xs border-emerald-500/30 text-emerald-300 hover:bg-emerald-950/20"
+            className="w-full sm:w-auto text-xs font-semibold border-2 border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all duration-200"
           >
             Download PDF
           </Button>

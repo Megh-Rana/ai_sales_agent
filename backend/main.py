@@ -70,7 +70,7 @@ def main():
     print(f"   Goal:      {args.goal}")
     print(f"   Mode:      {'Text' if args.text else 'Voice'}")
     print(f"   Streaming: {'Off' if args.no_stream else 'On'}")
-    provider = getattr(config, "LLM_PROVIDER", "ollama")
+    provider = getattr(config, "LLM_PROVIDER", "sarvam")
     if provider == "sarvam":
         model_str = "Sarvam 105B (Cloud API)"
     elif provider == "param":

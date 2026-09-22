@@ -8,12 +8,14 @@ the configured BaseAIProvider instance (OllamaProvider, MockProvider, etc.).
 import os
 from typing import Optional, Dict, Type, Any
 from ai.core.providers.base import BaseAIProvider
+from ai.core.providers.sarvam import SarvamProvider
 from ai.core.providers.ollama import OllamaProvider
 from ai.core.providers.mock import MockProvider
 from ai.core.providers.local import LocalModelProvider
 import config
 
 _PROVIDER_MAP: Dict[str, Type[BaseAIProvider]] = {
+    "sarvam": SarvamProvider,
     "ollama": OllamaProvider,
     "mock": MockProvider,
     "local": LocalModelProvider,
@@ -32,7 +34,7 @@ def get_ai_provider(
     Factory function to retrieve an AI provider instance.
 
     Args:
-        provider_name: 'ollama', 'mock', 'local' (defaults to config.AI_PROVIDER or env AI_PROVIDER)
+        provider_name: 'sarvam', 'ollama', 'mock', 'local' (defaults to config.AI_PROVIDER or env AI_PROVIDER, standard 'sarvam')
         model: Optional model name override
         force_new: If True, creates a fresh instance instead of returning cached singleton
         **kwargs: Additional parameters passed to provider constructor
@@ -47,7 +49,7 @@ def get_ai_provider(
         return _DEFAULT_PROVIDER_INSTANCE
 
     target_provider = (
-        provider_name or getattr(config, "AI_PROVIDER", os.getenv("AI_PROVIDER", "ollama"))
+        provider_name or getattr(config, "AI_PROVIDER", os.getenv("AI_PROVIDER", "sarvam"))
     ).lower()
 
     if target_provider not in _PROVIDER_MAP:

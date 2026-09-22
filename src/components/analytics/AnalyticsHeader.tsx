@@ -3,6 +3,7 @@ import { DateRangePreset } from '../../types/analytics';
 import { Calendar, BarChart3, RefreshCw, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { PDFReportService } from '../../services/pdfReportService';
+import { useI18n } from '../../i18n/i18nContext';
 
 interface AnalyticsHeaderProps {
   dateRange: DateRangePreset;
@@ -21,12 +22,14 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   onRefresh,
   isRefreshing = false,
 }) => {
+  const { t } = useI18n();
+
   const dateOptions: { id: DateRangePreset; label: string }[] = [
-    { id: 'today', label: 'Today' },
-    { id: '7d', label: '7 days' },
-    { id: '30d', label: '30 days' },
-    { id: '90d', label: '90 days' },
-    { id: 'custom', label: 'Custom' },
+    { id: 'today', label: t.analytics?.today || 'Today' },
+    { id: '7d', label: t.analytics?.days7 || '7 days' },
+    { id: '30d', label: t.analytics?.days30 || '30 days' },
+    { id: '90d', label: t.analytics?.days90 || '90 days' },
+    { id: 'custom', label: t.analytics?.custom || 'Custom' },
   ];
 
   return (
@@ -39,14 +42,14 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
               <BarChart3 className="w-5 h-5" aria-hidden="true" />
             </div>
             <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">
-              Sales Analytics
+              {t.analytics?.title || 'Sales Analytics'}
             </h1>
             <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              Intelligence
+              {t.analytics?.badge || 'Intelligence'}
             </span>
           </div>
           <p className="text-sm text-foreground-secondary font-normal pl-0.5">
-            Understand what's driving your sales pipeline and voice call conversions.
+            {t.analytics?.subtitle || "Understand what's driving your sales pipeline and voice call conversions."}
           </p>
         </div>
 
@@ -84,7 +87,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
           {/* Demo State Switcher Toggle */}
           <div className="hidden xl:flex items-center space-x-1 bg-background border border-border-strong rounded-lg p-1 text-xs">
             <span className="px-2 text-foreground-tertiary text-[11px] font-semibold uppercase tracking-wider">
-              State:
+              {t.analytics?.state || 'State'}:
             </span>
             {(['normal', 'loading', 'empty', 'error'] as const).map((st) => (
               <button
@@ -103,7 +106,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
             ))}
           </div>
 
-          {/* Export PDF Button */}
+          {/* Export PDF Button - High Contrast Visible Emerald Button */}
           <button
             type="button"
             onClick={() => {
@@ -136,11 +139,11 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
                 toast.error('Failed to generate analytics PDF');
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/30 hover:bg-emerald-900/40 text-emerald-300 hover:text-white border border-emerald-500/30 text-xs font-semibold transition-all shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold border border-emerald-500 text-xs transition-all shadow-sm cursor-pointer"
             title="Download executive analytics PDF"
           >
-            <FileDown className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Export PDF</span>
+            <FileDown className="w-3.5 h-3.5 text-white" />
+            <span className="hidden sm:inline">{t.analytics?.exportPdf || 'Export PDF'}</span>
           </button>
 
           {/* Refresh Button */}
@@ -149,7 +152,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
               type="button"
               onClick={onRefresh}
               disabled={isRefreshing}
-              aria-label="Refresh Analytics Data"
+              aria-label={t.analytics?.refresh || 'Refresh Analytics Data'}
               className="p-2 rounded-lg bg-surface-elevated hover:bg-surface-hover text-foreground hover:text-white border border-border-strong transition-all disabled:opacity-50"
             >
               <RefreshCw

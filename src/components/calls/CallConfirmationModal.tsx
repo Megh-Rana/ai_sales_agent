@@ -27,7 +27,7 @@ export interface CallConfirmationModalProps {
   onLanguageChange: (lang: CallLanguage) => void;
 }
 
-const AVAILABLE_LANGUAGES: CallLanguage[] = ['English', 'Hindi', 'Gujarati', 'Hinglish'];
+const AVAILABLE_LANGUAGES: CallLanguage[] = ['English', 'Hindi', 'Gujarati', 'Marathi'];
 
 export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
   isOpen,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Target, Plus, RefreshCw, Layers } from 'lucide-react';
+import { useI18n } from '../../i18n/i18nContext';
 
 interface CampaignHeaderProps {
   activeCount: number;
@@ -20,6 +21,8 @@ export const CampaignHeader: React.FC<CampaignHeaderProps> = ({
   onRefresh,
   isRefreshing = false,
 }) => {
+  const { t } = useI18n();
+
   return (
     <header className="bg-surface-0 border border-border-default rounded-xl p-5 md:p-6 shadow-xs mb-6">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -30,7 +33,7 @@ export const CampaignHeader: React.FC<CampaignHeaderProps> = ({
               <Target className="w-5 h-5" aria-hidden="true" />
             </div>
             <h1 className="text-h2 font-bold text-foreground tracking-tight">
-              Outreach Cadences & Campaigns
+              {t.navigation?.campaigns || 'Outreach Cadences & Campaigns'}
             </h1>
             <span className="px-2.5 py-0.5 text-caption font-semibold rounded-full bg-signal-qualified/10 text-signal-qualified border border-signal-qualified/30">
               {activeCount} Active Cadences

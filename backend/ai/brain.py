@@ -113,6 +113,7 @@ class AIBrain:
         campaign_goal: str = "Schedule a product demo meeting",
         agent_name: str = "Alex",
         company_name: str = "TechSolutions",
+        default_language: str = "en",
     ):
         self.company_info = company_info
         self.products_services = products_services
@@ -125,8 +126,8 @@ class AIBrain:
         self._param_engine = None
         self._model_warmed = False
 
-        # Track previous language to detect switches
-        self._prev_language: str = "en"
+        # Track previous language to detect switches; seed with session language
+        self._prev_language: str = default_language
 
     def _get_client(self):
         """Lazy-load Ollama client."""
@@ -171,28 +172,49 @@ class AIBrain:
         )
 
     def warm_up(self):
-        """Pre-load the model to avoid cold-start latency."""
+        """Pre-load the model or verify cloud connection to avoid cold-start latency."""
         if self._model_warmed:
             return
-        provider = getattr(config, "LLM_PROVIDER", "ollama")
-        if provider == "param":
+        provider = getattr(config, "LLM_PROVIDER", "sarvam")
+        if provider == "sarvam" and getattr(config, "HAS_SARVAM_KEY", False):
+            try:
+                model_name = getattr(config, "SARVAM_LLM_MODEL", "sarvam-105b")
+                print(f"[AI] Warming up Sarvam AI Cloud ({model_name})...")
+                t0 = time.time()
+                from sarvamai import SarvamAI
+                client = SarvamAI(api_subscription_key=config.SARVAM_API_KEY)
+                client.chat.completions(
+                    model=model_name,
+                    messages=[{"role": "user", "content": "ping"}],
+                    max_tokens=1,
+                    reasoning_effort=None,
+                )
+                self._model_warmed = True
+                print(f"[AI] Sarvam AI Cloud warmed up in {time.time() - t0:.1f}s")
+            except Exception as e:
+                print(f"[AI] Sarvam warm-up notice ({e}). Client ready for interactive calls.")
+                self._model_warmed = True
+        elif provider == "param":
             print(f"[AI] Warming up local model {config.PARAM_MODEL_ID}...")
             engine = self._get_param_engine()
             engine.load()
             self._model_warmed = True
             print(f"[AI] Local model warmed up.")
         elif provider == "ollama":
-            print(f"[AI] Warming up {config.OLLAMA_MODEL}...")
-            t0 = time.time()
-            client = self._get_client()
-            client.chat(
-                model=config.OLLAMA_MODEL,
-                messages=[{"role": "user", "content": "Hello"}],
-                keep_alive=-1,
-                options={"num_predict": 1, "num_gpu": config.OLLAMA_NUM_GPU},
-            )
-            self._model_warmed = True
-            print(f"[AI] Model warmed up in {time.time() - t0:.1f}s")
+            try:
+                print(f"[AI] Warming up {config.OLLAMA_MODEL}...")
+                t0 = time.time()
+                client = self._get_client()
+                client.chat(
+                    model=config.OLLAMA_MODEL,
+                    messages=[{"role": "user", "content": "Hello"}],
+                    keep_alive=-1,
+                    options={"num_predict": 1, "num_gpu": config.OLLAMA_NUM_GPU},
+                )
+                self._model_warmed = True
+                print(f"[AI] Model warmed up in {time.time() - t0:.1f}s")
+            except Exception as e:
+                print(f"[AI] Ollama warm-up notice ({e}). Will connect when Ollama is running.")
 
     def get_opening(self, prospect_name: str = "", language: str = "en") -> str:
         """Get the opening line for the call."""
@@ -203,87 +225,107 @@ class AIBrain:
             company_name=self.company_name,
             reason=reason,
         )
-        self.memory.add_turn("agent", opening, language)
-        self._prev_language = language
+        if prospect_name and prospect_name.strip():
+            greeting = f"Hi {prospect_name.strip()}, "
+            opening = greeting + opening[0].lower() + opening[1:]
         return opening
 
-    # ─── Non-streaming response (text mode / fallback) ───────────────
-
-    def generate_response(self, prospect_text: str, language: str = "en") -> str:
+    def think(self, user_text: str, detected_language: str = "en") -> Generator[str, None, None]:
         """
-        Generate a complete AI response (blocking).
-
-        Args:
-            prospect_text: what the prospect said (transcribed)
-            language: detected language code
-
-        Returns:
-            AI response text (ready for TTS)
+        Process user speech, update conversation history, and yield response sentences.
         """
-        self.memory.add_turn("prospect", prospect_text, language)
+        # Record user turn
+        self.memory.add_turn("user", user_text, language=detected_language)
 
-        system_prompt = self._build_system_prompt(language)
+        # Detect language switch
+        switch_hint = self._language_switch_hint(detected_language, self._prev_language)
+        self._prev_language = detected_language
+
+        # Build messages for LLM
+        system_prompt = self._get_system_prompt(detected_language)
         messages = [{"role": "system", "content": system_prompt}]
-        messages.extend(self.memory.get_context_for_llm())
 
-        t0 = time.time()
-        client = self._get_client()
+        if switch_hint:
+            messages.append({"role": "system", "content": switch_hint})
 
-        try:
-            response = client.chat(
-                model=config.OLLAMA_MODEL,
-                messages=messages,
-                keep_alive=-1,
-                options={
-                    "temperature": config.OLLAMA_TEMPERATURE,
-                    "num_predict": config.MAX_RESPONSE_TOKENS,
-                    "num_ctx": config.OLLAMA_NUM_CTX,
-                    "num_gpu": config.OLLAMA_NUM_GPU,
-                },
-            )
-            raw_text = response["message"]["content"]
-        except Exception as e:
-            print(f"[AI] Error calling Ollama: {e}")
-            raw_text = self._get_fallback_response(language)
+        # Add recent conversation history (last N turns)
+        history = self.memory.get_recent_history(n=6)
+        for turn in history:
+            messages.append({"role": turn["role"], "content": turn["text"]})
 
-        clean_text = self._clean_for_tts(raw_text)
-        if not clean_text:
-            print(f"[AI] WARNING: Empty response after cleaning. Raw: {raw_text[:200]}")
-            clean_text = self._get_fallback_response(language)
+        # Sentence buffer for streaming TTS
+        sentence_buffer = ""
+        full_response = ""
 
-        elapsed = time.time() - t0
-        print(f"[AI] Generated response in {elapsed:.2f}s ({len(clean_text)} chars)")
+        # Stream tokens from LLM and segment into complete sentences
+        for token in self._stream_raw_tokens(messages):
+            sentence_buffer += token
+            full_response += token
 
-        self.memory.add_turn("agent", clean_text, language)
-        self._extract_info(prospect_text, clean_text)
-        self._prev_language = language
+            # Check if we have reached a sentence boundary
+            sentence = self._extract_sentence(sentence_buffer)
+            if sentence:
+                yield sentence
+                sentence_buffer = sentence_buffer[len(sentence):].lstrip()
 
+        # Yield any remaining text as the final sentence
+        remaining = sentence_buffer.strip()
+        if remaining:
+            yield remaining
+
+        # Clean and save the assistant's turn in memory
+        cleaned = self._clean_llm_response(full_response)
+        self.memory.add_turn("assistant", cleaned, language=detected_language)
+
+    def _extract_sentence(self, text: str) -> str | None:
+        """Extract the first complete sentence from buffered text, if any."""
+        import re
+        # Match common sentence terminators (. ! ? or Hindi purna viram ।)
+        match = re.search(r"([.!?।])(\s+|$)", text)
+        if match:
+            end_pos = match.end()
+            sentence = text[:end_pos].strip()
+            # Only return if it meets minimum character length
+            if len(sentence) >= getattr(config, "STREAM_MIN_CHARS", 30):
+                return sentence
+        return None
+
+    def _clean_llm_response(self, text: str) -> str:
+        """Strip formatting, thinking tokens, and extra whitespace."""
+        import re
+        clean_text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+        clean_text = re.sub(r"[\*\_#`]", "", clean_text)
+        clean_text = re.sub(r"\s+", " ", clean_text).strip()
         return clean_text
 
     def _stream_raw_tokens(self, messages: list[dict]) -> Generator[str, None, None]:
-        """Stream raw tokens from the selected LLM provider (param / ollama / sarvam)."""
-        provider = getattr(config, "LLM_PROVIDER", "ollama")
+        """Stream raw tokens from the selected LLM provider (strictly Sarvam Cloud API by default)."""
+        provider = getattr(config, "LLM_PROVIDER", "sarvam")
 
-        if provider == "param":
+        if provider == "sarvam" and getattr(config, "HAS_SARVAM_KEY", False):
+            from sarvamai import SarvamAI
+            client = SarvamAI(api_subscription_key=config.SARVAM_API_KEY)
+            model_name = getattr(config, "SARVAM_LLM_MODEL", "sarvam-105b")
+            try:
+                stream = client.chat.completions(
+                    model=model_name,
+                    messages=messages,
+                    reasoning_effort=None,
+                    stream=True,
+                )
+                for chunk in stream:
+                    if hasattr(chunk, "choices") and chunk.choices and len(chunk.choices) > 0:
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, "content") and delta.content:
+                            yield delta.content
+                return
+            except Exception as e:
+                print(f"[AI] Sarvam 105B API error ({e}).")
+
+        elif provider == "param":
             engine = self._get_param_engine()
             for token in engine.stream_chat(messages):
                 yield token
-
-        elif provider == "sarvam":
-            import os
-            from sarvamai import SarvamAI
-            client = SarvamAI(api_subscription_key=os.getenv("SARVAM_API_KEY"))
-            stream = client.chat.completions(
-                model="sarvam-105b",
-                messages=messages,
-                reasoning_effort="low",
-                stream=True,
-            )
-            for chunk in stream:
-                if hasattr(chunk, "choices") and chunk.choices:
-                    delta = chunk.choices[0].delta
-                    if hasattr(delta, "content") and delta.content:
-                        yield delta.content
 
         else:  # "ollama" fallback
             client = self._get_client()

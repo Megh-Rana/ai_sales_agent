@@ -47,6 +47,7 @@ class PipelineOrchestrator:
         campaign_goal: str = "Schedule a product demo",
         agent_name: str = "Alex",
         company_name: str = "TechSolutions",
+        default_language: str = "en",
     ):
         # Components
         self.stt = STTEngine()
@@ -58,10 +59,12 @@ class PipelineOrchestrator:
             campaign_goal=campaign_goal,
             agent_name=agent_name,
             company_name=company_name,
+            default_language=default_language,
         )
         self.audio = AudioIO()
 
         # State
+        self.language = default_language  # Default session language for STT prompt
         self._running = False
         self._is_speaking = False   # True while TTS audio is playing
         self._turn_count = 0
@@ -166,7 +169,9 @@ class PipelineOrchestrator:
 
         # ─── STT ──────────────────────────────────────────────────────
         t0 = time.time()
-        stt_result = self.stt.transcribe(speech_audio)
+        # Pass session language as a hint so Sarvam STT / Whisper bias transcription
+        # to the correct language instead of auto-detecting as English
+        stt_result = self.stt.transcribe(speech_audio, language=self.language)
         stt_time = time.time() - t0
 
         transcript = stt_result["text"]

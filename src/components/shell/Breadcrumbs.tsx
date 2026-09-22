@@ -1,15 +1,17 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
+import { useI18n } from '../../i18n/i18nContext';
 
 export const Breadcrumbs: React.FC = () => {
+  const { t } = useI18n();
   const location = useLocation();
   const pathnames = location.pathname.split('/').filter((x) => x);
 
   if (pathnames.length === 0 || (pathnames.length === 1 && pathnames[0] === 'dashboard')) {
     return (
       <div className="flex items-center gap-2 text-body-medium font-semibold text-foreground">
-        <span>Overview Dashboard</span>
+        <span>{t.topbar?.overviewDashboard || 'Overview Dashboard'}</span>
       </div>
     );
   }
@@ -17,14 +19,14 @@ export const Breadcrumbs: React.FC = () => {
   const formatSegment = (segment: string, fullPath: string) => {
     // Route segment friendly labels
     const dictionary: Record<string, string> = {
-      leads: 'Opportunities',
-      discover: 'Discover Intent Signals',
-      campaigns: 'Outreach Cadences',
-      calls: 'AI Voice Calls',
-      'follow-ups': 'Follow-ups Queue',
-      analytics: 'Pipeline Analytics',
-      business: 'Business Profile',
-      settings: 'Settings',
+      leads: t.navigation?.leads || 'Opportunities',
+      discover: t.navigation?.discoverSignals || 'Discover Intent Signals',
+      campaigns: t.navigation?.campaigns || 'Outreach Cadences',
+      calls: t.navigation?.calls || 'AI Voice Calls',
+      'follow-ups': t.navigation?.followUps || 'Follow-ups Queue',
+      analytics: t.navigation?.analytics || 'Pipeline Analytics',
+      business: t.navigation?.businessProfile || 'Business Profile',
+      settings: t.navigation?.settings || 'Settings',
       profile: 'User Profile',
       team: 'Team & Seats',
       notifications: 'Notification Channels',

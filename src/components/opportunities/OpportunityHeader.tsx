@@ -2,6 +2,8 @@ import React from 'react';
 import { Radar, Flame, Sparkles, Filter, Search, RefreshCw, Layers } from 'lucide-react';
 import { OpportunityFilterState, OpportunityCategoryType } from '../../types/opportunities';
 
+import { useI18n } from '../../i18n/i18nContext';
+
 interface OpportunityHeaderProps {
   totalCount: number;
   urgentCount: number;
@@ -25,6 +27,8 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
   activeTab,
   onTabChange,
 }) => {
+  const { t } = useI18n();
+
   return (
     <div className="bg-surface-0 border-b border-border-default px-6 py-5 space-y-4">
       {/* Top Header Row */}
@@ -40,7 +44,7 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
           </div>
 
           <h1 className="text-h2 font-bold text-foreground tracking-tight flex items-center gap-3">
-            <span>Opportunity Radar</span>
+            <span>{t.navigation?.opportunities || 'Opportunity Radar'}</span>
             <span className="text-sm font-mono font-medium px-2.5 py-0.5 rounded-full bg-surface-1 border border-border-subtle text-foreground-secondary">
               {totalCount} Active
             </span>

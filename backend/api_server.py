@@ -177,6 +177,7 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
             campaign_goal=goal,
             agent_name=request.agentName or "Alex",
             company_name=request.companyName,
+            default_language=request.language,
         )
         
         # Set voice gender
@@ -269,6 +270,10 @@ async def launch_voice_call(session_id: str):
                                         ws.send_json({
                                             "type": "transcript",
                                             "item": turn_item,
+                                            "speaker": speaker,
+                                            "text": text,
+                                            "language": lang,
+                                            "timestamp": turn_item["timestamp"],
                                             "sessionId": session_id,
                                             "duration": int(time.time() - session.get("start_time", time.time()))
                                         }),
@@ -279,9 +284,10 @@ async def launch_voice_call(session_id: str):
 
                 pipeline.on_transcript = handle_live_transcript
 
-                # Get opening message
-                opening = pipeline.ai.get_opening(prospect_name=contact_name)
-                print(f"🤖 Agent: {opening}\n")
+                # Get opening message in the selected session language
+                session_lang = session.get("language", "en")
+                opening = pipeline.ai.get_opening(prospect_name=contact_name, language=session_lang)
+                print(f"🤖 Agent [{session_lang}]: {opening}\n")
                 
                 # Add opening to transcript
                 opening_item = {
@@ -301,6 +307,10 @@ async def launch_voice_call(session_id: str):
                                     ws.send_json({
                                         "type": "transcript",
                                         "item": opening_item,
+                                        "speaker": "agent",
+                                        "text": opening,
+                                        "language": session["language"],
+                                        "timestamp": opening_item["timestamp"],
                                         "sessionId": session_id,
                                         "duration": 0
                                     }),
@@ -548,11 +558,13 @@ async def get_config():
         "supportedLanguages": config.SUPPORTED_LANGUAGES,
         "maxConversationTurns": config.MAX_CONVERSATION_TURNS,
         "streamingEnabled": config.STREAMING_PIPELINE,
-        "sttProvider": config.STT_PROVIDER,
-        "llmProvider": config.LLM_PROVIDER,
-        "ttsProvider": "sarvam",
+        "sttProvider": getattr(config, "STT_PROVIDER", "sarvam"),
+        "llmProvider": getattr(config, "LLM_PROVIDER", "sarvam"),
+        "ttsProvider": getattr(config, "TTS_PROVIDER", "sarvam"),
+        "aiProvider": getattr(config, "AI_PROVIDER", "sarvam"),
+        "sarvamKeyConfigured": getattr(config, "HAS_SARVAM_KEY", False),
         "mode": "voice_interactive",
-        "instruction": "This is a real voice agent. You will talk through your microphone."
+        "instruction": "This is a real voice agent powered by Sarvam AI. You will talk through your microphone."
     }
 
 @app.websocket("/ws/call/{session_id}")

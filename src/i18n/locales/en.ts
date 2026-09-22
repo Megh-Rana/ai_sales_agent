@@ -19,13 +19,24 @@ export const en = {
   
   navigation: {
     dashboard: 'Dashboard',
-    leads: 'Leads',
-    calls: 'AI Calls',
-    campaigns: 'Campaigns',
-    analytics: 'Analytics',
-    opportunities: 'Opportunities',
+    leads: 'Leads & Accounts',
+    calls: 'AI Voice Agent Calls',
+    campaigns: 'Outreach Cadences',
+    analytics: 'Pipeline Analytics',
+    opportunities: 'Opportunity Radar',
     copilot: 'Sales Copilot',
     settings: 'Settings',
+    commandCenter: 'Revenue Command Center',
+    followUps: 'Follow-ups Queue',
+    actions: 'Sales Action Center',
+    discoverSignals: 'Discover Intent Signals',
+    businessProfile: 'Business Profile',
+    // Sidebar section headers
+    sectionOverview: 'Overview',
+    sectionSalesOps: 'Sales Operations',
+    sectionIntelligence: 'Intelligence',
+    sectionWorkspace: 'Workspace',
+    sectionAdmin: 'Administration',
   },
 
   landing: {
@@ -130,12 +141,42 @@ export const en = {
     nextAction: 'Next Action',
   },
 
+  topbar: {
+    searchPlaceholder: 'Search or command...',
+    searchTooltip: 'Search commands',
+    overviewDashboard: 'Overview Dashboard',
+  },
+
+  dashboard: {
+    title: 'Sales Workspace',
+    filterAll: 'All High Intent',
+    filterCallReady: 'Call Ready',
+    filterFollowup: 'Follow-ups Due',
+    scanSignals: 'Scan Buying Signals',
+    pipelineSnapshot: 'Pipeline Snapshot',
+    recentActivity: 'Recent Activity',
+    buyingSignals: 'Buying Signals',
+  },
+
   analytics: {
-    title: 'Revenue Analytics',
+    title: 'Sales Analytics',
+    subtitle: "Understand what's driving your sales pipeline and voice call conversions.",
+    badge: 'Intelligence',
+    exportPdf: 'Export PDF',
+    refresh: 'Refresh',
+    today: 'Today',
+    days7: '7 Days',
+    days30: '30 Days',
+    days90: '90 Days',
+    custom: 'Custom',
+    state: 'State',
     metrics: 'Key Metrics',
     conversionRate: 'Conversion Rate',
     callPerformance: 'Call Performance',
     pipeline: 'Pipeline',
+    funnelTitle: 'Autonomous Sales Conversion Funnel',
+    intentDistribution: 'Account Intent Distribution',
+    conversionMetrics: 'Conversion & Velocity Telemetry',
   },
 };
 

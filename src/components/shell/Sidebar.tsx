@@ -24,6 +24,7 @@ import { Avatar } from '../ui/Avatar';
 import { Tooltip } from '../ui/Tooltip';
 import { mockUser } from '../../services/mockShellData';
 import { useAuth } from '../../context/AuthContext';
+import { useI18n } from '../../i18n/i18nContext';
 
 export interface SidebarProps {
   isCollapsed?: boolean;
@@ -37,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   className = '',
 }) => {
   const { isAdmin } = useAuth();
+  const { t } = useI18n();
   return (
     <aside
       className={`bg-surface border-r border-border-strong h-screen flex flex-col transition-all duration-300 ease-in-out shrink-0 select-none z-30 ${
@@ -98,21 +100,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Navigation Links Area */}
       <nav aria-label="Main Navigation" className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
         {/* OVERVIEW */}
-        <SidebarSection label="Overview" isCollapsed={isCollapsed}>
+        <SidebarSection label={t.navigation.sectionOverview} isCollapsed={isCollapsed}>
           <SidebarItem
             to="/dashboard"
             icon={<LayoutDashboard className="w-4 h-4" />}
-            label="Dashboard"
+            label={t.navigation.dashboard}
             isCollapsed={isCollapsed}
           />
         </SidebarSection>
 
         {/* SALES WORKFLOW */}
-        <SidebarSection label="Sales Operations" isCollapsed={isCollapsed}>
+        <SidebarSection label={t.navigation.sectionSalesOps} isCollapsed={isCollapsed}>
           <SidebarItem
             to="/command-center"
             icon={<Activity className="w-4 h-4" />}
-            label="Revenue Command Center"
+            label={t.navigation.commandCenter}
             badge="Live OS"
             badgeVariant="primary"
             isCollapsed={isCollapsed}
@@ -120,7 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <SidebarItem
             to="/opportunities"
             icon={<Radar className="w-4 h-4" />}
-            label="Opportunity Radar"
+            label={t.navigation.opportunities}
             badge="7 Active"
             badgeVariant="signal"
             isCollapsed={isCollapsed}
@@ -128,28 +130,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <SidebarItem
             to="/leads"
             icon={<Users className="w-4 h-4" />}
-            label="Leads & Accounts"
+            label={t.navigation.leads}
             badge="38"
             isCollapsed={isCollapsed}
           />
           <SidebarItem
             to="/leads/discover"
             icon={<Compass className="w-4 h-4" />}
-            label="Discover Intent Signals"
+            label={t.navigation.discoverSignals}
             isCollapsed={isCollapsed}
             subItem={!isCollapsed}
           />
           <SidebarItem
             to="/campaigns"
             icon={<Target className="w-4 h-4" />}
-            label="Outreach Cadences"
+            label={t.navigation.campaigns}
             badge="4 Active"
             isCollapsed={isCollapsed}
           />
           <SidebarItem
             to="/calls"
             icon={<PhoneCall className="w-4 h-4" />}
-            label="AI Voice Agent Calls"
+            label={t.navigation.calls}
             badge="Live"
             badgeVariant="primary"
             isCollapsed={isCollapsed}
@@ -157,18 +159,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <SidebarItem
             to="/follow-ups"
             icon={<CalendarCheck className="w-4 h-4" />}
-            label="Follow-ups Queue"
+            label={t.navigation.followUps}
             badge="12"
             isCollapsed={isCollapsed}
           />
         </SidebarSection>
 
         {/* INTELLIGENCE */}
-        <SidebarSection label="Intelligence" isCollapsed={isCollapsed}>
+        <SidebarSection label={t.navigation.sectionIntelligence} isCollapsed={isCollapsed}>
           <SidebarItem
             to="/copilot"
             icon={<Sparkles className="w-4 h-4" />}
-            label="Sales Copilot"
+            label={t.navigation.copilot}
             badge="AI Pitch"
             badgeVariant="primary"
             isCollapsed={isCollapsed}
@@ -176,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <SidebarItem
             to="/actions"
             icon={<Target className="w-4 h-4 text-blue-400" />}
-            label="Sales Action Center"
+            label={t.navigation.actions}
             badge="4 Urgent"
             badgeVariant="signal"
             isCollapsed={isCollapsed}
@@ -184,24 +186,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <SidebarItem
             to="/analytics"
             icon={<BarChart3 className="w-4 h-4" />}
-            label="Pipeline Analytics"
+            label={t.navigation.analytics}
             isCollapsed={isCollapsed}
           />
         </SidebarSection>
 
         {/* WORKSPACE */}
-        <SidebarSection label="Workspace" isCollapsed={isCollapsed}>
+        <SidebarSection label={t.navigation.sectionWorkspace} isCollapsed={isCollapsed}>
           <SidebarItem
             to="/business"
             icon={<Briefcase className="w-4 h-4" />}
-            label="Business Profile"
+            label={t.navigation.businessProfile}
             isCollapsed={isCollapsed}
           />
         </SidebarSection>
 
         {/* ADMINISTRATION (admin-only) */}
         {isAdmin && (
-          <SidebarSection label="Administration" isCollapsed={isCollapsed}>
+          <SidebarSection label={t.navigation.sectionAdmin} isCollapsed={isCollapsed}>
             <SidebarItem
               to="/admin"
               icon={<ShieldAlert className="w-4 h-4" />}
@@ -224,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <SidebarItem
           to="/settings"
           icon={<Settings className="w-4 h-4" />}
-          label="Settings"
+          label={t.navigation.settings}
           isCollapsed={isCollapsed}
         />
       </div>

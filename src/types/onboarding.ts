@@ -9,7 +9,7 @@ export type VoiceLanguage =
   | 'en-GB'
   | 'en-IN'
   | 'hi-IN'
-  | 'hinglish'
+  | 'mr-IN'
   | 'gu-IN';
 
 export interface BusinessBasicsData {

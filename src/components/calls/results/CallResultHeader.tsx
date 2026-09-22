@@ -146,10 +146,10 @@ export const CallResultHeader: React.FC<CallResultHeaderProps> = ({
                 toast.error('Failed to export PDF report');
               }
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-100 hover:text-white bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-600/40 rounded-lg transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 border border-emerald-500 rounded-lg transition-colors shadow-sm"
             title="Download executive debrief PDF"
           >
-            <FileDown className="w-3.5 h-3.5 text-emerald-400" />
+            <FileDown className="w-3.5 h-3.5 text-white" />
             <span>Export PDF</span>
           </button>
 
