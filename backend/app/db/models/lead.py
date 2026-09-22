@@ -23,6 +23,10 @@ class Lead(Base):
     location = Column(String(255), nullable=True)
     source = Column(String(100), nullable=True, index=True)
     source_url = Column(String(500), nullable=True)
+    job_title = Column(String(255), nullable=True)
+    company_size = Column(String(100), nullable=True)
+    linkedin_url = Column(String(500), nullable=True)
+    website = Column(String(500), nullable=True)
     status = Column(String(50), nullable=False, default="new", index=True)
     
     # Stored intent_score - note: no AI scoring logic here, strictly storage

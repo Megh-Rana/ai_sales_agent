@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Check, RefreshCw, Filter, Globe, Building2, Zap, Radio } from 'lucide-react';
+import { X, Search, Check, RefreshCw, Filter, Globe, Building2, Zap, Radio, Users } from 'lucide-react';
 import { DiscoveryFilterState } from '../../types/leads';
 import { Button } from '../ui/Button';
 
@@ -61,6 +61,14 @@ const SOURCE_PLATFORMS = [
   'Crunchbase',
 ];
 
+const AVAILABLE_COMPANY_SIZES = [
+  '1-50',
+  '50-200',
+  '201-500',
+  '501-1,000',
+  '1,000+',
+];
+
 export const DiscoveryFilterDrawer: React.FC<DiscoveryFilterDrawerProps> = ({
   isOpen,
   onClose,
@@ -73,6 +81,9 @@ export const DiscoveryFilterDrawer: React.FC<DiscoveryFilterDrawerProps> = ({
   const [localLocations, setLocalLocations] = useState<string[]>(filters.locations);
   const [localSignals, setLocalSignals] = useState<string[]>(filters.signalTypes);
   const [localSources, setLocalSources] = useState<string[]>(filters.sources);
+  const [localCompanySizes, setLocalCompanySizes] = useState<string[]>(
+    filters.companySizes || (filters.companySize ? [filters.companySize] : [])
+  );
   const [industrySearch, setIndustrySearch] = useState('');
 
   // Sync state when filters update or drawer opens
@@ -82,6 +93,9 @@ export const DiscoveryFilterDrawer: React.FC<DiscoveryFilterDrawerProps> = ({
       setLocalLocations(filters.locations);
       setLocalSignals(filters.signalTypes);
       setLocalSources(filters.sources);
+      setLocalCompanySizes(
+        filters.companySizes || (filters.companySize ? [filters.companySize] : [])
+      );
     }
   }, [filters, isOpen]);
 
@@ -109,6 +123,8 @@ export const DiscoveryFilterDrawer: React.FC<DiscoveryFilterDrawerProps> = ({
       locations: localLocations,
       signalTypes: localSignals,
       sources: localSources,
+      companySizes: localCompanySizes,
+      companySize: localCompanySizes[0] || undefined,
     });
     onClose();
   };
@@ -118,6 +134,7 @@ export const DiscoveryFilterDrawer: React.FC<DiscoveryFilterDrawerProps> = ({
     setLocalLocations([]);
     setLocalSignals([]);
     setLocalSources([]);
+    setLocalCompanySizes([]);
     onClearAll();
   };
 
@@ -214,6 +231,46 @@ export const DiscoveryFilterDrawer: React.FC<DiscoveryFilterDrawerProps> = ({
                     }`}
                   >
                     <span className="truncate">{ind}</span>
+                    <div
+                      className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] border shrink-0 ${
+                        isChecked ? 'bg-primary text-primary-foreground border-primary' : 'border-border-default'
+                      }`}
+                    >
+                      {isChecked && <Check className="w-2.5 h-2.5" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section: Company Size / Headcount */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-foreground flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-primary" />
+                <span>Company Size (Employees)</span>
+              </label>
+              <span className="text-[11px] text-foreground-tertiary">
+                {localCompanySizes.length} selected
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5">
+              {AVAILABLE_COMPANY_SIZES.map((size) => {
+                const isChecked = localCompanySizes.includes(size);
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setLocalCompanySizes(toggleArrayItem(localCompanySizes, size))}
+                    className={`p-2 rounded-lg border text-left flex items-center justify-between gap-1 text-[11px] transition-colors ${
+                      isChecked
+                        ? 'bg-primary-muted border-primary text-primary font-medium'
+                        : 'bg-surface-1/60 border-border-subtle hover:border-border-default text-foreground-secondary'
+                    }`}
+                  >
+                    <span className="truncate">{size}</span>
                     <div
                       className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] border shrink-0 ${
                         isChecked ? 'bg-primary text-primary-foreground border-primary' : 'border-border-default'

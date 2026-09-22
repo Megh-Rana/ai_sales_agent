@@ -25,6 +25,10 @@ class LeadBase(BaseModel):
     location: Optional[str] = Field(None, max_length=255, description="Lead location/region")
     source: Optional[str] = Field(None, max_length=100, description="Acquisition source (e.g. website, inbound, referral)")
     source_url: Optional[str] = Field(None, max_length=500, description="Origin URL or referral link")
+    job_title: Optional[str] = Field(None, max_length=255, description="Contact person job title / executive role")
+    company_size: Optional[str] = Field(None, max_length=100, description="Company employee size range (e.g. 50-200)")
+    linkedin_url: Optional[str] = Field(None, max_length=500, description="LinkedIn profile or post URL")
+    website: Optional[str] = Field(None, max_length=500, description="Company official website")
     status: LeadStatus = Field(default=LeadStatus.NEW, description="Current lead lifecycle status")
     intent_score: Optional[float] = Field(
         None,
@@ -48,6 +52,10 @@ class LeadUpdate(BaseModel):
     location: Optional[str] = Field(None, max_length=255)
     source: Optional[str] = Field(None, max_length=100)
     source_url: Optional[str] = Field(None, max_length=500)
+    job_title: Optional[str] = Field(None, max_length=255)
+    company_size: Optional[str] = Field(None, max_length=100)
+    linkedin_url: Optional[str] = Field(None, max_length=500)
+    website: Optional[str] = Field(None, max_length=500)
     status: Optional[LeadStatus] = None
     intent_score: Optional[float] = Field(None, ge=0.0, le=100.0)
 

@@ -25,11 +25,11 @@ export interface DiscoveryControlsProps {
 }
 
 const PRESET_REQUIREMENTS = [
-  'Warehouse Automation & Dispatch',
-  'Legacy Telephony & Dialer Migration',
-  'Pricing / Vendor RFP Issued',
-  'Series-A/B GTM Expansion',
-  'Patient Intake IVR Software',
+  'Microsoft 365 SharePoint services',
+  'sell milk dairy products',
+  'logistics fleet management',
+  'fintech payment solutions',
+  'healthcare diagnostics',
 ];
 
 const FRESHNESS_OPTIONS: { value: DiscoveryFilterState['freshness']; label: string }[] = [

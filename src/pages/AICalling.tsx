@@ -19,6 +19,7 @@ import {
   INITIAL_QUALIFICATION_DIMENSIONS
 } from '../data/mockCalls';
 import { callService } from '../services/callService';
+import { dataBackboneService } from '../services/dataBackboneService';
 import { CallHeader } from '../components/calls/CallHeader';
 import { CallWaveform } from '../components/calls/CallWaveform';
 import { LiveTranscript } from '../components/calls/LiveTranscript';
@@ -107,8 +108,25 @@ export const AICalling: React.FC = () => {
 
     // Try WebSocket connection for instant zero-latency speech turn streaming
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/call/${sessionId}`;
+      const explicitWs = import.meta.env.VITE_WS_URL as string | undefined;
+      const apiBase = import.meta.env.VITE_API_URL as string | undefined;
+      let wsUrl = '';
+
+      if (explicitWs) {
+        wsUrl = `${explicitWs.replace(/\/+$/, '')}/ws/call/${sessionId}`;
+      } else if (apiBase) {
+        try {
+          const parsed = new URL(apiBase);
+          const proto = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+          wsUrl = `${proto}//${parsed.host}/ws/call/${sessionId}`;
+        } catch {
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          wsUrl = `${protocol}//${window.location.hostname}:8000/ws/call/${sessionId}`;
+        }
+      } else {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${protocol}//${window.location.hostname}:8000/ws/call/${sessionId}`;
+      }
       const socket = new WebSocket(wsUrl);
       wsRef.current = socket;
 
@@ -310,15 +328,24 @@ export const AICalling: React.FC = () => {
       }));
 
       safeTimeout(() => {
-        setSession((prev) => ({
-          ...prev,
-          status: 'COMPLETED',
-          audioStatus: 'idle'
-        }));
+        setSession((prev) => {
+          dataBackboneService.recordCallOutcome({
+            leadId: resolvedLeadId,
+            status: 'completed',
+            duration: prev.duration || 180,
+            outcome: 'meeting_booked',
+            transcript: prev.transcript.map(t => `${t.speaker}: ${t.text}`).join('\n')
+          });
+          return {
+            ...prev,
+            status: 'COMPLETED',
+            audioStatus: 'idle'
+          };
+        });
         toast.success('Conversation concluded. Executive debrief generated.');
       }, 750);
     }
-  }, [session.status, session.duration, scriptSteps, safeTimeout]);
+  }, [session.status, session.duration, scriptSteps, safeTimeout, resolvedLeadId]);
 
   useEffect(() => {
     if (session.status === 'LIVE') {
@@ -505,17 +532,26 @@ export const AICalling: React.FC = () => {
         }));
       }
     } else {
-      // Mock call ending
+      // Manual/Simulated call ending
       safeTimeout(() => {
-        setSession((prev) => ({
-          ...prev,
-          status: 'COMPLETED',
-          audioStatus: 'idle'
-        }));
+        setSession((prev) => {
+          dataBackboneService.recordCallOutcome({
+            leadId: resolvedLeadId,
+            status: 'completed',
+            duration: prev.duration || 120,
+            outcome: 'meeting_booked',
+            transcript: prev.transcript.map(t => `${t.speaker}: ${t.text}`).join('\n')
+          });
+          return {
+            ...prev,
+            status: 'COMPLETED',
+            audioStatus: 'idle'
+          };
+        });
         toast.success('Conversation concluded. Executive brief generated.');
       }, 750);
     }
-  }, [isRealVoiceCall, backendSessionId, clearAllTimeouts, safeTimeout, formatDuration]);
+  }, [isRealVoiceCall, backendSessionId, clearAllTimeouts, safeTimeout, formatDuration, resolvedLeadId]);
 
   const handleCancelConnecting = async () => {
     clearAllTimeouts();
@@ -629,7 +665,7 @@ export const AICalling: React.FC = () => {
             contactName={session.contactName}
             contactRole={session.contactRole}
             contactPhone={session.contactPhone}
-            location={lead.location}
+            location={lead?.location || 'India'}
             connectingStageText={connectingStageText}
             onCancelCall={handleCancelConnecting}
           />
@@ -744,8 +780,8 @@ export const AICalling: React.FC = () => {
         companyName={session.companyName}
         contactName={session.contactName}
         contactRole={session.contactRole}
-        objective={`Understand their ${lead.industry.toLowerCase()} requirement and qualify implementation timeline.`}
-        whyNow={lead.whyNow}
+        objective={`Understand their ${lead?.industry?.toLowerCase() || 'business'} requirement and qualify implementation timeline.`}
+        whyNow={lead?.whyNow || 'Active lead discovered via AI discovery.'}
         selectedLanguage={session.language}
         onLanguageChange={(lang) => setSession((prev) => ({ ...prev, language: lang }))}
       />

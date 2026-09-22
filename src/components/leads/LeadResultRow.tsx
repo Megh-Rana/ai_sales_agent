@@ -20,6 +20,7 @@ import { IntentScore } from '../sales/IntentScore';
 import { SignalSourceBadge } from '../sales/SignalSourceBadge';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
+import { getResolvableSourceUrl } from '../../utils/sourceUrl';
 
 interface LeadResultRowProps {
   lead: DiscoveredLead;
@@ -78,6 +79,19 @@ export const LeadResultRow: React.FC<LeadResultRowProps> = ({
               <Badge variant="neutral" className="text-[11px] py-0.5 px-2 font-medium shrink-0">
                 {lead.industry}
               </Badge>
+              {lead.is_inferred_from_hiring || lead.signal_type === 'inferred_hiring_signal' || lead.source?.platform?.toLowerCase().includes('job') || lead.source?.platform?.toLowerCase().includes('hiring') ? (
+                <span
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-400 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded-full shrink-0 shadow-xs"
+                  title={lead.inferred_need_basis || "Business need inferred from active job hiring listing"}
+                >
+                  <Sparkles className="w-3 h-3 text-purple-400" />
+                  <span>Inferred from Hiring Signal</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0">
+                  <span>Direct Requirement</span>
+                </span>
+              )}
               <span className="inline-flex items-center gap-1 text-[11px] text-foreground-tertiary font-mono shrink-0">
                 <MapPin className="w-3 h-3 text-foreground-tertiary" />
                 {lead.location}
@@ -220,7 +234,12 @@ export const LeadResultRow: React.FC<LeadResultRowProps> = ({
           <div className="p-3 rounded-lg bg-surface-subtle border border-border text-foreground-secondary flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="space-y-0.5 flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <SignalSourceBadge source={lead.source} />
+                <SignalSourceBadge
+                  source={lead.source}
+                  companyName={lead.companyName}
+                  companyDomain={lead.companyDomain}
+                  requirement={lead.requirement}
+                />
                 <span className="text-[11px] text-foreground-tertiary font-mono">
                   Captured at {lead.source.discoveredAt}
                 </span>
@@ -231,7 +250,13 @@ export const LeadResultRow: React.FC<LeadResultRowProps> = ({
             </div>
             {lead.source.sourceUrl && (
               <a
-                href={lead.source.sourceUrl}
+                href={getResolvableSourceUrl(
+                  lead.source.sourceUrl,
+                  lead.source.platform,
+                  lead.companyName,
+                  lead.companyDomain,
+                  lead.requirement
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary-hover font-medium shrink-0 transition-colors"

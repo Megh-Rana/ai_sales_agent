@@ -15,11 +15,21 @@ import {
 import { Bot, ArrowRight, PhoneCall, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useI18n } from '../i18n/i18nContext';
 import { LanguageSelector } from '../components/ui/LanguageSelector';
+import { useAuth } from '../context/AuthContext';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('discovery');
+
+  const handleLaunchWorkstation = (targetPath = '/dashboard') => {
+    if (isAuthenticated) {
+      navigate(targetPath);
+    } else {
+      navigate(`/login?redirect=${encodeURIComponent(targetPath)}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-app text-foreground relative overflow-hidden select-none">
@@ -28,7 +38,7 @@ export const LandingPage: React.FC = () => {
 
       {/* TOP MARKETING BAR */}
       <header className="border-b border-border-subtle bg-surface-0/80 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
+        <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => handleLaunchWorkstation('/dashboard')}>
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-md shadow-primary/30">
             <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
@@ -46,7 +56,7 @@ export const LandingPage: React.FC = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSelector variant="minimal" />
           <HoverGlowButton
-            onClick={() => navigate('/dashboard')}
+            onClick={() => handleLaunchWorkstation('/dashboard')}
             className="px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs text-white bg-thistle hover:bg-thistle/90 rounded-xl font-semibold"
           >
             <span className="hidden sm:inline">Launch Workstation</span>
@@ -71,7 +81,7 @@ export const LandingPage: React.FC = () => {
             {/* HERO CALL TO ACTION */}
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 pt-4">
               <MagneticButton
-                onClick={() => navigate('/dashboard')}
+                onClick={() => handleLaunchWorkstation('/dashboard')}
                 className="px-5 sm:px-7 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-thistle hover:bg-thistle/90 shadow-xl shadow-thistle/20"
               >
                 <span>{t.landing.exploreDashboard}</span>
@@ -183,19 +193,19 @@ export const LandingPage: React.FC = () => {
           VIDUR AI SALES PLATFORM
         </div>
         <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-xs text-foreground-secondary">
-          <button onClick={() => navigate('/dashboard')} className="hover:text-foreground transition-colors">
+          <button onClick={() => handleLaunchWorkstation('/dashboard')} className="hover:text-foreground transition-colors">
             {t.navigation.dashboard}
           </button>
           <span>•</span>
-          <button onClick={() => navigate('/leads/discover')} className="hover:text-foreground transition-colors">
+          <button onClick={() => handleLaunchWorkstation('/leads/discover')} className="hover:text-foreground transition-colors">
             {t.navigation.leads}
           </button>
           <span>•</span>
-          <button onClick={() => navigate('/calls')} className="hover:text-foreground transition-colors">
+          <button onClick={() => handleLaunchWorkstation('/calls')} className="hover:text-foreground transition-colors">
             {t.navigation.calls}
           </button>
           <span>•</span>
-          <button onClick={() => navigate('/analytics')} className="hover:text-foreground transition-colors">
+          <button onClick={() => handleLaunchWorkstation('/analytics')} className="hover:text-foreground transition-colors">
             {t.navigation.analytics}
           </button>
         </div>

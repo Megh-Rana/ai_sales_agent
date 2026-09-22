@@ -42,7 +42,7 @@
     --primary: #CDB4DB;
     --primary-hover: #D8C0E3;
     --primary-active: #B8A4C9;
-    --primary-foreground: #0B0E14;
+    --primary-foreground: #FFFFFF;
     --primary-muted: #2D1F35;
 
     /* Accent & Signals - Pastel Colors */
@@ -246,7 +246,6 @@
     font-size: 0.75rem;
     line-height: 1rem;
     font-weight: 400;
-    color: var(--text-muted);
   }
 
   .text-metric {
@@ -284,7 +283,6 @@ button[class*="bg-[#1E293B]"],
 button[class*="bg-blue-600"],
 button[class*="bg-blue-700"],
 button[class*="bg-blue-500"],
-button[class*="bg-primary"],
 a[class*="bg-[#1A202C]"],
 a[class*="bg-blue-600"] {
   color: #FFFFFF !important;
@@ -292,9 +290,26 @@ a[class*="bg-blue-600"] {
 
 button[class*="bg-[#1A202C]"] svg,
 button[class*="bg-[#1E293B]"] svg,
-button[class*="bg-blue-600"] svg,
-button[class*="bg-primary"] svg {
+button[class*="bg-blue-600"] svg {
   color: inherit !important;
+}
+
+/* Violet / Primary / Thistle buttons and solid blocks must ALWAYS have crisp pure white content */
+button.bg-primary:not([class*="-muted"]):not([class*="/10"]):not([class*="/20"]):not([class*="/30"]),
+button.bg-primary:not([class*="-muted"]):not([class*="/10"]):not([class*="/20"]):not([class*="/30"]) *,
+.bg-primary:not([class*="-muted"]):not([class*="/10"]):not([class*="/20"]):not([class*="/30"]),
+.bg-primary:not([class*="-muted"]):not([class*="/10"]):not([class*="/20"]):not([class*="/30"]) *,
+button[class*="bg-thistle"]:not([class*="-muted"]),
+button[class*="bg-thistle"]:not([class*="-muted"]) *,
+a[class*="bg-primary"]:not([class*="-muted"]) {
+  color: #FFFFFF !important;
+}
+
+button.bg-primary:not([class*="-muted"]) svg,
+.bg-primary:not([class*="-muted"]) svg,
+button[class*="bg-thistle"]:not([class*="-muted"]) svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
 }
 
 /* Muted text should not apply inside high-contrast primary or colored buttons */

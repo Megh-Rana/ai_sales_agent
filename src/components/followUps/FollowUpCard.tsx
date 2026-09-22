@@ -184,10 +184,10 @@ export const FollowUpCard: React.FC<FollowUpCardProps> = ({
         <button
           type="button"
           onClick={() => navigate(`/calls/call-${item.leadId}?leadId=${item.leadId}`)}
-          className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-caption font-semibold shadow-xs transition-all focus:outline-none focus:ring-1 focus:ring-primary"
+          className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-caption font-semibold shadow-xs transition-all focus:outline-none focus:ring-1 focus:ring-primary"
         >
-          <PhoneCall className="w-3.5 h-3.5" />
-          <span>Call Now</span>
+          <PhoneCall className="w-3.5 h-3.5 text-white" />
+          <span className="text-white">Call Now</span>
         </button>
       </div>
     </article>

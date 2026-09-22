@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { DateRangePreset } from '../types/analytics';
 import { mockAnalyticsDataByRange } from '../data/mockAnalytics';
 import { AnalyticsHeader } from '../components/analytics/AnalyticsHeader';
@@ -17,15 +17,30 @@ import { AnalyticsErrorState } from '../components/analytics/AnalyticsErrorState
 import { Sparkles, Activity, Compass, Layers } from 'lucide-react';
 import { ScrollProgress, AnimatedCardChart } from '../components/ui/21st';
 
+import { SalesAnalyticsDataset } from '../types/analytics';
+import { dataBackboneService } from '../services/dataBackboneService';
+
 export const Analytics: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRangePreset>('30d');
   const [viewState, setViewState] = useState<'normal' | 'loading' | 'empty' | 'error'>('normal');
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Memoize dataset retrieval to avoid unnecessary object reference recalculations
-  const currentDataset = useMemo(() => {
+  const [dataset, setDataset] = useState<SalesAnalyticsDataset>(() => {
     return mockAnalyticsDataByRange[dateRange] || mockAnalyticsDataByRange['30d'];
-  }, [dateRange]);
+  });
+
+  const loadMetrics = useCallback((range: DateRangePreset) => {
+    dataBackboneService.getAnalyticsMetrics(range).then((data) => {
+      if (data) {
+        setDataset(data);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    loadMetrics(dateRange);
+  }, [dateRange, loadMetrics]);
+
+  const currentDataset = dataset;
 
   const handleDateRangeChange = useCallback((range: DateRangePreset) => {
     setDateRange(range);
@@ -33,11 +48,13 @@ export const Analytics: React.FC = () => {
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
-    const timer = setTimeout(() => {
+    dataBackboneService.getAnalyticsMetrics(dateRange).then((data) => {
+      if (data) setDataset(data);
       setIsRefreshing(false);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
+    }).catch(() => {
+      setIsRefreshing(false);
+    });
+  }, [dateRange]);
 
   const handleResetFilter = useCallback(() => {
     setDateRange('30d');
@@ -45,7 +62,8 @@ export const Analytics: React.FC = () => {
 
   const handleRetry = useCallback(() => {
     setViewState('normal');
-  }, []);
+    loadMetrics(dateRange);
+  }, [dateRange, loadMetrics]);
 
   return (
     <div className="space-y-8 select-none pb-16">

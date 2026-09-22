@@ -2,10 +2,10 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 import secrets
-from typing import Optional
+from typing import Callable, Optional
 from uuid import UUID
 import jwt
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from pydantic import BaseModel, ConfigDict
 from app.core.config import get_settings
 
@@ -15,9 +15,29 @@ settings = get_settings()
 class AuthenticatedUser(BaseModel):
     id: UUID
     email: Optional[str] = None
-    role: str = "authenticated"
+    role: str = "sales_rep"  # "sales_rep" or "admin"
 
     model_config = ConfigDict(from_attributes=True)
+
+
+def require_role(*allowed_roles: str) -> Callable:
+    """
+    FastAPI dependency factory for Role-Based Access Control (RBAC).
+    Returns a dependency that enforces the current user holds one of the allowed roles.
+    Raises HTTP 403 Forbidden for insufficient role permissions.
+
+    Usage:
+        @router.get("/admin/users", dependencies=[Depends(require_role("admin"))])
+    """
+    async def _check_role(current_user: AuthenticatedUser = Depends(get_current_user)) -> AuthenticatedUser:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Forbidden: requires one of roles {list(allowed_roles)}, "
+                       f"but user has role '{current_user.role}'.",
+            )
+        return current_user
+    return _check_role
 
 
 def get_jwt_secret() -> str:

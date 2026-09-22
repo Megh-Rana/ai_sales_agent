@@ -2,27 +2,84 @@ import { DiscoveredLead } from '../types/leads';
 
 export const mockDiscoveredLeads: DiscoveredLead[] = [
   {
+    id: 'lead-100w',
+    companyName: 'Apex Intralogistics & Warehouse Systems',
+    companyDomain: 'apexintralogistics.com',
+    industry: 'Logistics & Supply Chain',
+    location: 'Chicago, IL',
+    employeeCount: '500–1,000',
+    requirement: 'Warehouse Automation & Dispatch: Implementing autonomous mobile robots (AMRs) and automated AI voice dispatch to eliminate loading dock queue delays.',
+    detailedPain: 'Manual freight coordination and unintegrated warehouse automation cause 35% dispatch delays during peak hours.',
+    intentScore: 96,
+    intentLevel: 'high',
+    scoreReasons: [
+      'Active commercial RFP for Warehouse Automation & Dispatch published (12h ago)',
+      'Hiring 5 Automated Warehouse Logistics Coordinators on LinkedIn',
+      'Expanding automated fulfillment center footprint in Midwest region',
+    ],
+    whyNow: 'RFP published on Transport Exchange 12 hours ago; procurement evaluation deadline is next Monday.',
+    buyingSignals: [
+      {
+        id: 'sig-100w-1',
+        type: 'RFP Published',
+        description: 'Commercial RFP #WMS-2026-AUT: Warehouse Automation & Dispatch Voice System issued on B2B Transport Exchange.',
+        timestamp: '12h ago',
+        impactScore: 96,
+      },
+      {
+        id: 'sig-100w-2',
+        type: 'Facility Expansion',
+        description: 'New 200,000 sq ft automated fulfillment distribution hub in Joliet, IL.',
+        timestamp: '1d ago',
+        impactScore: 92,
+      },
+      {
+        id: 'sig-100w-3',
+        type: 'Hiring Surge',
+        description: '5 Dispatch & Warehouse Operations Leads hired in last 3 weeks.',
+        timestamp: '2d ago',
+        impactScore: 89,
+      },
+    ],
+    source: {
+      platform: 'LinkedIn',
+      originalRequirement: 'Looking for vendor partner: Warehouse Automation & Dispatch software with AI voice calling capabilities.',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=Warehouse+Automation+Dispatch',
+      discoveredAt: 'Today · 09:15',
+      postedAt: '12 hours ago',
+    },
+    estimatedValue: '₹55 Lakh / yr',
+    recommendedAction: 'call',
+    suggestedOpeningHook: 'Hi Marcus, saw Apex just issued the Warehouse Automation & Dispatch initiative. Are you looking to streamline dock dispatch and AMR coordination ahead of Q4?',
+    decisionMakerContact: {
+      name: 'Marcus Brody',
+      role: 'VP of Warehouse Operations & Logistics',
+      phoneAvailable: true,
+    },
+    status: 'high-intent',
+  },
+  {
     id: 'lead-101',
     companyName: 'Acme Logistics Solutions',
     companyDomain: 'acmelogistics.com',
     industry: 'Logistics & 3PL',
     location: 'Chicago, IL',
     employeeCount: '250–500',
-    requirement: 'Seeking AI-assisted route optimization and automated outbound voice dispatch to handle 1,200 daily regional freight deliveries.',
-    detailedPain: 'Legacy manual dispatching creates 45-minute driver idle bottlenecks and 14% missed delivery appointment windows.',
+    requirement: 'Warehouse Automation & Dispatch: Seeking AI-assisted warehouse automation, route optimization, and automated outbound voice dispatch to handle 1,200 daily regional freight deliveries.',
+    detailedPain: 'Legacy manual dispatching and unintegrated warehouse automation create 45-minute driver idle bottlenecks and 14% missed delivery appointment windows.',
     intentScore: 94,
     intentLevel: 'high',
     scoreReasons: [
-      'Published formal RFP on regional transport exchange (18h ago)',
+      'Published formal RFP on regional transport exchange for Warehouse Automation & Dispatch (18h ago)',
       'Hiring 3 Outbound Freight Operations Coordinators',
       'Decommissioning legacy telephony vendor contract',
     ],
-    whyNow: 'Formal RFP posted 18h ago; vendor selection committee convenes this Friday.',
+    whyNow: 'Formal RFP for Warehouse Automation & Dispatch posted 18h ago; vendor selection committee convenes this Friday.',
     buyingSignals: [
       {
         id: 'sig-101-1',
         type: 'RFP Published',
-        description: 'Vendor RFP #LOG-2026-09 issued on Transport Exchange portal.',
+        description: 'Vendor RFP #LOG-2026-09 issued on Transport Exchange portal for Warehouse Automation & Dispatch.',
         timestamp: '18h ago',
         impactScore: 95,
       },
@@ -43,8 +100,8 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     ],
     source: {
       platform: 'IndiaMART',
-      originalRequirement: 'Urgent: Looking for AI-integrated fleet dispatch and outbound driver telephony automation platform.',
-      sourceUrl: 'https://mock.indiamart.com/inquiries/rfp-acme-7729',
+      originalRequirement: 'Urgent: Looking for Warehouse Automation & Dispatch AI-integrated fleet dispatch and outbound driver telephony automation platform.',
+      sourceUrl: 'https://dir.indiamart.com/search.mp?ss=Acme+Logistics+Solutions',
       discoveredAt: 'Today · 08:30',
       postedAt: '18 hours ago',
     },
@@ -94,7 +151,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'G2 Crowd',
       originalRequirement: 'Category Comparison: Evaluating Vidur vs. Legacy SalesLoft dialer for real-time latency and CRM sync.',
-      sourceUrl: 'https://mock.g2.com/intent/buyer-alert-cloudscale-441',
+      sourceUrl: 'https://www.g2.com/search?query=CloudScale+Telephony',
       discoveredAt: 'Today · 09:45',
       postedAt: '4 hours ago',
     },
@@ -144,7 +201,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'LinkedIn',
       originalRequirement: 'Looking for B2B outbound cadence platform with native German & English language synthesis.',
-      sourceUrl: 'https://mock.linkedin.com/posts/apex-industrial-gtm-2026',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=Apex+Industrial+Systems',
       discoveredAt: 'Yesterday · 16:15',
       postedAt: '1 day ago',
     },
@@ -186,7 +243,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'RFP Portal',
       originalRequirement: 'RFP-HC-882: Seeking secure automated voice reminder and intake dialer with EHR integration.',
-      sourceUrl: 'https://mock.healthcare-rfp.gov/notices/882-nexus',
+      sourceUrl: 'https://www.google.com/search?q=Nexus+Healthcare+RFP',
       discoveredAt: 'Yesterday · 11:20',
       postedAt: '1 day ago',
     },
@@ -228,7 +285,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'IndiaMART',
       originalRequirement: 'Need pricing and demo for AI sales dialer to book carrier loads.',
-      sourceUrl: 'https://mock.indiamart.com/inquiries/swiftfreight-882',
+      sourceUrl: 'https://dir.indiamart.com/search.mp?ss=SwiftFreight+Transport',
       discoveredAt: 'Today · 06:10',
       postedAt: '22 hours ago',
     },
@@ -270,7 +327,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'TechStack',
       originalRequirement: 'Evaluating modern voice AI APIs to automate clinic appointments.',
-      sourceUrl: 'https://mock.techstack-radar.com/reports/medicore-voip',
+      sourceUrl: 'https://www.google.com/search?q=MediCore+Health+VoIP',
       discoveredAt: '2 days ago',
       postedAt: '2 days ago',
     },
@@ -312,7 +369,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'LinkedIn',
       originalRequirement: 'Announcing AS9100 approval: seeking outbound GTM partner to connect with Airbus & Rolls Royce tier-1 procurement.',
-      sourceUrl: 'https://mock.linkedin.com/posts/titan-as9100-announcement',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=Titan+Manufacturing+Aerospace',
       discoveredAt: '3 days ago',
       postedAt: '3 days ago',
     },
@@ -354,7 +411,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'Job Board',
       originalRequirement: 'Job posting mentions requirement to deploy automated dialers and conversational AI tools.',
-      sourceUrl: 'https://mock.job-board.com/postings/datablox-head-sdr',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=DataBlox+Analytics',
       discoveredAt: '4 days ago',
       postedAt: '4 days ago',
     },
@@ -396,7 +453,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'LinkedIn',
       originalRequirement: 'Looking for dock scheduling and automated supplier touchpoint software.',
-      sourceUrl: 'https://mock.linkedin.com/posts/veloce-ft-worth-crossdock',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=Veloce+Freight+Logistics',
       discoveredAt: '5 days ago',
       postedAt: '5 days ago',
     },
@@ -438,7 +495,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'IndiaMART',
       originalRequirement: 'Inquiry: Looking for B2B lead generation service for sustainable packaging.',
-      sourceUrl: 'https://mock.indiamart.com/inquiries/omnipack-fmcg-992',
+      sourceUrl: 'https://dir.indiamart.com/search.mp?ss=OmniPack+Automation',
       discoveredAt: '6 days ago',
       postedAt: '6 days ago',
     },
@@ -480,7 +537,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'Crunchbase',
       originalRequirement: 'Grant funding awarded for decentralized clinical trial operations.',
-      sourceUrl: 'https://mock.crunchbase.com/organizations/biovanguard-series-b',
+      sourceUrl: 'https://www.crunchbase.com/textsearch?q=BioVanguard+Pharma',
       discoveredAt: '7 days ago',
       postedAt: '7 days ago',
     },
@@ -522,7 +579,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'LinkedIn',
       originalRequirement: 'Urgent need for outbound SDR dialer to contact transport fleet operators before deadline.',
-      sourceUrl: 'https://mock.linkedin.com/posts/kestrel-hgv-deadline-2026',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=Kestrel+Haulage+Fleet',
       discoveredAt: '1 week ago',
       postedAt: '1 week ago',
     },
@@ -564,7 +621,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'TechStack',
       originalRequirement: 'General inquiry into modern sales engagement tooling.',
-      sourceUrl: 'https://mock.techstack-radar.com/eval/apex-cloud-sec',
+      sourceUrl: 'https://www.google.com/search?q=Apex+Cyber+Security',
       discoveredAt: '2 weeks ago',
       postedAt: '2 weeks ago',
     },
@@ -605,7 +662,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'Job Board',
       originalRequirement: 'Looking for recommendation: simple voice bot to remind clinics to restock gloves and sterilizer.',
-      sourceUrl: 'https://mock.forum.com/dental-distributors/threads/9912',
+      sourceUrl: 'https://www.google.com/search?q=Dental+Distributors+Telephony',
       discoveredAt: '2 weeks ago',
       postedAt: '2 weeks ago',
     },
@@ -647,7 +704,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'IndiaMART',
       originalRequirement: 'Immediate Requirement: Need voice broadcast and interactive phone response dialer for refrigerated truck alerts.',
-      sourceUrl: 'https://mock.indiamart.com/inquiries/precision-coldchain-alert-661',
+      sourceUrl: 'https://dir.indiamart.com/search.mp?ss=Precision+ColdChain',
       discoveredAt: 'Today · 10:15',
       postedAt: '6 hours ago',
     },
@@ -689,7 +746,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'LinkedIn',
       originalRequirement: 'Seeking sales automation partner to qualify 800 industrial demo signups.',
-      sourceUrl: 'https://mock.linkedin.com/posts/redwood-webinar-followup',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=Redwood+Capital+GTM',
       discoveredAt: 'Yesterday · 14:20',
       postedAt: '1 day ago',
     },
@@ -731,7 +788,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'G2 Crowd',
       originalRequirement: 'Evaluating modern voice AI agents to replace high CAC manual outbound cadences.',
-      sourceUrl: 'https://mock.g2.com/intent/buyer-alert-omniflow-771',
+      sourceUrl: 'https://www.g2.com/search?query=OmniFlow+Dialer',
       discoveredAt: 'Yesterday · 18:00',
       postedAt: '1 day ago',
     },
@@ -773,7 +830,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'RFP Portal',
       originalRequirement: 'Tender: Patient automated telephony compliance reminder service for Manchester hospital network.',
-      sourceUrl: 'https://mock.nhs-tenders.gov.uk/notices/genesis-8839',
+      sourceUrl: 'https://www.google.com/search?q=Genesis+Diagnostics+Tender',
       discoveredAt: '2 days ago',
       postedAt: '2 days ago',
     },
@@ -815,7 +872,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'IndiaMART',
       originalRequirement: 'Looking for automatic telephone calling system to contact truck fleet owners in Hindi and English.',
-      sourceUrl: 'https://mock.indiamart.com/inquiries/zenith-carrier-4421',
+      sourceUrl: 'https://dir.indiamart.com/search.mp?ss=Zenith+Freight+Carrier',
       discoveredAt: 'Yesterday · 12:45',
       postedAt: '1 day ago',
     },
@@ -857,7 +914,7 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     source: {
       platform: 'LinkedIn',
       originalRequirement: 'Exploring AI outbound voice solutions to book plant manager walkthroughs.',
-      sourceUrl: 'https://mock.linkedin.com/posts/aerocranes-service-expansion',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=AeroCranes+Heavy+Lift',
       discoveredAt: '1 week ago',
       postedAt: '1 week ago',
     },
@@ -871,12 +928,244 @@ export const mockDiscoveredLeads: DiscoveredLead[] = [
     },
     status: 'discovered',
   },
+  {
+    id: 'lead-121',
+    companyName: 'GlobalNet IT Solutions',
+    companyDomain: 'globalnet-it.com',
+    industry: 'IT Services',
+    location: 'Global',
+    employeeCount: '500–1,000',
+    requirement: 'Urgent: Seeking SharePoint Implementation Partner to deliver enterprise document governance, compliance workflows, and cloud migration across 1,500 seats.',
+    detailedPain: 'Current fragmented intranet and disparate file servers create compliance risks, duplicate documents, and 30% lost worker productivity.',
+    intentScore: 95,
+    intentLevel: 'high',
+    scoreReasons: [
+      'Published urgent RFP post on LinkedIn for certified SharePoint Implementation Partner',
+      'Migrating 1,500 enterprise seats from legacy file shares to Microsoft 365 SharePoint',
+      'Immediate Q4 budget allocation approved by executive infrastructure committee',
+    ],
+    whyNow: 'Public executive post on LinkedIn seeking partner proposals before month-end.',
+    buyingSignals: [
+      {
+        id: 'sig-121-1',
+        type: 'Requirement Posted',
+        description: 'LinkedIn Post: Seeking Certified SharePoint Implementation Partner for enterprise rollout.',
+        timestamp: '4h ago',
+        impactScore: 96,
+      },
+      {
+        id: 'sig-121-2',
+        type: 'Cloud Migration',
+        description: 'Active migration initiative to consolidate on-premise SharePoint 2013 to SharePoint Online.',
+        timestamp: '1d ago',
+        impactScore: 92,
+      },
+    ],
+    source: {
+      platform: 'LinkedIn',
+      originalRequirement: 'Looking for a certified SharePoint Implementation Partner to lead our global enterprise intranet migration and governance strategy.',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=GlobalNet+IT+SharePoint',
+      discoveredAt: 'Today · 10:15',
+      postedAt: '4 hours ago',
+    },
+    estimatedValue: '₹65 Lakh / yr',
+    recommendedAction: 'call',
+    suggestedOpeningHook: 'Hi Michael, saw your LinkedIn post regarding the SharePoint Implementation Partner requirement for GlobalNet. Are you open to discussing automated migration blueprints?',
+    decisionMakerContact: {
+      name: 'Michael Chang',
+      role: 'VP of Enterprise Infrastructure',
+      phoneAvailable: false,
+    },
+    status: 'discovered',
+  },
+  {
+    id: 'lead-122',
+    companyName: 'Apex Care Health Partners',
+    companyDomain: 'apexcarehealth.com',
+    industry: 'Healthcare & Life Sciences',
+    location: 'Boston, MA',
+    employeeCount: '50-200',
+    companySize: '50-200',
+    requirement: 'Seeking HIPAA-compliant outbound voice AI for patient appointment confirmations and post-procedure follow-ups.',
+    detailedPain: 'Manual patient callback queues cause 22% appointment no-shows and clinical staffing burnout.',
+    intentScore: 92,
+    intentLevel: 'high',
+    scoreReasons: [
+      'LinkedIn commercial announcement for patient engagement voice platform',
+      'Expanding clinical footprint across 12 regional outpatient centers',
+      'Decommissioning legacy manual call center vendor'
+    ],
+    whyNow: 'LinkedIn RFP broadcast posted 6 hours ago; vendor evaluation concludes this Friday.',
+    buyingSignals: [
+      {
+        id: 'sig-122-1',
+        type: 'RFP Published',
+        description: 'LinkedIn Post: Seeking HIPAA-compliant outbound voice AI for patient confirmations.',
+        timestamp: '6h ago',
+        impactScore: 92,
+      },
+      {
+        id: 'sig-122-2',
+        type: 'Facility Expansion',
+        description: 'Opened 3 new diagnostic centers in Greater Boston area.',
+        timestamp: '2d ago',
+        impactScore: 86,
+      },
+    ],
+    source: {
+      platform: 'LinkedIn',
+      originalRequirement: 'Looking for HIPAA-compliant outbound voice AI for patient appointment confirmations and post-op follow-ups.',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=ApexCare+Health+Voice+AI',
+      discoveredAt: 'Today · 11:20',
+      postedAt: '6 hours ago',
+    },
+    estimatedValue: '₹55 Lakh / yr',
+    recommendedAction: 'call',
+    suggestedOpeningHook: 'Hi Dr. Reed, saw Apex Care is evaluating outbound voice AI for patient confirmations on LinkedIn. Would love to share our HIPAA-compliant clinic benchmarks.',
+    decisionMakerContact: {
+      name: 'Dr. Evelyn Reed',
+      role: 'Chief Medical Information Officer',
+      phoneAvailable: true,
+    },
+    status: 'high-intent',
+  },
+  {
+    id: 'lead-123',
+    companyName: 'Vitalis Health Systems',
+    companyDomain: 'vitalishealth.com',
+    industry: 'Healthcare & Life Sciences',
+    location: 'Chicago, IL',
+    employeeCount: '50-200',
+    companySize: '50-200',
+    requirement: 'Evaluating autonomous voice agents to automate patient intake scheduling and insurance eligibility verifications.',
+    detailedPain: 'Intake receptionists spend 5 hours daily on repetitive telephone triaging, delaying specialty referrals.',
+    intentScore: 89,
+    intentLevel: 'high',
+    scoreReasons: [
+      'Director of Patient Access posted requirement on LinkedIn',
+      'Budget approved for autonomous telephony automation in Q4',
+      'High patient intake drop-off during peak morning triage hours'
+    ],
+    whyNow: 'LinkedIn sourcing post logged today; pilot rollout scheduled for next month.',
+    buyingSignals: [
+      {
+        id: 'sig-123-1',
+        type: 'Pricing Requested',
+        description: 'Evaluating AI dialers for patient intake phone routing and verification.',
+        timestamp: '8h ago',
+        impactScore: 89,
+      },
+    ],
+    source: {
+      platform: 'LinkedIn',
+      originalRequirement: 'Seeking enterprise voice AI partner for ambulatory care scheduling and patient verification.',
+      sourceUrl: 'https://www.linkedin.com/search/results/all/?keywords=Vitalis+Health+Voice+Intake',
+      discoveredAt: 'Today · 09:30',
+      postedAt: '8 hours ago',
+    },
+    estimatedValue: '₹48 Lakh / yr',
+    recommendedAction: 'call',
+    suggestedOpeningHook: 'Hi Marcus, noticed your post regarding ambulatory care voice automation on LinkedIn. How are you approaching intake phone queues this quarter?',
+    decisionMakerContact: {
+      name: 'Marcus Bennett',
+      role: 'VP of Patient Services',
+      phoneAvailable: true,
+    },
+    status: 'high-intent',
+  },
 ];
+
+// ── Discovered Leads Persistence ────────────────────────────────
+const DISCOVERED_LEADS_KEY = 'vidur_discovered_leads';
+
+export function getDiscoveredLeads(): DiscoveredLead[] {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(DISCOVERED_LEADS_KEY) : null;
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveDiscoveredLeads(leads: DiscoveredLead[]): void {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(DISCOVERED_LEADS_KEY, JSON.stringify(leads));
+    }
+  } catch {}
+}
+
+export function registerDiscoveredLead(lead: DiscoveredLead): void {
+  const existing = getDiscoveredLeads();
+  const idx = existing.findIndex((l) => l.id === lead.id || (l.companyDomain && l.companyDomain === lead.companyDomain));
+  if (idx >= 0) {
+    existing[idx] = { ...existing[idx], ...lead };
+  } else {
+    existing.unshift(lead);
+  }
+  saveDiscoveredLeads(existing);
+}
+
+// ── Queue / Pipeline Management ─────────────────────────────────
+const QUEUE_KEY = 'vidur_queued_leads';
+
+export function getQueuedLeadIds(): string[] {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(QUEUE_KEY) : null;
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addLeadToQueue(leadId: string): void {
+  const ids = getQueuedLeadIds();
+  if (!ids.includes(leadId)) {
+    ids.push(leadId);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(ids));
+      }
+    } catch {}
+  }
+}
+
+export function removeLeadFromQueue(leadId: string): void {
+  const ids = getQueuedLeadIds().filter((id) => id !== leadId);
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(ids));
+    }
+  } catch {}
+}
+
+export function getQueuedLeads(): DiscoveredLead[] {
+  const ids = getQueuedLeadIds();
+  const discovered = getDiscoveredLeads();
+  const combined = [...discovered, ...mockDiscoveredLeads];
+  return ids
+    .map((id) => combined.find((l) => l.id === id || l.id === `lead-${id}`))
+    .filter(Boolean) as DiscoveredLead[];
+}
+
+export function isLeadQueued(leadId: string): boolean {
+  return getQueuedLeadIds().includes(leadId);
+}
 
 export function getLeadDetails(rawLeadId: string | undefined): DiscoveredLead | null {
   if (!rawLeadId) return null;
   const leadId = rawLeadId.trim();
-  const baseLead = mockDiscoveredLeads.find(
+
+  // Check dynamically discovered leads first
+  const discovered = getDiscoveredLeads();
+  const foundDiscovered = discovered.find(
+    (l) => l.id.toLowerCase() === leadId.toLowerCase() || l.id.toLowerCase() === `lead-${leadId.toLowerCase()}`
+  );
+  if (foundDiscovered && foundDiscovered.companyIntelligence && foundDiscovered.decisionMaker) {
+    return foundDiscovered;
+  }
+
+  const baseLead = foundDiscovered || mockDiscoveredLeads.find(
     (l) => l.id.toLowerCase() === leadId.toLowerCase() || l.id.toLowerCase() === `lead-${leadId.toLowerCase()}`
   );
 
@@ -927,7 +1216,7 @@ export function getLeadDetails(rawLeadId: string | undefined): DiscoveredLead | 
         phoneAvailable: true,
         confidence: 98,
         isDirectDial: true,
-        linkedInUrl: 'https://mock.linkedin.com/in/david-reynolds-logistics'
+        linkedInUrl: 'https://www.linkedin.com/search/results/people/?keywords=David+Reynolds+Logistics'
       },
       recommendedPitch: {
         pitch: "Hi David, I saw Acme just issued the regional dispatch RFP yesterday. Most VPs of Logistics we speak with are trying to eliminate driver wait-times before the Q4 volume surge without hiring an army of manual dispatchers. Are you open to seeing how automated outbound dispatch handles 1,200 daily routes with zero rep lag?",
@@ -1010,7 +1299,7 @@ export function getLeadDetails(rawLeadId: string | undefined): DiscoveredLead | 
         phoneAvailable: true,
         confidence: 95,
         isDirectDial: true,
-        linkedInUrl: 'https://mock.linkedin.com/in/sarah-jenkins-growth'
+        linkedInUrl: 'https://www.linkedin.com/search/results/people/?keywords=Sarah+Jenkins+Growth'
       },
       recommendedPitch: {
         pitch: "Hi Sarah, noticed your team evaluating voice AI cadences this morning. How are you tackling inbound speed-to-lead following the Series-A? We help B2B SaaS teams qualify inbound demo requests within 60 seconds with autonomous voice agents.",
@@ -1101,7 +1390,7 @@ export function getLeadDetails(rawLeadId: string | undefined): DiscoveredLead | 
       phoneAvailable: !!baseLead.decisionMakerContact?.phoneAvailable,
       confidence: baseLead.decisionMakerContact?.phoneAvailable ? 92 : 65,
       isDirectDial: !!baseLead.decisionMakerContact?.phoneAvailable,
-      linkedInUrl: `https://mock.linkedin.com/company/${baseLead.companyName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`
+      linkedInUrl: `https://www.linkedin.com/search/results/companies/?keywords=${baseLead.companyName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`
     },
     recommendedPitch: {
       pitch: baseLead.suggestedOpeningHook,
@@ -1140,7 +1429,13 @@ export function getLeadDetails(rawLeadId: string | undefined): DiscoveredLead | 
       postedAt: baseLead.source.postedAt,
       lastUpdated: 'Today · Active',
       freshness: 'Fresh (Captured within 24h)'
-    }
+    },
+    companySize: (baseLead as any).companySize || baseLead.employeeCount,
+    website: (baseLead as any).website || (baseLead.companyDomain ? `https://${baseLead.companyDomain}` : undefined),
+    jobTitle: (baseLead as any).jobTitle || baseLead.decisionMakerContact?.role || 'Commercial Leader',
+    contactEmail: (baseLead as any).contactEmail || (baseLead.companyDomain ? `contact@${baseLead.companyDomain}` : undefined),
+    contactPhone: (baseLead as any).contactPhone || (baseLead.decisionMakerContact?.phoneAvailable ? '+1 (555) 019-4820' : undefined),
+    linkedinUrl: (baseLead as any).linkedinUrl || `https://www.linkedin.com/search/results/companies/?keywords=${baseLead.companyName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
   };
 }
 

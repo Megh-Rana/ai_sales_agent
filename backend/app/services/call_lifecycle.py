@@ -6,8 +6,8 @@ from typing import Dict, Set
 
 # Valid lifecycle state graph
 ALLOWED_TRANSITIONS: Dict[str, Set[str]] = {
-    "scheduled": {"in_progress", "no_answer", "cancelled", "failed"},
-    "in_progress": {"completed", "failed"},
+    "scheduled": {"in_progress", "no_answer", "cancelled", "failed", "completed"},
+    "in_progress": {"completed", "failed", "no_answer", "cancelled"},
     "completed": set(),    # Terminal state
     "no_answer": set(),    # Terminal state
     "cancelled": set(),    # Terminal state

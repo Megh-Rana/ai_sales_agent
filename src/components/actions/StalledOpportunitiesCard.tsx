@@ -60,10 +60,10 @@ export const StalledOpportunitiesCard: React.FC<StalledOpportunitiesCardProps> =
                 <button
                   type="button"
                   onClick={() => navigate('/calls')}
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded bg-primary-muted text-primary text-xs font-semibold border border-primary/40 transition-all hover:bg-primary hover:text-primary-foreground"
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition-all focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  <PhoneCall className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>Re-engage Call</span>
+                  <PhoneCall className="w-3.5 h-3.5 text-white" aria-hidden="true" />
+                  <span className="text-white font-semibold">Re-engage Call</span>
                 </button>
               </div>
             </div>

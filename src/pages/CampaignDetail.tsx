@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { SalesCampaign } from '../types/campaigns';
 import { mockCampaignsData } from '../data/mockCampaigns';
+import { dataBackboneService } from '../services/dataBackboneService';
 import { CampaignCadenceProgress } from '../components/campaigns/CampaignCadenceProgress';
 import {
   ArrowLeft,
@@ -18,8 +20,17 @@ export const CampaignDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const campaign =
-    mockCampaignsData.find((c) => c.id === id) || mockCampaignsData[0];
+  const [campaign, setCampaign] = useState<SalesCampaign>(() => {
+    return mockCampaignsData.find((c) => c.id === id) || mockCampaignsData[0];
+  });
+
+  useEffect(() => {
+    if (id) {
+      dataBackboneService.getCampaign(id).then((camp) => {
+        if (camp) setCampaign(camp);
+      });
+    }
+  }, [id]);
 
   return (
     <div className="space-y-8 select-none pb-16">
@@ -140,7 +151,7 @@ export const CampaignDetail: React.FC = () => {
                     <td className="py-3.5 px-4 text-right">
                       <button
                         type="button"
-                        onClick={() => navigate('/calls')}
+                        onClick={() => navigate(`/calls?leadId=${encodeURIComponent(lead.leadId)}`)}
                         className="inline-flex items-center space-x-1 px-3 py-1.5 rounded bg-primary hover:bg-primary-hover text-primary-foreground text-caption font-semibold shadow-xs transition-all focus:outline-none focus:ring-1 focus:ring-primary"
                       >
                         <PhoneCall className="w-3 h-3" />

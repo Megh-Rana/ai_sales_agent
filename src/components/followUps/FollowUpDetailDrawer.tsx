@@ -217,10 +217,10 @@ export const FollowUpDetailDrawer: React.FC<FollowUpDetailDrawerProps> = ({
             type="button"
             onClick={handleSaveOutcome}
             disabled={isSubmitting}
-            className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-caption font-semibold transition-all shadow-xs disabled:opacity-50"
+            className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-caption font-semibold transition-all shadow-xs disabled:opacity-50"
           >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{isSubmitting ? 'Saving...' : 'Save & Complete'}</span>
+            <CheckCircle2 className="w-4 h-4 text-white" />
+            <span className="text-white">{isSubmitting ? 'Saving...' : 'Save & Complete'}</span>
           </button>
         </div>
       </div>

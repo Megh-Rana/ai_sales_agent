@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { PhoneCall, Search, Zap, Bot, BarChart2, LayoutDashboard, CalendarCheck, Target } from 'lucide-react';
+import { PhoneCall, Search, Zap, Bot, BarChart2, LayoutDashboard, CalendarCheck, Target, ShieldAlert } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 
 export interface DockItem {
   id: string;
@@ -35,6 +36,12 @@ export const AnimatedDock: React.FC<AnimatedDockProps> = ({
   const mouseX = useMotionValue(Infinity);
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAdmin } = useAuth();
+
+  // Dynamically add admin item for admin users
+  const dockItems = isAdmin
+    ? [...items, { id: 'admin', label: 'Admin Panel', icon: ShieldAlert, path: '/admin/users', matchPaths: ['/admin'] }]
+    : items;
 
   const isItemActive = (item: DockItem): boolean => {
     const currentPath = location.pathname;
@@ -58,7 +65,7 @@ export const AnimatedDock: React.FC<AnimatedDockProps> = ({
         </div>
 
         <div className="flex items-center gap-1 sm:gap-1.5">
-          {items.map((item) => (
+          {dockItems.map((item) => (
             <DockIcon
               key={item.id}
               item={item}

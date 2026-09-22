@@ -28,7 +28,9 @@ export const ResultsSummaryBar: React.FC<ResultsSummaryBarProps> = ({
     filters.industries.length > 0 ||
     filters.locations.length > 0 ||
     filters.signalTypes.length > 0 ||
-    filters.sources.length > 0;
+    filters.sources.length > 0 ||
+    (filters.companySizes && filters.companySizes.length > 0) ||
+    !!filters.companySize;
 
   return (
     <div className={`space-y-2.5 ${className}`}>
@@ -172,6 +174,23 @@ export const ResultsSummaryBar: React.FC<ResultsSummaryBarProps> = ({
                 onClick={() => onRemoveFilter('sources', src)}
                 className="hover:text-signal-urgent ml-0.5"
                 aria-label={`Remove source filter ${src}`}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+
+          {(filters.companySizes || (filters.companySize ? [filters.companySize] : [])).map((size) => (
+            <span
+              key={size}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-surface-1 text-primary border border-primary/30"
+            >
+              <span>Size: {size}</span>
+              <button
+                type="button"
+                onClick={() => onRemoveFilter('companySizes', size)}
+                className="hover:text-signal-urgent ml-0.5"
+                aria-label={`Remove company size filter ${size}`}
               >
                 <X className="w-3 h-3" />
               </button>

@@ -8,6 +8,7 @@ import {
   mockStalledDeals,
   mockLiveSignals,
 } from '../data/mockActions';
+import { getQueuedLeads } from '../data/leads';
 import { ActionCenterHeader } from '../components/actions/ActionCenterHeader';
 import { ActionSummaryGrid } from '../components/actions/ActionSummaryGrid';
 import { NextBestActionCard } from '../components/actions/NextBestActionCard';
@@ -29,11 +30,44 @@ import {
 
 import { Target, Zap, Clock, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
+// Convert queued leads to NextBestActionItem format
+function buildActionsFromQueue(): NextBestActionItem[] {
+  const queued = getQueuedLeads();
+  return queued.map((lead) => ({
+    id: `action-q-${lead.id}`,
+    leadId: lead.id,
+    companyName: lead.companyName,
+    companyDomain: lead.companyDomain,
+    industry: lead.industry,
+    contactName: lead.decisionMakerContact?.name || 'Decision Maker',
+    contactRole: lead.decisionMakerContact?.role || 'Executive',
+    intentScore: lead.intentScore,
+    estimatedValue: lead.estimatedValue || '₹20L',
+    priority: lead.intentScore >= 85 ? ('CRITICAL' as const) : ('HIGH' as const),
+    category: 'CALL' as const,
+    title: `AI Call: ${lead.companyName} — ${lead.requirement?.slice(0, 60) || lead.industry}`,
+    requirementSummary: lead.requirement || 'Queued from Lead Discovery',
+    whyNow: {
+      headline: lead.whyNow || 'Queued from AI Discovery',
+      evidence: lead.scoreReasons || [],
+      timeframe: 'Action required now',
+    },
+    primaryActionLabel: 'Start AI Call',
+    primaryActionTarget: `/calls/call-${lead.id}?leadId=${lead.id}`,
+    primaryActionType: 'call' as const,
+    status: 'active' as const,
+    createdAt: new Date().toISOString(),
+  }));
+}
+
 export const ActionCenter: React.FC = () => {
   const { t } = useI18n();
   const [activePriority, setActivePriority] = useState<'ALL' | ActionPriorityLevel>('ALL');
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [actionsList, setActionsList] = useState<NextBestActionItem[]>(mockNextBestActions);
+  const [actionsList, setActionsList] = useState<NextBestActionItem[]>(() => {
+    const fromQueue = buildActionsFromQueue();
+    return [...fromQueue, ...mockNextBestActions];
+  });
   const [viewState, setViewState] = useState<'normal' | 'loading' | 'empty' | 'error'>('normal');
   const [isRefreshing, setIsRefreshing] = useState(false);
 

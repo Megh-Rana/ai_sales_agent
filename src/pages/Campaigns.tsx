@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { SalesCampaign } from '../types/campaigns';
 import { mockCampaignsData } from '../data/mockCampaigns';
+import { dataBackboneService } from '../services/dataBackboneService';
 import { CampaignHeader } from '../components/campaigns/CampaignHeader';
 import { CampaignCard } from '../components/campaigns/CampaignCard';
 import { CampaignBuilderModal } from '../components/campaigns/CampaignBuilderModal';
@@ -16,6 +17,18 @@ export const Campaigns: React.FC = () => {
   const [viewState, setViewState] = useState<'normal' | 'loading' | 'empty' | 'error'>('normal');
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    dataBackboneService.getCampaigns().then((camps) => {
+      if (isMounted && camps && camps.length > 0) {
+        setCampaignsList(camps);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const activeCount = useMemo(() => {
     return campaignsList.filter((c) => c.status === 'RUNNING' || c.status === 'READY').length;
@@ -45,10 +58,15 @@ export const Campaigns: React.FC = () => {
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
-    setTimeout(() => {
+    dataBackboneService.getCampaigns().then((camps) => {
+      if (camps && camps.length > 0) {
+        setCampaignsList(camps);
+      }
       setIsRefreshing(false);
       toast.success('Campaign metrics updated');
-    }, 600);
+    }).catch(() => {
+      setIsRefreshing(false);
+    });
   }, []);
 
   return (

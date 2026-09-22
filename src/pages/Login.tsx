@@ -1,22 +1,40 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Lock, Mail } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowRight, Lock, Mail, AlertCircle, Timer } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+// Auth via real API: POST /api/auth/login (see AuthContext.tsx)
+import { useAuth } from '../context/AuthContext';
 
 export const Login: React.FC = () => {
-  const [email, setEmail] = useState('neel@acmetech.io');
-  const [password, setPassword] = useState('••••••••••••');
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('neel@vidur.in');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isLockedOut, setIsLockedOut] = useState(false);
+  const { login, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTarget = searchParams.get('redirect') || '/dashboard';
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/dashboard');
-    }, 400);
+    setError(null);
+    setIsLockedOut(false);
+
+    try {
+      await login(email, password);
+      navigate(redirectTarget, { replace: true });
+    } catch (err: unknown) {
+      const apiErr = err as Error & { status?: number };
+      if (apiErr.status === 429) {
+        setIsLockedOut(true);
+        setError(apiErr.message);
+      } else if (apiErr.status === 401) {
+        setError('Invalid email or password. Please check your credentials and try again.');
+      } else {
+        setError(apiErr.message || 'An unexpected error occurred. Please try again.');
+      }
+    }
   };
 
   return (
@@ -57,26 +75,50 @@ export const Login: React.FC = () => {
             </p>
           </div>
 
+          {/* Error / Lockout Banner */}
+          {error && (
+            <div
+              className={`flex items-start gap-3 px-4 py-3 rounded-lg border text-sm ${
+                isLockedOut
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                  : 'bg-red-500/10 border-red-500/30 text-red-400'
+              }`}
+              role="alert"
+              aria-live="assertive"
+            >
+              {isLockedOut ? (
+                <Timer className="w-4 h-4 mt-0.5 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              )}
+              <span>{error}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSignIn} className="space-y-4">
             <Input
               label="Work Email"
               type="email"
+              id="login-email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="rep@company.com"
               leftIcon={<Mail className="w-4 h-4" />}
+              autoComplete="email"
             />
 
             <div className="space-y-1">
               <Input
                 label="Password"
                 type="password"
+                id="login-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
                 leftIcon={<Lock className="w-4 h-4" />}
+                autoComplete="current-password"
               />
               <div className="flex justify-end">
                 <a href="#forgot" className="text-[11px] text-primary hover:text-primary-hover">
@@ -90,10 +132,11 @@ export const Login: React.FC = () => {
               variant="primary"
               size="md"
               className="w-full justify-center"
-              isLoading={isLoading}
+              isLoading={loading}
+              disabled={isLockedOut}
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
-              Enter Sales Workspace
+              {isLockedOut ? 'Account Locked' : 'Enter Sales Workspace'}
             </Button>
           </form>
 
@@ -104,6 +147,11 @@ export const Login: React.FC = () => {
             </Link>
           </div>
         </div>
+
+        {/* Dev hint */}
+        <p className="mt-4 text-center text-[11px] text-foreground-tertiary">
+          Admins: <code className="font-mono">admin@vidur.in</code> / <code className="font-mono">admin@2026</code> | <code className="font-mono">neel@vidur.in</code> / <code className="font-mono">neelit002</code> | <code className="font-mono">megh@vidur.in</code> / <code className="font-mono">meghce099</code>
+        </p>
       </div>
     </div>
   );

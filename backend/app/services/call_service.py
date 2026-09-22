@@ -39,6 +39,33 @@ class CallService:
             metadata_json=call_in.metadata_json,
         )
         db.add(call)
+
+        # Synchronize lead status and campaign lead status in DB
+        if call.outcome:
+            outcome_lower = call.outcome.lower()
+            if outcome_lower in ("meeting_booked", "converted"):
+                lead.status = "converted"
+            elif outcome_lower in ("interested", "qualified"):
+                lead.status = "qualified"
+            elif lead.status == "new":
+                lead.status = "contacted"
+        elif lead.status == "new":
+            lead.status = "contacted"
+
+        from app.db.models.campaign_lead import CampaignLead
+        cleads = db.scalars(select(CampaignLead).where(CampaignLead.lead_id == lead.id)).all()
+        for cl in cleads:
+            if call.outcome:
+                outcome_lower = call.outcome.lower()
+                if outcome_lower in ("meeting_booked", "converted"):
+                    cl.status = "CONVERTED"
+                elif outcome_lower in ("interested", "qualified"):
+                    cl.status = "QUALIFIED"
+                elif cl.status == "QUEUED":
+                    cl.status = "CONTACTED"
+            elif cl.status == "QUEUED":
+                cl.status = "CONTACTED"
+
         db.commit()
         db.refresh(call)
         return call
@@ -112,6 +139,29 @@ class CallService:
                     call.completed_at = datetime.now(timezone.utc)
             else:
                 setattr(call, field, value)
+
+        # Synchronize lead status and campaign lead status in DB
+        if call.outcome:
+            lead = db.scalars(select(Lead).where(Lead.id == call.lead_id)).first()
+            if lead:
+                outcome_lower = call.outcome.lower()
+                if outcome_lower in ("meeting_booked", "converted"):
+                    lead.status = "converted"
+                elif outcome_lower in ("interested", "qualified"):
+                    lead.status = "qualified"
+                elif lead.status == "new":
+                    lead.status = "contacted"
+
+            from app.db.models.campaign_lead import CampaignLead
+            cleads = db.scalars(select(CampaignLead).where(CampaignLead.lead_id == call.lead_id)).all()
+            for cl in cleads:
+                outcome_lower = call.outcome.lower()
+                if outcome_lower in ("meeting_booked", "converted"):
+                    cl.status = "CONVERTED"
+                elif outcome_lower in ("interested", "qualified"):
+                    cl.status = "QUALIFIED"
+                elif cl.status == "QUEUED":
+                    cl.status = "CONTACTED"
 
         db.commit()
         db.refresh(call)

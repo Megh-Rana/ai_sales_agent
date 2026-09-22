@@ -23,6 +23,7 @@ import { SidebarItem } from './SidebarItem';
 import { Avatar } from '../ui/Avatar';
 import { Tooltip } from '../ui/Tooltip';
 import { mockUser } from '../../services/mockShellData';
+import { useAuth } from '../../context/AuthContext';
 
 export interface SidebarProps {
   isCollapsed?: boolean;
@@ -35,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
   className = '',
 }) => {
+  const { isAdmin } = useAuth();
   return (
     <aside
       className={`bg-surface border-r border-border-strong h-screen flex flex-col transition-all duration-300 ease-in-out shrink-0 select-none z-30 ${
@@ -197,15 +199,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           />
         </SidebarSection>
 
-        {/* ADMINISTRATION */}
-        <SidebarSection label="Administration" isCollapsed={isCollapsed}>
-          <SidebarItem
-            to="/admin"
-            icon={<ShieldAlert className="w-4 h-4" />}
-            label="Admin Portal"
-            isCollapsed={isCollapsed}
-          />
-        </SidebarSection>
+        {/* ADMINISTRATION (admin-only) */}
+        {isAdmin && (
+          <SidebarSection label="Administration" isCollapsed={isCollapsed}>
+            <SidebarItem
+              to="/admin"
+              icon={<ShieldAlert className="w-4 h-4" />}
+              label="Admin Portal"
+              isCollapsed={isCollapsed}
+            />
+            <SidebarItem
+              to="/admin/users"
+              icon={<Users className="w-4 h-4" />}
+              label="Users & Credentials"
+              isCollapsed={isCollapsed}
+              subItem={!isCollapsed}
+            />
+          </SidebarSection>
+        )}
       </nav>
 
       {/* Footer Area: Settings & User Profile */}

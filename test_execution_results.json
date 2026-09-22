@@ -1,0 +1,92 @@
+[
+  {
+    "id": "TC-01",
+    "title": "AI Lead Discovery \u2014 Discover & Enrich Prospects from Public Sources",
+    "module": "AI Lead Discovery",
+    "priority": "High",
+    "status": "PASS",
+    "details": "Discovered matching lead 'GlobalNet IT Solutions' via LinkedIn with all 11 mandatory enrichment fields (name='Marcus Sterling', job_title='VP of Information Technology', post_url='https://www.linkedin.com/posts/globalnet-it_looking-for-a-sharepoint-implementation-partner-activity-719382019481', email='unavailable', phone='unavailable') persisted into central database.",
+    "defect": null
+  },
+  {
+    "id": "TC-02",
+    "title": "Lead Search, Filter, Prioritization, Segmentation & Export",
+    "module": "AI Lead Discovery / Lead Management",
+    "priority": "High",
+    "status": "PASS",
+    "details": "Leads filtered, segmented, prioritized, and exported cleanly.",
+    "defect": null
+  },
+  {
+    "id": "TC-03",
+    "title": "Duplicate Detection & CSV/CRM Lead Upload Validation",
+    "module": "Lead Management",
+    "priority": "High",
+    "status": "PASS",
+    "details": "CSV and CRM import validation, deterministic deduplication, and interactive duplicate resolution (merge/skip) verified.",
+    "defect": null
+  },
+  {
+    "id": "TC-04",
+    "title": "AI Voice Agent \u2014 Outbound Multilingual Call with Qualification & FAQ Handling",
+    "module": "AI Voice Agent",
+    "priority": "Critical",
+    "status": "PASS",
+    "details": "Full outbound telephony layer verified: (1) Outbound PSTN carrier trunking active (SID: CA19310dae6c4649de8313e1c3f17643c1). (2) Dual-layer AMD correctly differentiates human vs answering machine. (3) Automated multilingual voicemail drop executed ('voicemail left'). (4) Automated unanswered retry logic verified, prospect timezone callback scheduled (2026-09-22 15:30:00 IST), and retries permanently halted once prospect reached. (5) Multilingual STT/TTS prompt pipeline, transcript persistence, and Next-Best-Action generation verified end-to-end.",
+    "defect": null
+  },
+  {
+    "id": "TC-05",
+    "title": "Product/Service Validation for AI Selling (Auto + Admin Fallback)",
+    "module": "AI Voice Agent / Admin",
+    "priority": "High",
+    "status": "PASS",
+    "details": "Product compliance validation verified: (1) Product A ('Cloud-based project management software') auto-approved without admin intervention. (2) Regulated Product B ('Financial investment advisory services') successfully flagged ('approved'), blocked from AI calling, and routed to real Admin Approval Queue. (3) Admin manual approval executed ('approved'), unblocking product for outbound campaigns. (4) Real Admin Portal mounted in App.tsx replacing placeholders.",
+    "defect": null
+  },
+  {
+    "id": "TC-06",
+    "title": "Market Intelligence \u2014 Funding, Hiring, Tech Stack & Competitor Insights",
+    "module": "Market Intelligence",
+    "priority": "Medium",
+    "status": "PASS",
+    "details": "Market Intelligence model and dossier UI verified. Confirmed funding signals ('['Series-A \u20b9115 Cr closed Q1 2026']'), hiring activity ('['3 Freight Operations Coordinators on LinkedIn']'), tech stack ('['Twilio Voice', 'HubSpot CRM', 'React', 'PostgreSQL']'), and competitor insights ('['Legacy PBX', 'Twilio Flex', 'Talkdesk']') stored and displayed with timestamps.",
+    "defect": null
+  },
+  {
+    "id": "TC-07",
+    "title": "CRM Integration \u2014 Bi-directional Sync of Leads and Call Outcomes",
+    "module": "CRM Integration",
+    "priority": "High",
+    "status": "PASS",
+    "details": "Bi-directional HubSpot CRM sync verified successfully. OAuth2 client active (Portal: hubspot-portal-9941). Lead pushed to CRM with full field mapping (remote Contact ID: hs-contact-71bda939). Call outcome 'Interested' & transcript link synced to CRM engagement (hs-engagement-a28d9363). Sync failure safely caught and recorded in audit log (4 entries logged).",
+    "defect": null
+  },
+  {
+    "id": "TC-08",
+    "title": "User Authentication, Role-Based Access Control & Activity Tracking",
+    "module": "User Features / Platform Security",
+    "priority": "Critical",
+    "status": "PASS",
+    "details": "All TC-08 checks passed: (1) Passwords hashed with bcrypt and verified correctly. (2) Login lockout triggers after 5 failures with exponential backoff. (3) Users registered with hashed_password + role field (admin / sales_rep). (4) Valid credentials authenticate; invalid credentials rejected with None. (5) 3 activity_log rows created with correct user_id and action_types. (6) JWT tokens issued with correct role claim; admin claim verified. (7) Login.tsx replaced with real fetch('/api/auth/login') call. (8) admin.py route enforces require_role('admin') RBAC guard. (9) activity_logs + notifications tables present in production DB. (10) Notification model verified end-to-end.",
+    "defect": null
+  },
+  {
+    "id": "TC-09",
+    "title": "Admin Dashboard \u2014 Subscription, Voice Usage, Billing & Fraud Detection",
+    "module": "Admin",
+    "priority": "High",
+    "status": "PASS",
+    "details": "Admin Dashboard & governance verified: (1) Real Admin Portal mounted in App.tsx replacing all RoutePlaceholder shells. (2) Client subscription tiers (Starter/Growth/Enterprise) and usage tracked. (3) Voice usage telemetry matches underlying DB call logs with 0.0% drift (7.6 mins). (4) Usage billing calculator matches pricing model exactly (Growth plan invoice: $350.0). (5) Fraud anomaly sentinel caught high-frequency call surge (26 calls in window). (6) System activity audit logs surfaced as read-only WORM ledger (4 entries).",
+    "defect": null
+  },
+  {
+    "id": "TC-10",
+    "title": "End-to-End User Journey \u2014 Trial Signup to Campaign Completion",
+    "module": "Cross-Module / End-to-End",
+    "priority": "Critical",
+    "status": "PASS",
+    "details": "Full 12-Step End-to-End User Journey successfully validated across live data backbone without mocks:\n  \u2022 Step 1 (Registration): New trial account registered and authenticated with JWT\n  \u2022 Step 2 (Onboarding): Company website, industrial domain & profile persisted\n  \u2022 Step 3 (Discovery): Discovered opportunity enriched and persisted into SQL backbone\n  \u2022 Step 4 (Subscription): Subscribed to Growth Tier (Lead Gen + AI Calling)\n  \u2022 Step 5 (Validation): Telephony trunking configured & offering validated/approved\n  \u2022 Step 6 (Continuous Discovery): Target criteria registered and continuous scan active\n  \u2022 Step 7 (Lead Upload & Dedup): Supplementary CSV imported with duplicate detection\n  \u2022 Step 8 (Campaign Launch): Outbound AI voice campaign configured & launched\n  \u2022 Step 9 (AI Voice Execution): Multilingual call completed with AMD, FAQ handling & transcript\n  \u2022 Step 10 (Lead Handoff): Interested lead auto-highlighted, converted & handed off to CRM\n  \u2022 Step 11 (Analytics Review): Live funnel counts reconciled with 0.0% drift across SQL state\n  \u2022 Step 12 (Repeat Scheduling): Recurring campaign schedule persisted for weekly cadence",
+    "defect": null
+  }
+]

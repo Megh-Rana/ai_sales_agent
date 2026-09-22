@@ -54,6 +54,10 @@ class LeadService:
             location=lead_in.location,
             source=lead_in.source,
             source_url=lead_in.source_url,
+            job_title=lead_in.job_title,
+            company_size=lead_in.company_size,
+            linkedin_url=lead_in.linkedin_url,
+            website=lead_in.website,
             status=lead_in.status.value if hasattr(lead_in.status, "value") else str(lead_in.status),
             intent_score=lead_in.intent_score,
         )
@@ -223,18 +227,44 @@ class LeadService:
         return False
 
     @staticmethod
-    def import_leads_csv(
+    def find_existing_duplicate_lead(
+        db: Session,
+        business_id: UUID,
+        norm_email: Optional[str],
+        norm_company: str,
+    ) -> Optional[Lead]:
+        """Finds existing matching lead by contact_email or company_name under the same business."""
+        if norm_email:
+            existing = db.scalars(
+                select(Lead).where(
+                    Lead.business_id == business_id,
+                    func.lower(func.trim(Lead.contact_email)) == norm_email,
+                )
+            ).first()
+            if existing:
+                return existing
+
+        return db.scalars(
+            select(Lead).where(
+                Lead.business_id == business_id,
+                func.lower(func.trim(Lead.company_name)) == norm_company,
+            )
+        ).first()
+
+    @staticmethod
+    def import_lead_records(
         db: Session,
         business_id: UUID,
         owner_id: UUID,
-        file_bytes: bytes,
-        filename: str,
+        records: List[dict],
+        source_name: str = "import",
+        resolutions: Optional[dict] = None,
     ) -> LeadImportResponse:
         """
-        Parses and imports leads from CSV with validation, normalization,
-        and deterministic deduplication under transaction boundaries.
+        Shared lead ingestion engine used identically by CSV Import and CRM (HubSpot/Salesforce) Import.
+        Enforces validation, deterministic deduplication, and optional per-record merge/skip resolution.
         """
-        # 1. Ownership & business validation
+        # Validate business existence and ownership
         business = db.scalars(
             select(Business).where(
                 Business.id == business_id,
@@ -244,54 +274,24 @@ class LeadService:
         if not business:
             raise ValueError(f"Business with ID '{business_id}' does not exist or access denied.")
 
-        # 2. File size & format checks
-        if len(file_bytes) > MAX_CSV_SIZE:
-            raise ValueError("File exceeds the maximum upload limit of 5 MB.")
-
-        if not filename.lower().endswith(".csv"):
-            raise ValueError("Invalid file format. Only CSV files (.csv) are accepted.")
-
-        # 3. Decode CSV content (UTF-8 with or without BOM)
-        try:
-            content = file_bytes.decode("utf-8-sig")
-        except UnicodeDecodeError:
-            try:
-                content = file_bytes.decode("latin-1")
-            except Exception:
-                raise ValueError("Could not decode file. Please upload a valid UTF-8 encoded CSV.")
-
-        if not content.strip():
-            return LeadImportResponse(total_rows=0, created=0, skipped=0, failed=0, errors=[])
-
-        # 4. Parse CSV
-        stream = io.StringIO(content.strip())
-        reader = csv.DictReader(stream)
-
-        if not reader.fieldnames:
-            raise ValueError("CSV file has no headers.")
-
-        # Normalize header keys to lowercase for flexible column mapping
-        header_map = {h.strip().lower(): h for h in reader.fieldnames if h}
-        if "company_name" not in header_map:
-            raise ValueError("CSV is missing the required column: 'company_name'.")
-
-        total_rows = 0
+        total_rows = len(records)
         created = 0
         skipped = 0
+        merged = 0
         failed = 0
         errors: List[LeadImportError] = []
+        duplicates: List[dict] = []
 
         seen_emails: Set[str] = set()
         seen_companies: Set[str] = set()
         leads_to_create: List[Lead] = []
 
-        for row_num, raw_row in enumerate(reader, start=1):
-            total_rows += 1
+        resolution_map = {str(k).strip().lower(): str(v).strip().lower() for k, v in (resolutions or {}).items()}
 
-            # Map raw fields by lowercase key
+        for row_num, raw_row in enumerate(records, start=1):
             row = {k.strip().lower(): v for k, v in raw_row.items() if k}
 
-            raw_company = row.get("company_name", "")
+            raw_company = str(row.get("company_name") or "").strip()
             company_name = normalize_company_name(raw_company)
             if not company_name:
                 failed += 1
@@ -304,7 +304,7 @@ class LeadService:
                 continue
 
             # Contact Email validation
-            raw_email = row.get("contact_email", "")
+            raw_email = str(row.get("contact_email") or "").strip()
             norm_email = normalize_email(raw_email)
             if raw_email and not norm_email:
                 norm_email = None
@@ -341,17 +341,75 @@ class LeadService:
                     continue
                 status_val = st
 
-            # Deduplication
+            # Deduplication Check
             norm_company_lower = company_name.lower()
-            if LeadService.is_duplicate_lead(
-                db,
-                business_id,
-                norm_email,
-                norm_company_lower,
-                seen_emails,
-                seen_companies,
-            ):
-                skipped += 1
+            is_in_batch_dup = (
+                (norm_email and norm_email in seen_emails) or
+                (not norm_email and norm_company_lower in seen_companies)
+            )
+
+            existing_db_lead = LeadService.find_existing_duplicate_lead(
+                db, business_id, norm_email, norm_company_lower
+            )
+
+            if is_in_batch_dup or existing_db_lead:
+                # Determine resolution choice if provided
+                existing_id_str = str(existing_db_lead.id) if existing_db_lead else None
+                decision = None
+                if existing_id_str and existing_id_str.lower() in resolution_map:
+                    decision = resolution_map[existing_id_str.lower()]
+                elif norm_email and norm_email.lower() in resolution_map:
+                    decision = resolution_map[norm_email.lower()]
+                elif norm_company_lower in resolution_map:
+                    decision = resolution_map[norm_company_lower]
+                elif raw_company and raw_company.lower() in resolution_map:
+                    decision = resolution_map[raw_company.lower()]
+
+                if decision == "merge" and existing_db_lead:
+                    # Update existing lead with incoming fields
+                    if row.get("requirement"):
+                        existing_db_lead.requirement = str(row["requirement"]).strip()
+                    if row.get("contact_phone"):
+                        existing_db_lead.contact_phone = str(row["contact_phone"]).strip()
+                    if row.get("contact_name"):
+                        existing_db_lead.contact_name = str(row["contact_name"]).strip()
+                    if row.get("industry"):
+                        existing_db_lead.industry = str(row["industry"]).strip()
+                    if row.get("job_title"):
+                        existing_db_lead.job_title = str(row["job_title"]).strip()
+                    if row.get("company_size"):
+                        existing_db_lead.company_size = str(row["company_size"]).strip()
+                    if row.get("website"):
+                        existing_db_lead.website = str(row["website"]).strip()
+                    if row.get("linkedin_url"):
+                        existing_db_lead.linkedin_url = str(row["linkedin_url"]).strip()
+                    if intent_score is not None:
+                        existing_db_lead.intent_score = intent_score
+                    if status_val != "new":
+                        existing_db_lead.status = status_val
+                    db.commit()
+                    merged += 1
+                else:
+                    skipped += 1
+
+                if existing_db_lead:
+                    duplicates.append({
+                        "row": row_num,
+                        "conflict_field": "email" if (norm_email and existing_db_lead.contact_email == norm_email) else "company_name",
+                        "conflict_value": norm_email or company_name,
+                        "incoming_data": row,
+                        "existing_lead_id": existing_db_lead.id,
+                        "existing_data": {
+                            "id": str(existing_db_lead.id),
+                            "company_name": existing_db_lead.company_name,
+                            "contact_name": existing_db_lead.contact_name,
+                            "contact_email": existing_db_lead.contact_email,
+                            "contact_phone": existing_db_lead.contact_phone,
+                            "requirement": existing_db_lead.requirement,
+                            "status": existing_db_lead.status,
+                            "intent_score": existing_db_lead.intent_score,
+                        }
+                    })
                 continue
 
             # Register in current batch tracking
@@ -363,20 +421,24 @@ class LeadService:
             lead = Lead(
                 business_id=business_id,
                 company_name=company_name,
-                contact_name=row.get("contact_name", "").strip() or None,
+                contact_name=str(row.get("contact_name") or "").strip() or None,
                 contact_email=norm_email,
-                contact_phone=row.get("contact_phone", "").strip() or None,
-                requirement=row.get("requirement", "").strip() or None,
-                industry=row.get("industry", "").strip() or None,
-                location=row.get("location", "").strip() or None,
-                source=row.get("source", "").strip() or "csv_import",
-                source_url=row.get("source_url", "").strip() or None,
+                contact_phone=str(row.get("contact_phone") or "").strip() or None,
+                requirement=str(row.get("requirement") or "").strip() or None,
+                industry=str(row.get("industry") or "").strip() or None,
+                location=str(row.get("location") or "").strip() or None,
+                source=str(row.get("source") or "").strip() or source_name,
+                source_url=str(row.get("source_url") or "").strip() or None,
+                job_title=str(row.get("job_title") or "").strip() or None,
+                company_size=str(row.get("company_size") or "").strip() or None,
+                linkedin_url=str(row.get("linkedin_url") or "").strip() or None,
+                website=str(row.get("website") or "").strip() or None,
                 status=status_val,
                 intent_score=intent_score,
             )
             leads_to_create.append(lead)
 
-        # 5. Atomic persistence for valid batch
+        # Atomic persistence for valid non-duplicates
         if leads_to_create:
             try:
                 for lead in leads_to_create:
@@ -391,6 +453,65 @@ class LeadService:
             total_rows=total_rows,
             created=created,
             skipped=skipped,
+            merged=merged,
             failed=failed,
             errors=errors,
+            duplicates=duplicates,
+        )
+
+    @staticmethod
+    def import_leads_csv(
+        db: Session,
+        business_id: UUID,
+        owner_id: UUID,
+        file_bytes: bytes,
+        filename: str,
+        resolutions: Optional[dict] = None,
+    ) -> LeadImportResponse:
+        """
+        Parses and imports leads from CSV with validation, normalization,
+        and deterministic deduplication under transaction boundaries.
+        Reuses the shared LeadService.import_lead_records engine.
+        """
+        # 1. File size & format checks
+        if len(file_bytes) > MAX_CSV_SIZE:
+            raise ValueError("File exceeds the maximum upload limit of 5 MB.")
+
+        if not filename.lower().endswith(".csv"):
+            raise ValueError("Invalid file format. Only CSV files (.csv) are accepted.")
+
+        # 2. Decode CSV content (UTF-8 with or without BOM)
+        try:
+            content = file_bytes.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            try:
+                content = file_bytes.decode("latin-1")
+            except Exception:
+                raise ValueError("Could not decode file. Please upload a valid UTF-8 encoded CSV.")
+
+        if not content.strip():
+            return LeadImportResponse(total_rows=0, created=0, skipped=0, failed=0, errors=[])
+
+        # 3. Parse CSV
+        stream = io.StringIO(content.strip())
+        reader = csv.DictReader(stream)
+
+        if not reader.fieldnames:
+            raise ValueError("CSV file has no headers.")
+
+        header_map = {h.strip().lower(): h for h in reader.fieldnames if h}
+        if "company_name" not in header_map:
+            raise ValueError("CSV is missing the required column: 'company_name'.")
+
+        records: List[dict] = []
+        for raw_row in reader:
+            records.append({k.strip().lower(): v for k, v in raw_row.items() if k})
+
+        return LeadService.import_lead_records(
+            db=db,
+            business_id=business_id,
+            owner_id=owner_id,
+            records=records,
+            source_name="csv_import",
+            resolutions=resolutions,
         )

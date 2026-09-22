@@ -43,8 +43,8 @@ export interface CommandItem {
 
 export const mockUser: UserProfile = {
   name: 'Neel Agrawal',
-  email: 'neel@acmetech.io',
-  role: 'Sales Operations Admin',
+  email: 'neel@vidur.in',
+  role: 'Administrator',
 };
 
 export const mockWorkspaces: Workspace[] = [

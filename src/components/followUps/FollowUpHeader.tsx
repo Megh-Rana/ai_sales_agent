@@ -102,10 +102,10 @@ export const FollowUpHeader: React.FC<FollowUpHeaderProps> = ({
           <button
             type="button"
             onClick={onOpenScheduleModal}
-            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-caption transition-all shadow-xs focus:outline-none focus:ring-1 focus:ring-primary"
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold text-caption transition-all shadow-xs focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <Plus className="w-4 h-4" aria-hidden="true" />
-            <span>Schedule Follow-up</span>
+            <Plus className="w-4 h-4 text-white" aria-hidden="true" />
+            <span className="text-white">Schedule Follow-up</span>
           </button>
         </div>
       </div>

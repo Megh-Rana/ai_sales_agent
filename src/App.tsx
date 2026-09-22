@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppShell } from './components/shell/AppShell';
 import { RoutePlaceholder } from './pages/RoutePlaceholder';
 import { NotFound } from './pages/NotFound';
@@ -23,10 +23,46 @@ import { RevenueCommandCenter } from './pages/RevenueCommandCenter';
 import { DesignSystemShowcase } from './pages/DesignSystemShowcase';
 import { Toaster } from 'sonner';
 import { PWAInstallBanner } from './components/pwa/PWAInstallBanner';
+import { ForceChangePasswordModal } from './components/auth/ForceChangePasswordModal';
 
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 import { LandingPage } from './pages/LandingPage';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminUsers } from './pages/admin/AdminUsers';
+import { AdminVoiceUsage } from './pages/admin/AdminVoiceUsage';
+import { AdminBilling } from './pages/admin/AdminBilling';
+import { AdminFraud } from './pages/admin/AdminFraud';
+import { AdminAuditLogs } from './pages/admin/AdminAuditLogs';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    const redirectUrl = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${redirectUrl}`} replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAdmin, isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    const redirectUrl = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${redirectUrl}`} replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
 
 function AppContent() {
   const { theme } = useTheme();
@@ -34,6 +70,7 @@ function AppContent() {
     <BrowserRouter>
       <Toaster richColors position="bottom-right" theme={theme} closeButton />
       <PWAInstallBanner />
+      <ForceChangePasswordModal />
       <Routes>
         {/* PUBLIC ROUTES */}
         <Route path="/" element={<LandingPage />} />
@@ -48,10 +85,11 @@ function AppContent() {
         <Route
           path="*"
           element={
-            <AppShell>
-              <Routes>
-                {/* Default Redirect */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <ProtectedRoute>
+              <AppShell>
+                <Routes>
+                  {/* Default Redirect */}
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
                 {/* Dashboard */}
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -150,47 +188,18 @@ function AppContent() {
                 />
 
                 {/* Admin Sub-routes */}
-                <Route
-                  path="/admin"
-                  element={
-                    <RoutePlaceholder title="Administration Portal" description="Global platform monitoring, user management, and system health." badge="Administration" />
-                  }
-                />
-                <Route
-                  path="/admin/users"
-                  element={
-                    <RoutePlaceholder title="Global User Management" description="Provision accounts, reset access, and audit user activity." badge="Admin" />
-                  }
-                />
-                <Route
-                  path="/admin/campaigns"
-                  element={
-                    <RoutePlaceholder title="System Campaign Monitoring" description="Global cadence performance, volume throttling, and queue health." badge="Admin" />
-                  }
-                />
-                <Route
-                  path="/admin/voice-usage"
-                  element={
-                    <RoutePlaceholder title="AI Voice Usage Telemetry" description="SIP latency, call duration analytics, and telephony costs." badge="Admin" />
-                  }
-                />
-                <Route
-                  path="/admin/audit-logs"
-                  element={
-                    <RoutePlaceholder title="System Audit Logs" description="Immutable security audit trail of all administrative events." badge="Admin" />
-                  }
-                />
-                <Route
-                  path="/admin/fraud"
-                  element={
-                    <RoutePlaceholder title="Fraud & Anomaly Detection" description="Automated threat monitoring and abuse prevention rules." badge="Admin" />
-                  }
-                />
+                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+                <Route path="/admin/voice-usage" element={<AdminRoute><AdminVoiceUsage /></AdminRoute>} />
+                <Route path="/admin/billing" element={<AdminRoute><AdminBilling /></AdminRoute>} />
+                <Route path="/admin/audit-logs" element={<AdminRoute><AdminAuditLogs /></AdminRoute>} />
+                <Route path="/admin/fraud" element={<AdminRoute><AdminFraud /></AdminRoute>} />
 
                 {/* 404 Route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AppShell>
+            </ProtectedRoute>
           }
         />
       </Routes>
@@ -201,7 +210,9 @@ function AppContent() {
 export function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ThemeProvider>
   );
 }

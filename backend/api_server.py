@@ -25,13 +25,37 @@ from pipeline.orchestrator import PipelineOrchestrator
 
 app = FastAPI(title="AI Sales Voice Agent API", version="1.0.0")
 
-# CORS middleware for frontend
+# Allowed origins for localhost and deployed environments
+default_origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "http://[::1]:3000",
+    "http://[::1]:5173",
+]
+env_cors = os.getenv("CORS_ORIGINS", "")
+if env_cors:
+    if env_cors.strip().startswith("["):
+        try:
+            default_origins.extend(json.loads(env_cors))
+        except Exception:
+            pass
+    else:
+        for o in env_cors.split(","):
+            cleaned = o.strip()
+            if cleaned and cleaned not in default_origins:
+                default_origins.append(cleaned)
+
+# CORS middleware for frontend (supports local dev ports, private network access, & Vercel)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for MVP
+    allow_origins=default_origins,
+    allow_origin_regex=r"^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$|^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_private_network=True,
 )
 
 # Active call sessions with their pipelines and threads
@@ -53,9 +77,14 @@ async def on_startup():
     try:
         from app.db.database import init_db
         init_db()
-        print("✅ Local SQLite database initialized successfully.")
+        print("Local SQLite database initialized successfully.")
+        try:
+            from seed_discovery_leads import parse_and_seed_discovery_leads
+            parse_and_seed_discovery_leads()
+        except Exception as seed_err:
+            print(f"Discovery lead seed notice: {seed_err}")
     except Exception as e:
-        print(f"⚠️ Database initialization warning: {e}")
+        print(f"Database initialization warning: {e}")
 
 # Request/Response Models
 class CallStartRequest(BaseModel):
@@ -90,6 +119,41 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy", "timestamp": time.time()}
+
+class DiscoverLeadsRequest(BaseModel):
+    query: Optional[str] = ""
+    sources: Optional[List[str]] = []
+    industry: Optional[str] = None
+    limit: Optional[int] = 6
+
+# ─── Website Lead Discovery ────────────────────────────────────────
+@app.post("/api/leads/discover")
+@app.post("/api/discover-leads")
+async def discover_leads_endpoint(req: DiscoverLeadsRequest):
+    """
+    Autonomous lead discovery from websites, domains, and requirement queries.
+    """
+    try:
+        from ai.services.website_discovery import discovery_service
+        leads = discovery_service.discover_leads(query=req.query or "", limit=req.limit or 6)
+        return {"leads": leads, "count": len(leads), "query": req.query}
+    except Exception as e:
+        print(f"[ERROR] Failed to discover leads: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to discover leads: {str(e)}")
+
+@app.get("/api/leads/discover")
+@app.get("/api/discover-leads")
+async def discover_leads_get_endpoint(query: Optional[str] = "", limit: Optional[int] = 6):
+    """
+    GET variant for lead discovery.
+    """
+    try:
+        from ai.services.website_discovery import discovery_service
+        leads = discovery_service.discover_leads(query=query or "", limit=limit or 6)
+        return {"leads": leads, "count": len(leads), "query": query}
+    except Exception as e:
+        print(f"[ERROR] Failed to discover leads: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to discover leads: {str(e)}")
 
 # ─── Real Voice Call Management ───────────────────────────────────
 @app.post("/api/call/start", response_model=CallStartResponse)
@@ -367,7 +431,62 @@ async def end_call(session_id: str):
             session["summary"] = summary
         
         session["status"] = "completed"
-        
+
+        # Persist completed call to database so CRM and Analytics reflect live DB state
+        try:
+            from app.db.database import SessionLocal
+            from app.db.models.lead import Lead
+            from app.db.models.call import Call
+            from app.db.models.campaign_lead import CampaignLead
+            from sqlalchemy import select
+            import uuid as _uuid
+
+            raw_lead_id = session.get("leadId")
+            db = SessionLocal()
+            try:
+                target_lead = None
+                try:
+                    parsed_uuid = _uuid.UUID(str(raw_lead_id))
+                    target_lead = db.scalars(select(Lead).where(Lead.id == parsed_uuid)).first()
+                except Exception:
+                    pass
+
+                if not target_lead and session.get("companyName"):
+                    target_lead = db.scalars(select(Lead).where(Lead.company_name == session.get("companyName"))).first()
+
+                if target_lead:
+                    interest_level = (summary or {}).get("lead_info", {}).get("interest_level", "Medium")
+                    outcome_val = "meeting_booked" if interest_level == "High" else "interested" if interest_level == "Medium" else "contacted"
+                    
+                    if outcome_val == "meeting_booked":
+                        target_lead.status = "converted"
+                    elif outcome_val == "interested":
+                        target_lead.status = "qualified"
+                    elif target_lead.status == "new":
+                        target_lead.status = "contacted"
+
+                    call_rec = Call(
+                        lead_id=target_lead.id,
+                        status="completed",
+                        language=session.get("language", "en"),
+                        duration=session.get("duration", 0),
+                        transcript=json.dumps(session.get("transcript", [])),
+                        outcome=outcome_val,
+                        provider="browser_voice",
+                        provider_call_id=session_id,
+                    )
+                    db.add(call_rec)
+
+                    cleads = db.scalars(select(CampaignLead).where(CampaignLead.lead_id == target_lead.id)).all()
+                    for cl in cleads:
+                        cl.status = "CONVERTED" if outcome_val == "meeting_booked" else "QUALIFIED" if outcome_val == "interested" else "CONTACTED"
+
+                    db.commit()
+            finally:
+                db.close()
+        except Exception as db_err:
+            print(f"[Warning] Failed to persist call session to DB: {db_err}")
+
         return {
             "sessionId": session_id,
             "status": "completed",
@@ -517,9 +636,13 @@ async def analyze_lead_intelligence(req: IntelligenceAnalyzeRequest):
 
 if __name__ == "__main__":
     import uvicorn
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
     
     print("\n" + "=" * 70)
-    print("  🎙️  AI Sales Voice Agent API Server - MVP MODE")
+    print("  [AI] AI Sales Voice Agent API Server - MVP MODE")
     print("=" * 70)
     print("\n  This server launches REAL voice calls where you can talk to the AI.")
     print("  You become the customer and speak through your microphone!")
@@ -533,10 +656,11 @@ if __name__ == "__main__":
     print("  4. Conversation continues until you end it")
     print("\n" + "=" * 70 + "\n")
     
+    port = int(os.getenv("PORT", 8000))
     uvicorn.run(
         "api_server:app",
         host="0.0.0.0",
-        port=8000,
+        port=port,
         reload=False,  # Don't reload in voice mode
         log_level="info"
     )

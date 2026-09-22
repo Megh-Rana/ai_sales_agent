@@ -10,7 +10,8 @@ import {
   UserCheck,
   Phone,
   MessageSquareQuote,
-  TrendingUp
+  TrendingUp,
+  Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DiscoveredLead } from '../../types/leads';
@@ -111,9 +112,24 @@ export const PriorityOpportunityCard: React.FC<PriorityOpportunityCardProps> = (
         </div>
 
         {/* Row 2: Active Commercial Requirement */}
-        <div className="p-2.5 bg-surface-subtle rounded-lg border border-border-subtle text-xs space-y-1 min-w-0">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-primary font-semibold flex items-center gap-1">
-            <span>Active Commercial Need</span>
+        <div className="p-2.5 bg-surface-subtle rounded-lg border border-border-subtle text-xs space-y-1.5 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-primary font-semibold flex items-center gap-1">
+              <span>Active Commercial Need</span>
+            </div>
+            {lead.is_inferred_from_hiring || lead.signal_type === 'inferred_hiring_signal' || lead.source?.platform?.toLowerCase().includes('job') || lead.source?.platform?.toLowerCase().includes('hiring') ? (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30 shrink-0"
+                title={lead.inferred_need_basis || "Business need inferred from active job recruitment"}
+              >
+                <Sparkles className="w-3 h-3 text-purple-400" />
+                <span>Inferred from Hiring Signal</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shrink-0">
+                <span>Direct Requirement</span>
+              </span>
+            )}
           </div>
           <p className="text-foreground-secondary leading-relaxed text-xs font-medium line-clamp-2 break-words">
             "{lead.requirement}"
@@ -174,7 +190,12 @@ export const PriorityOpportunityCard: React.FC<PriorityOpportunityCardProps> = (
       {/* Row 5: Source Ingestion Provenance & Actions Footer */}
       <div className="pt-3 mt-3 border-t border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 min-w-0 w-full">
         <div className="flex items-center gap-2 min-w-0 max-w-full">
-          <SignalSourceBadge source={lead.source} />
+          <SignalSourceBadge
+            source={lead.source}
+            companyName={lead.companyName}
+            companyDomain={lead.companyDomain}
+            requirement={lead.requirement}
+          />
         </div>
 
         <div className="flex items-center gap-2 justify-end shrink-0 w-full sm:w-auto">

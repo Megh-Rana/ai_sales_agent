@@ -137,11 +137,11 @@ export const FollowUps: React.FC = () => {
                   onClick={() => setActiveTab(tab.id as typeof activeTab)}
                   className={`px-3 py-1.5 rounded-lg text-caption font-semibold transition-all ${
                     activeTab === tab.id
-                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      ? 'bg-primary text-white shadow-xs'
                       : 'bg-surface-1 text-foreground-tertiary hover:text-foreground border border-border-subtle'
                   }`}
                 >
-                  {tab.label}
+                  <span className={activeTab === tab.id ? 'text-white' : ''}>{tab.label}</span>
                 </button>
               ))}
             </div>

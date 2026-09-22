@@ -38,6 +38,59 @@ import { Button } from '../components/ui/Button';
 
 const STORAGE_KEY = 'vidur_onboarding_draft_v1';
 
+export interface ComplianceCheckResult {
+  status: 'auto-approved' | 'needs-review' | 'rejected';
+  isRegulated: boolean;
+  inconclusive: boolean;
+  category: string;
+  reason: string;
+  blockedCalling: boolean;
+}
+
+export function complianceCheck(productName: string, description: string): ComplianceCheckResult {
+  const text = `${productName} ${description}`.toLowerCase();
+
+  const prohibitedKeywords = [
+    'payday loan', 'get rich quick', 'pyramid scheme', 'multilevel marketing', 'unlicensed gambling'
+  ];
+
+  const regulatedKeywords = [
+    'financial investment', 'investment advisory', 'financial advisory', 'wealth management',
+    'stock trading', 'crypto', 'telehealth', 'medical prescription', 'legal claims', 'mortgage broker'
+  ];
+
+  if (prohibitedKeywords.some((k) => text.includes(k))) {
+    return {
+      status: 'rejected',
+      isRegulated: true,
+      inconclusive: false,
+      category: 'Prohibited Offering',
+      reason: 'Product violates platform safety policies and cannot be dialed by AI.',
+      blockedCalling: true,
+    };
+  }
+
+  if (regulatedKeywords.some((k) => text.includes(k))) {
+    return {
+      status: 'needs-review',
+      isRegulated: true,
+      inconclusive: true,
+      category: 'Regulated Financial / Healthcare / Legal Offering',
+      reason: 'Regulated offering requires compliance certification & Admin queue approval before AI dialing.',
+      blockedCalling: true,
+    };
+  }
+
+  return {
+    status: 'auto-approved',
+    isRegulated: false,
+    inconclusive: false,
+    category: 'B2B Software & Professional Services',
+    reason: 'Standard commercial offering passed automated compliance validation.',
+    blockedCalling: false,
+  };
+}
+
 export const BusinessOnboarding: React.FC = () => {
   const navigate = useNavigate();
 

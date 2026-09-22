@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Building2, Users, CreditCard, ShieldCheck, Keyboard, LogOut, ChevronDown, Sun, Moon } from 'lucide-react';
+import { User, Building2, Users, CreditCard, ShieldCheck, ShieldAlert, Keyboard, LogOut, ChevronDown, Sun, Moon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { mockUser } from '../../services/mockShellData';
 import { Avatar } from '../ui/Avatar';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 export interface UserMenuProps {
   onOpenShortcuts?: () => void;
@@ -14,6 +15,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenShortcuts }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const { theme, setTheme, toggleTheme } = useTheme();
+  const { user, logout, isAdmin } = useAuth();
+
+  // Fallback to mockUser when no real auth session (dev mode)
+  const displayName = user?.full_name || user?.email || mockUser.name;
+  const displayEmail = user?.email || mockUser.email;
+  const displayRole = user?.role || mockUser.role;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -30,6 +37,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenShortcuts }) => {
     navigate(path);
   };
 
+  const handleSignOut = () => {
+    setIsOpen(false);
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="relative">
       <button
@@ -38,8 +51,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenShortcuts }) => {
         className="flex items-center gap-2 p-1 rounded-lg hover:bg-surface-hover transition-colors text-left select-none group"
         aria-label="User Account Menu"
       >
-        <Avatar type="user" name={mockUser.name} size="sm" />
-        <span className="text-small font-medium text-foreground hidden md:inline-block">{mockUser.name}</span>
+        <Avatar type="user" name={displayName} size="sm" />
+        <span className="text-small font-medium text-foreground hidden md:inline-block">{displayName}</span>
         <ChevronDown className="w-3.5 h-3.5 text-foreground-tertiary hidden md:inline-block group-hover:text-foreground transition-colors" />
       </button>
 
@@ -57,11 +70,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenShortcuts }) => {
             >
               {/* User Header */}
               <div className="px-3 py-2 border-b border-border mb-1">
-                <div className="text-small font-semibold text-foreground truncate">{mockUser.name}</div>
-                <div className="text-caption text-foreground-tertiary truncate">{mockUser.email}</div>
+                <div className="text-small font-semibold text-foreground truncate">{displayName}</div>
+                <div className="text-caption text-foreground-tertiary truncate">{displayEmail}</div>
                 <div className="mt-1">
                   <span className="text-[10px] font-mono uppercase bg-primary-muted text-primary px-1.5 py-0.2 rounded border border-primary/30 font-semibold">
-                    {mockUser.role}
+                    {displayRole}
                   </span>
                 </div>
               </div>
@@ -156,9 +169,23 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenShortcuts }) => {
                 </button>
               )}
 
+              {/* Admin Panel Link — visible only to admin role users */}
+              {isAdmin && (
+                <>
+                  <div className="pt-1 border-t border-border-subtle mt-1" />
+                  <button
+                    onClick={() => handleNavigate('/admin/users')}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-primary hover:bg-primary/10 transition-colors text-left font-semibold"
+                  >
+                    <ShieldAlert className="w-4 h-4 shrink-0" />
+                    <span>Users & Credentials</span>
+                  </button>
+                </>
+              )}
+
               <div className="pt-1 border-t border-border-subtle">
                 <button
-                  onClick={() => handleNavigate('/login')}
+                  onClick={handleSignOut}
                   className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-danger hover:bg-danger-muted transition-colors font-medium text-left"
                 >
                   <LogOut className="w-4 h-4 shrink-0" />

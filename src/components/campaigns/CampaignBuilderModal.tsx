@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CampaignObjectiveType, SalesCampaign } from '../../types/campaigns';
 import { mockDiscoveredLeads } from '../../data/leads';
 import { DiscoveredLead } from '../../types/leads';
+import { dataBackboneService } from '../../services/dataBackboneService';
 import {
   X,
   ArrowRight,
@@ -28,18 +29,30 @@ export const CampaignBuilderModal: React.FC<CampaignBuilderModalProps> = ({
   const [step, setStep] = useState(1);
   const [name, setName] = useState('Q3 High-Intent Requirement Surge');
   const [objective, setObjective] = useState<CampaignObjectiveType>('REQUIREMENT_RESPONSE');
-  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([
-    mockDiscoveredLeads[0]?.id || 'lead-101',
-    mockDiscoveredLeads[1]?.id || 'lead-[#102]',
-  ]);
-  const [customHooks, setCustomHooks] = useState<Record<string, string>>({
-    [mockDiscoveredLeads[0]?.id || 'lead-101']:
-      'I saw Acme Logistics recently posted a public requirement for 450 fleet telematics units...',
-    [mockDiscoveredLeads[1]?.id || 'lead-102']:
-      'Noticed your company is expanding regional operations and upgrading triage telephony...',
-  });
-
+  const [availableLeads, setAvailableLeads] = useState<DiscoveredLead[]>(mockDiscoveredLeads);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [customHooks, setCustomHooks] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Sync leads from database
+  useEffect(() => {
+    let isMounted = true;
+    dataBackboneService.getLeads().then((leads) => {
+      if (isMounted && leads && leads.length > 0) {
+        setAvailableLeads(leads);
+        // Default select top 2 real leads from DB
+        const topIds = [leads[0]?.id, leads[1]?.id].filter(Boolean) as string[];
+        setSelectedLeadIds(topIds);
+        setCustomHooks({
+          [leads[0]?.id || 'lead-1']: `Noticed ${leads[0]?.companyName} recently posted a requirement for ${leads[0]?.requirement?.slice(0, 50) || 'solutions'}...`,
+          [leads[1]?.id || 'lead-2']: `Noticed your company is expanding operations and evaluating sales automation...`,
+        });
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -61,13 +74,13 @@ export const CampaignBuilderModal: React.FC<CampaignBuilderModalProps> = ({
     if (step > 1) setStep(step - 1);
   };
 
-  const handleCompleteLaunch = () => {
+  const handleCompleteLaunch = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     const campaignTitle = name.trim() || 'New Outreach Campaign';
 
-    const selectedLeads = mockDiscoveredLeads
+    const selectedLeads = availableLeads
       .filter((l: DiscoveredLead) => selectedLeadIds.includes(l.id))
       .map((l: DiscoveredLead) => ({
         leadId: l.id,
@@ -84,30 +97,51 @@ export const CampaignBuilderModal: React.FC<CampaignBuilderModalProps> = ({
         status: 'QUEUED' as const,
       }));
 
-    const newCamp: SalesCampaign = {
-      id: `camp-${Date.now()}`,
+    // Post to backend database API
+    const created = await dataBackboneService.createCampaign({
       name: campaignTitle,
       objective,
-      objectiveLabel:
-        objective === 'REQUIREMENT_RESPONSE'
-          ? 'Public Requirement Response'
-          : objective === 'BOOK_MEETINGS'
-          ? 'Meeting Booking'
-          : 'ICP Outreach',
+      primary_channel: 'AI_VOICE_CALL',
       status: 'RUNNING',
-      primaryChannel: 'AI_VOICE_CALL',
-      targetAudienceCount: selectedLeads.length,
-      contactedCount: 0,
-      qualifiedCount: 0,
-      meetingsBookedCount: 0,
-      conversionRate: 0,
-      estimatedPipelineValue: '₹42.5L',
-      createdAt: new Date().toISOString(),
-      startedAt: new Date().toISOString(),
-      leads: selectedLeads,
-    };
+      estimated_pipeline_value: '₹42.5L',
+      lead_ids: selectedLeadIds,
+      leads: selectedLeads.map((sl) => ({
+        lead_id: sl.leadId,
+        custom_opening_hook: sl.customOpeningHook,
+        custom_value_prop: sl.customValueProp,
+        status: 'QUEUED',
+      })),
+    });
 
-    onLaunchCampaign(newCamp);
+    if (created) {
+      onLaunchCampaign(created);
+    } else {
+      // Fallback local campaign object preserving the real lead IDs
+      const newCamp: SalesCampaign = {
+        id: `camp-${Date.now()}`,
+        name: campaignTitle,
+        objective,
+        objectiveLabel:
+          objective === 'REQUIREMENT_RESPONSE'
+            ? 'Public Requirement Response'
+            : objective === 'BOOK_MEETINGS'
+            ? 'Meeting Booking'
+            : 'ICP Outreach',
+        status: 'RUNNING',
+        primaryChannel: 'AI_VOICE_CALL',
+        targetAudienceCount: selectedLeads.length,
+        contactedCount: 0,
+        qualifiedCount: 0,
+        meetingsBookedCount: 0,
+        conversionRate: 0,
+        estimatedPipelineValue: '₹42.5L',
+        createdAt: new Date().toISOString(),
+        startedAt: new Date().toISOString(),
+        leads: selectedLeads,
+      };
+      onLaunchCampaign(newCamp);
+    }
+
     setIsSubmitting(false);
     onClose();
   };
@@ -224,7 +258,7 @@ export const CampaignBuilderModal: React.FC<CampaignBuilderModalProps> = ({
               </div>
 
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                {mockDiscoveredLeads.slice(0, 5).map((lead: DiscoveredLead) => {
+                {availableLeads.slice(0, 10).map((lead: DiscoveredLead) => {
                   const isSelected = selectedLeadIds.includes(lead.id);
                   return (
                     <div
@@ -295,7 +329,7 @@ export const CampaignBuilderModal: React.FC<CampaignBuilderModalProps> = ({
               </span>
               <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                 {selectedLeadIds.map((id) => {
-                  const lead = mockDiscoveredLeads.find((l: DiscoveredLead) => l.id === id);
+                  const lead = availableLeads.find((l: DiscoveredLead) => l.id === id) || mockDiscoveredLeads.find((l: DiscoveredLead) => l.id === id);
                   if (!lead) return null;
                   return (
                     <div key={id} className="bg-surface-1 border border-border-subtle rounded-lg p-3.5 space-y-2">

@@ -9,7 +9,7 @@ export interface LeadBuyingSignal {
 }
 
 export interface LeadSignalSource {
-  platform: 'IndiaMART' | 'LinkedIn' | 'G2 Crowd' | 'RFP Portal' | 'TechStack' | 'Job Board' | 'Crunchbase';
+  platform: 'IndiaMART' | 'LinkedIn' | 'G2 Crowd' | 'RFP Portal' | 'TechStack' | 'Job Board' | 'Crunchbase' | 'X (Twitter)' | 'Company Website' | 'Company Website RFP' | 'Public B2B RFP Directories' | 'Freelance Job Boards' | 'Job Board (Hiring Signal)' | string;
   originalRequirement: string;
   sourceUrl: string;
   discoveredAt: string;
@@ -123,6 +123,15 @@ export interface DiscoveredLead {
   callBrief?: LeadCallBrief;
   timeline?: LeadActivityEvent[];
   provenance?: LeadProvenance;
+  website?: string;
+  jobTitle?: string;
+  linkedinUrl?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  companySize?: string;
+  signal_type?: 'direct_requirement' | 'inferred_hiring_signal';
+  is_inferred_from_hiring?: boolean;
+  inferred_need_basis?: string;
 }
 
 export type SortOption = 'intent' | 'freshness' | 'value';
@@ -135,5 +144,17 @@ export interface DiscoveryFilterState {
   locations: string[];
   signalTypes: string[];
   sources: string[];
+  companySize?: string;
+  companySizes: string[];
   sortBy: SortOption;
+}
+
+export interface SavedSegment {
+  id: string;
+  name: string;
+  description?: string;
+  filters: DiscoveryFilterState;
+  leadCount: number;
+  createdAt: string;
+  updatedAt?: string;
 }

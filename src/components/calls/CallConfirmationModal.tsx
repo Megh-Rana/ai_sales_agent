@@ -123,15 +123,16 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
                 <button
                   key={lang}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => onLanguageChange(lang)}
-                  className={`p-2 rounded-lg border text-center font-medium transition-all flex items-center justify-center gap-1.5 ${
+                  className={`p-2.5 rounded-lg border text-center font-medium transition-all flex items-center justify-center gap-1.5 text-xs select-none cursor-pointer ${
                     isSelected
-                      ? 'bg-primary/10 border-primary text-primary font-semibold shadow-xs'
-                      : 'bg-surface-elevated border-border-subtle text-foreground-secondary hover:text-foreground hover:border-border-default'
+                      ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-xs ring-2 ring-primary/20'
+                      : 'bg-surface-elevated border-border-subtle text-foreground-secondary hover:text-foreground hover:border-border-default hover:bg-surface-hover'
                   }`}
                 >
-                  {isSelected && <Check className="w-3.5 h-3.5" />}
-                  <span>{lang}</span>
+                  {isSelected && <Check className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />}
+                  <span className="truncate">{lang}</span>
                 </button>
               );
             })}
