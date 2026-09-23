@@ -60,7 +60,10 @@ The database is pre-seeded with administrator and sales representative accounts 
 
 ## 📈 Scalability, Concurrency & High-Throughput Deployment
 
-This section provides a rigorous technical analysis of the system's concurrency capacity, computational bottlenecks, and the step-by-step architectural blueprint to scale from local single-workstation testing to **1,000+ concurrent voice calls**.
+> [!TIP]
+> For the comprehensive architectural whitepaper including mathematical latency formulas, vLLM continuous batching GPU topologies, and infrastructure sizing matrices, see **[SCALABILITY.md](SCALABILITY.md)**.
+
+This section provides a technical analysis of the system's concurrency capacity, computational bottlenecks, and the step-by-step architectural blueprint to scale from local single-workstation testing to **1,000+ concurrent voice calls**.
 
 ### 1. Current Concurrency Capacity: How Many Calls Can Be Deployed at Once?
 
