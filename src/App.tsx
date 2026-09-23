@@ -35,18 +35,7 @@ import { AdminVoiceUsage } from './pages/admin/AdminVoiceUsage';
 import { AdminBilling } from './pages/admin/AdminBilling';
 import { AdminFraud } from './pages/admin/AdminFraud';
 import { AdminAuditLogs } from './pages/admin/AdminAuditLogs';
-
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  const location = useLocation();
-
-  if (!isAuthenticated) {
-    const redirectUrl = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/login?redirect=${redirectUrl}`} replace />;
-  }
-
-  return <>{children}</>;
-}
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { isAdmin, isAuthenticated } = useAuth();
