@@ -8,7 +8,9 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+venv
 venv/
+.venv
 .venv/
 
 # Recordings / generated output

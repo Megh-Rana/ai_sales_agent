@@ -60,8 +60,11 @@ dist-ssr/
 
 # ─── Backend Python ──────────────────────────────────────────
 # Python virtual environments
+backend/venv
 backend/venv/
+backend/.venv
 backend/.venv/
+backend/env
 backend/env/
 backend/.env
 
