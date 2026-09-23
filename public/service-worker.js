@@ -34,12 +34,25 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass through non-GET and backend/websocket requests
+  let url;
+  try {
+    url = new URL(event.request.url);
+  } catch {
+    return;
+  }
+
+  // Never intercept local development, Vite internal requests, non-GET, API, or WebSocket requests
   if (
+    url.hostname === 'localhost' ||
+    url.hostname === '127.0.0.1' ||
+    url.port === '3000' ||
+    url.port === '5173' ||
     event.request.method !== 'GET' ||
-    event.request.url.includes('/api/') ||
-    event.request.url.includes('/ws/') ||
-    event.request.url.startsWith('chrome-extension:')
+    url.pathname.startsWith('/api') ||
+    url.pathname.startsWith('/ws') ||
+    url.pathname.startsWith('/@') ||
+    url.pathname.startsWith('/src') ||
+    url.protocol.startsWith('chrome-extension')
   ) {
     return;
   }
@@ -74,11 +87,20 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => {
+        .catch(async () => {
           // If offline and requesting navigation, return cached root/index.html
           if (event.request.mode === 'navigate') {
-            return caches.match('/');
+            const cachedRoot = await caches.match('/');
+            if (cachedRoot) return cachedRoot;
+            const cachedIndex = await caches.match('/index.html');
+            if (cachedIndex) return cachedIndex;
           }
+          // Always return a valid Response to avoid TypeError: Failed to convert value to 'Response'
+          return new Response('Network offline or resource unavailable', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain' },
+          });
         });
     })
   );

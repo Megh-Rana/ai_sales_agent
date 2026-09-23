@@ -112,9 +112,9 @@ export const AICalling: React.FC = () => {
       const apiBase = import.meta.env.VITE_API_URL as string | undefined;
       let wsUrl = '';
 
-      if (explicitWs) {
+      if (explicitWs && !explicitWs.includes('vidur-api.onrender.com')) {
         wsUrl = `${explicitWs.replace(/\/+$/, '')}/ws/call/${sessionId}`;
-      } else if (apiBase) {
+      } else if (apiBase && !apiBase.includes('vidur-api.onrender.com')) {
         try {
           const parsed = new URL(apiBase);
           const proto = parsed.protocol === 'https:' ? 'wss:' : 'ws:';

@@ -2,7 +2,15 @@
  * Call Service - API client for AI Voice Agent backend
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+function getApiBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl || envUrl.includes('vidur-api.onrender.com')) {
+    return 'http://localhost:8000';
+  }
+  return envUrl.replace(/\/+$/, '');
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface CallStartRequest {
   leadId: string;
