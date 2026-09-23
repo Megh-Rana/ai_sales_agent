@@ -252,14 +252,27 @@ print_info "Starting FastAPI backend on http://localhost:8000..."
 nohup python -m uvicorn api_server:app --host 0.0.0.0 --port 8000 --reload > "$LOG_DIR/backend.log" 2>&1 &
 BACKEND_PID=$!
 echo $BACKEND_PID > "$LOG_DIR/backend.pid"
-sleep 3
 
-# Check if backend started successfully
-if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+# Wait and poll for backend health check
+print_info "Waiting for backend server to initialize..."
+BACKEND_STARTED=false
+for i in {1..30}; do
+    if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+        BACKEND_STARTED=true
+        break
+    fi
+    # If the process terminated unexpectedly, break early
+    if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+        break
+    fi
+    sleep 1
+done
+
+if [ "$BACKEND_STARTED" = true ]; then
     print_status "Backend server started successfully (PID: $BACKEND_PID)"
     print_info "Backend logs: $LOG_DIR/backend.log"
 else
-    print_error "Backend server failed to start. Check logs at $LOG_DIR/backend.log"
+    print_error "Backend server failed to start within timeout. Check logs at $LOG_DIR/backend.log"
     exit 1
 fi
 
@@ -292,14 +305,36 @@ if [ ! -d "node_modules" ]; then
 fi
 
 # Start frontend server
-print_info "Starting Vite frontend on http://localhost:5173..."
+print_info "Starting Vite frontend server..."
 nohup npm run dev > "$LOG_DIR/frontend.log" 2>&1 &
 FRONTEND_PID=$!
 echo $FRONTEND_PID > "$LOG_DIR/frontend.pid"
-sleep 5
 
-# Check if frontend started successfully
-if curl -s http://localhost:5173 > /dev/null 2>&1; then
+# Wait and poll for frontend server (checking ports 3000, 5173, and 3001)
+print_info "Waiting for frontend server to initialize..."
+FRONTEND_STARTED=false
+FRONTEND_PORT=3000
+for i in {1..30}; do
+    if curl -s http://localhost:3000 > /dev/null 2>&1; then
+        FRONTEND_STARTED=true
+        FRONTEND_PORT=3000
+        break
+    elif curl -s http://localhost:5173 > /dev/null 2>&1; then
+        FRONTEND_STARTED=true
+        FRONTEND_PORT=5173
+        break
+    elif curl -s http://localhost:3001 > /dev/null 2>&1; then
+        FRONTEND_STARTED=true
+        FRONTEND_PORT=3001
+        break
+    fi
+    if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+        break
+    fi
+    sleep 1
+done
+
+if [ "$FRONTEND_STARTED" = true ]; then
     print_status "Frontend server started successfully (PID: $FRONTEND_PID)"
     print_info "Frontend logs: $LOG_DIR/frontend.log"
 else
@@ -320,7 +355,7 @@ echo ""
 echo -e "${BLUE}Service Status:${NC}"
 echo -e "  Ollama (Gemma 3 4B):  ${GREEN}Running${NC} at http://localhost:11434"
 echo -e "  Backend API:          ${GREEN}Running${NC} at http://localhost:8000"
-echo -e "  Frontend UI:          ${GREEN}Running${NC} at http://localhost:5173"
+echo -e "  Frontend UI:          ${GREEN}Running${NC} at http://localhost:$FRONTEND_PORT"
 echo ""
 echo -e "${BLUE}API Documentation:${NC}"
 echo -e "  Swagger UI:           http://localhost:8000/docs"
