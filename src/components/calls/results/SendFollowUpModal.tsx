@@ -37,18 +37,19 @@ export const SendFollowUpModal: React.FC<SendFollowUpModalProps> = ({
 
   if (!isOpen) return null;
 
-  const emailSubject = `Recap & Next Steps: Sales follow-up automation for ${data.companyName}`;
-  const emailBody = `Hi ${data.contactName.split(' ')[0]},
+  const emailSubject = `Recap & Next Steps: AI Voice Follow-Up for ${data.companyName}`;
+  const firstName = data.contactName ? data.contactName.split(' ')[0] : 'there';
+  const emailBody = `Hi ${firstName},
 
-Thank you for speaking with our team today regarding Acme Manufacturing's sales operations.
+Thank you for speaking with our autonomous AI sales agent today regarding ${data.companyName}'s operations.
 
-Based on our discussion, you are looking to eliminate manual spreadsheet follow-up delays (saving 2-3 days on inbound response times) across your 12-member sales team within a 30-day evaluation window.
+Based on our conversation, we discussed addressing key operational priorities and streamlining workflow response times across your ${data.industry || 'operations'} team.
 
-Regarding your question on implementation effort: our onboarding is modular and turnkey—most manufacturing teams are fully operational within 2 to 3 weeks with zero disruption to active CRM workflows.
+Our deployment is modular and turnkey—integrating directly with existing CRM and communication channels with zero disruption to your daily operations.
 
-I'd love to show you a quick 20-minute walkthrough focused specifically on how the automated voice cadence works for your team.
+I would love to invite you to a brief 20-minute technical architecture walkthrough focused specifically on how Vidur AI's voice workflows can scale your pipeline.
 
-Would Thursday at 2:30 PM IST or Friday at 11:00 AM IST work for a brief product demo?
+Would tomorrow at 2:30 PM IST or the following day at 11:00 AM IST work for a brief product walkthrough?
 
 Best regards,
 Vidur Sales Operations Team`;

@@ -22,12 +22,32 @@ export interface CallStartRequest {
   companyInfo?: string;
   services?: string;
   goal?: string;
+  customPitch?: string;
+  requirement?: string;
+  buyingSignals?: string;
 }
 
 export interface CallStartResponse {
   sessionId: string;
   status: string;
   message: string;
+  openingPitch?: string;
+}
+
+export interface GeneratePitchRequest {
+  companyName: string;
+  contactName?: string;
+  contactRole?: string;
+  language: string;
+  companyInfo?: string;
+  requirement?: string;
+  services?: string;
+  buyingSignals?: string;
+}
+
+export interface GeneratePitchResponse {
+  pitch: string;
+  language: string;
 }
 
 export interface TranscriptItem {
@@ -111,6 +131,52 @@ class CallService {
       throw new Error('Failed to fetch config');
     }
     return response.json();
+  }
+
+  /**
+   * Dynamically generate a personalized opening pitch with Ollama LLM
+   */
+  async generatePitch(request: GeneratePitchRequest): Promise<GeneratePitchResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/call/generate-pitch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (response.ok) {
+        return response.json();
+      }
+    } catch (e) {
+      console.warn('[CallService] generatePitch error, using fallback:', e);
+    }
+
+    const lang = request.language || 'en';
+    const c = request.contactName ? request.contactName.split(' ')[0] : '';
+    if (lang === 'hi') {
+      return {
+        pitch: `नमस्ते ${c ? c + ' जी, ' : ''}मैं Vidur AI से बोल रहा हूँ। ${request.companyName} के ऑटोमेशन पर बात करने के लिए क्या आपके पास एक मिनट है?`,
+        language: lang,
+      };
+    }
+    if (lang === 'gu') {
+      return {
+        pitch: `નમસ્તે ${c ? c + 'ભાઈ, ' : ''}હું Vidur AI તરફથી. ${request.companyName} માટે થોડો સમય મળી શકે છે?`,
+        language: lang,
+      };
+    }
+    if (lang === 'mr') {
+      return {
+        pitch: `नमस्कार ${c ? c + ', ' : ''}मी Vidur AI कडून. ${request.companyName} च्या संदर्भात बोलायला एक मिनिट वेळ आहे का?`,
+        language: lang,
+      };
+    }
+    return {
+      pitch: `Hi ${c || 'there'}, this is Alex from Vidur AI following up with ${request.companyName}. Do you have a quick minute?`,
+      language: 'en',
+    };
   }
 
   /**

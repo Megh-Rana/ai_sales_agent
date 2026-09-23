@@ -13,6 +13,7 @@ import {
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { CallLanguage } from '../../types/calls';
+import { Sparkles, RotateCcw } from 'lucide-react';
 
 export interface CallConfirmationModalProps {
   isOpen: boolean;
@@ -25,6 +26,9 @@ export interface CallConfirmationModalProps {
   whyNow?: string;
   selectedLanguage: CallLanguage;
   onLanguageChange: (lang: CallLanguage) => void;
+  currentPitch?: string;
+  isGeneratingPitch?: boolean;
+  onRegeneratePitch?: () => void;
 }
 
 const AVAILABLE_LANGUAGES: CallLanguage[] = ['English', 'Hindi', 'Gujarati', 'Marathi'];
@@ -39,7 +43,10 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
   objective,
   whyNow,
   selectedLanguage,
-  onLanguageChange
+  onLanguageChange,
+  currentPitch,
+  isGeneratingPitch,
+  onRegeneratePitch
 }) => {
   return (
     <Modal
@@ -137,6 +144,34 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
               );
             })}
           </div>
+        </div>
+
+        {/* Dynamic Opening Pitch Preview for Selected Language */}
+        <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono uppercase text-primary font-bold tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
+              Initial Spoken Pitch ({selectedLanguage})
+            </span>
+            {onRegeneratePitch && (
+              <button
+                type="button"
+                onClick={onRegeneratePitch}
+                disabled={isGeneratingPitch}
+                className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              >
+                <RotateCcw className={`w-3 h-3 ${isGeneratingPitch ? 'animate-spin' : ''}`} />
+                <span>{isGeneratingPitch ? 'Generating...' : 'Regenerate'}</span>
+              </button>
+            )}
+          </div>
+          <p className="text-foreground text-xs leading-relaxed italic font-serif">
+            {isGeneratingPitch ? (
+              <span className="text-foreground-secondary animate-pulse">Generating personalized opening pitch in {selectedLanguage} using Ollama...</span>
+            ) : (
+              `"${currentPitch || 'Loading dynamic pitch...'}"`
+            )}
+          </p>
         </div>
 
         {/* Compliance Assurance Note */}

@@ -18,24 +18,31 @@ import {
 } from 'lucide-react';
 import { DiscoveredLead } from '../../types/leads';
 import { Button } from '../ui/Button';
+import { Sparkles, RotateCcw } from 'lucide-react';
 
 export interface PreCallViewProps {
   lead: DiscoveredLead;
   onStartCallFlow: () => void;
+  currentPitch?: string;
+  isGeneratingPitch?: boolean;
+  onRegeneratePitch?: () => void;
 }
 
 export const PreCallView: React.FC<PreCallViewProps> = ({
   lead,
-  onStartCallFlow
+  onStartCallFlow,
+  currentPitch,
+  isGeneratingPitch,
+  onRegeneratePitch
 }) => {
   const navigate = useNavigate();
 
   const decisionMakerName =
-    lead.decisionMakerContact?.name || lead.decisionMaker?.name || 'David Reynolds';
+    lead.decisionMakerContact?.name || lead.decisionMaker?.name || 'Operations Director';
   const decisionMakerRole =
-    lead.decisionMakerContact?.role || lead.decisionMaker?.role || 'Operations Leader';
+    lead.decisionMakerContact?.role || lead.decisionMaker?.role || 'Executive Leader';
   const decisionMakerPhone =
-    lead.decisionMaker?.phone || '+1 (312) 555-0184';
+    lead.decisionMaker?.phone || (lead.decisionMakerContact?.phoneAvailable ? '+91 98201 54890' : '+91 98000 00000');
 
   const primarySignal = lead.buyingSignals?.[0];
   const brief = lead.callBrief;
@@ -214,13 +221,27 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           {/* Opening Hook */}
-          <div className="p-4 rounded-lg bg-surface-elevated border border-border-subtle space-y-1.5 md:col-span-2">
-            <div className="flex items-center gap-1.5 text-primary font-semibold text-xs">
-              <PhoneCall className="w-3.5 h-3.5" />
-              <span>Recommended Opening Hook</span>
+          <div className="p-4 rounded-lg bg-surface-elevated border border-border-subtle space-y-2 md:col-span-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-primary font-semibold text-xs">
+                <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
+                <span>AI Dynamically Generated Opening Pitch (Ollama)</span>
+              </div>
+              {onRegeneratePitch && (
+                <button
+                  type="button"
+                  onClick={onRegeneratePitch}
+                  disabled={isGeneratingPitch}
+                  className="inline-flex items-center gap-1 text-[11px] font-mono text-primary hover:text-primary-hover transition-colors disabled:opacity-50 cursor-pointer"
+                  title="Regenerate dynamic pitch with Ollama"
+                >
+                  <RotateCcw className={`w-3 h-3 ${isGeneratingPitch ? 'animate-spin' : ''}`} />
+                  <span>{isGeneratingPitch ? 'Generating...' : 'Regenerate Pitch'}</span>
+                </button>
+              )}
             </div>
             <p className="text-foreground leading-relaxed italic font-serif text-sm">
-              "{brief?.opening || lead.suggestedOpeningHook}"
+              "{currentPitch || brief?.opening || lead.suggestedOpeningHook || `Hello ${decisionMakerName}, this is Alex from Vidur AI regarding ${lead.companyName}. Do you have a quick minute?`}"
             </p>
           </div>
 

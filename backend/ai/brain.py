@@ -216,19 +216,117 @@ class AIBrain:
             except Exception as e:
                 print(f"[AI] Ollama warm-up notice ({e}). Will connect when Ollama is running.")
 
-    def get_opening(self, prospect_name: str = "", language: str = "en") -> str:
-        """Get the opening line for the call."""
-        lang = language if language in OPENING_SCRIPT else "en"
-        reason = self.campaign_goal.lower().rstrip(".")
-        opening = OPENING_SCRIPT[lang].format(
-            agent_name=self.agent_name,
-            company_name=self.company_name,
-            reason=reason,
+    def _clean_pitch_text(self, text: str) -> str:
+        """Strip formatting, thinking tags, labels, and outer quotes from generated pitch."""
+        clean = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+        clean = re.sub(r"^(Alex|Agent|Vidur|Assistant|Sales Rep):\s*", "", clean.strip(), flags=re.IGNORECASE)
+        clean = clean.strip("\"'“”«»` \n\t")
+        clean = re.sub(r"\s+", " ", clean).strip()
+        return clean
+
+    def _fallback_pitch(self, contact: str, company: str, language: str) -> str:
+        """Personalized multilingual fallback pitch if LLM is offline or times out."""
+        c = contact.strip() if contact and contact.strip() != "there" else ""
+        if language == "hi":
+            greeting = f"नमस्ते {c} जी, " if c else "नमस्ते, "
+            return f"{greeting}मैं {self.agent_name}, Vidur AI से बोल रहा हूँ। {company} के संबंध में बात करने के लिए क्या आपके पास एक मिनट है?"
+        elif language == "gu":
+            greeting = f"નમસ્તે {c}ભાઈ, " if c else "નમસ્તે, "
+            return f"{greeting}હું {self.agent_name}, Vidur AI તરફથી. {company} માટે એક મિનિટ સમય મળી શકે છે?"
+        elif language == "mr":
+            greeting = f"नमस्कार {c}, " if c else "नमस्कार, "
+            return f"{greeting}मी {self.agent_name}, Vidur AI कडून. {company} च्या संदर्भात बोलायला एक मिनिट आहे का?"
+        else:
+            greeting = f"Hi {c}, " if c else "Hello, "
+            return f"{greeting}this is {self.agent_name} from Vidur AI following up regarding {company}. Do you have a quick minute?"
+
+    def generate_dynamic_opening_pitch(
+        self,
+        prospect_name: str = "",
+        company_name: str = "",
+        company_info: str = "",
+        products_services: str = "",
+        language: str = "en",
+        requirement: str = "",
+        buying_signals: str = "",
+    ) -> str:
+        """
+        Dynamically generate a personalized opening pitch using Ollama LLM based on
+        company details, specific requirements, and the selected language.
+        """
+        company = company_name or self.company_name or "your company"
+        contact = prospect_name.strip() if prospect_name else ""
+        info = company_info or self.company_info or f"{company} operations"
+        req = requirement or self.campaign_goal or "business automation and process efficiency"
+        signals = buying_signals or ""
+        services = products_services or self.products_services or "AI sales intelligence and autonomous voice systems"
+
+        lang_names = {
+            "en": "English",
+            "hi": "Hindi (in Devanagari script)",
+            "mr": "Marathi (in Devanagari script)",
+            "gu": "Gujarati (in Gujarati script)",
+        }
+        target_lang = lang_names.get(language, "English")
+        contact_ref = f"{contact} at {company}" if contact else f"the operations lead at {company}"
+
+        prompt = (
+            f"You are {self.agent_name}, a friendly, professional AI sales representative from Vidur AI calling {contact_ref}.\n"
+            f"Target Prospect Context:\n"
+            f"- Company: {company}\n"
+            f"- Industry / Context: {info}\n"
+            f"- Specific Requirement / Pain Point: {req}\n"
+            f"- Buying Signal / Event Trigger: {signals}\n"
+            f"- Our Solution: {services}\n\n"
+            f"Task: Generate a natural, engaging 1-2 sentence spoken opening pitch greeting in {target_lang}.\n"
+            f"Guidelines:\n"
+            f"1. Greet {contact or 'the prospect'} professionally and introduce yourself as {self.agent_name} from Vidur AI.\n"
+            f"2. Concretely reference {company}'s specific requirement or recent initiative to show direct relevance.\n"
+            f"3. End with a polite, natural conversational question asking if they have a brief minute to connect.\n"
+            f"4. Keep it strictly to 1 or 2 spoken sentences (under 35 words).\n"
+            f"5. IMPORTANT: Output ONLY the spoken dialogue. Do NOT include quotes, prefixes like '{self.agent_name}:', or explanations."
         )
-        if prospect_name and prospect_name.strip():
-            greeting = f"Hi {prospect_name.strip()}, "
-            opening = greeting + opening[0].lower() + opening[1:]
-        return opening
+
+        provider = getattr(config, "LLM_PROVIDER", "ollama")
+        if provider == "ollama":
+            try:
+                client = self._get_client()
+                resp = client.chat(
+                    model=config.OLLAMA_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    options={
+                        "temperature": 0.7,
+                        "num_predict": 90,
+                        "num_gpu": config.OLLAMA_NUM_GPU,
+                    },
+                )
+                raw = resp.get("message", {}).get("content", "").strip()
+                cleaned = self._clean_pitch_text(raw)
+                if cleaned and len(cleaned) > 15:
+                    print(f"[AI] Dynamically generated pitch ({language}): {cleaned}")
+                    return cleaned
+            except Exception as e:
+                print(f"[AI] Dynamic pitch generation notice ({e}), using personalized fallback.")
+
+        return self._fallback_pitch(contact, company, language)
+
+    def get_opening(
+        self,
+        prospect_name: str = "",
+        language: str = "en",
+        requirement: str = "",
+        buying_signals: str = "",
+    ) -> str:
+        """Get the opening line for the call (dynamically generated via Ollama with fallback)."""
+        return self.generate_dynamic_opening_pitch(
+            prospect_name=prospect_name,
+            company_name=self.company_name,
+            company_info=self.company_info,
+            products_services=self.products_services,
+            language=language,
+            requirement=requirement or self.campaign_goal,
+            buying_signals=buying_signals,
+        )
 
     def think(self, user_text: str, detected_language: str = "en") -> Generator[str, None, None]:
         """

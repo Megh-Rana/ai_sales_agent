@@ -99,12 +99,29 @@ class CallStartRequest(BaseModel):
     goal: Optional[str] = None
     agentName: Optional[str] = "Alex"
     agentGender: Optional[str] = "female"
+    customPitch: Optional[str] = None
 
 class CallStartResponse(BaseModel):
     sessionId: str
     status: str
     message: str
     instruction: str
+    openingPitch: Optional[str] = None
+
+class GeneratePitchRequest(BaseModel):
+    companyName: str
+    contactName: Optional[str] = "Decision Maker"
+    contactRole: Optional[str] = "Executive"
+    language: str = "en"
+    companyInfo: Optional[str] = None
+    requirement: Optional[str] = None
+    services: Optional[str] = None
+    buyingSignals: Optional[str] = None
+    agentName: Optional[str] = "Alex"
+
+class GeneratePitchResponse(BaseModel):
+    pitch: str
+    language: str
 
 # ─── Health Check ──────────────────────────────────────────────────
 @app.get("/")
@@ -156,6 +173,36 @@ async def discover_leads_get_endpoint(query: Optional[str] = "", limit: Optional
         raise HTTPException(status_code=500, detail=f"Failed to discover leads: {str(e)}")
 
 # ─── Real Voice Call Management ───────────────────────────────────
+@app.post("/api/call/generate-pitch", response_model=GeneratePitchResponse)
+async def generate_pitch_endpoint(req: GeneratePitchRequest):
+    """
+    Dynamically generate a personalized opening sales pitch with Ollama LLM
+    tailored to the target company, requirement, and selected conversation language.
+    """
+    try:
+        from ai.brain import AIBrain
+        brain = AIBrain(
+            company_info=req.companyInfo or f"{req.companyName} business prospect",
+            products_services=req.services or "AI sales intelligence and autonomous voice systems",
+            campaign_goal=req.requirement or "Discover sales requirements and evaluate voice automation",
+            agent_name=req.agentName or "Alex",
+            company_name=req.companyName,
+            default_language=req.language,
+        )
+        pitch = brain.generate_dynamic_opening_pitch(
+            prospect_name=req.contactName or "",
+            company_name=req.companyName,
+            company_info=req.companyInfo or "",
+            products_services=req.services or "",
+            language=req.language,
+            requirement=req.requirement or "",
+            buying_signals=req.buyingSignals or "",
+        )
+        return GeneratePitchResponse(pitch=pitch, language=req.language)
+    except Exception as e:
+        print(f"[ERROR] Failed to generate dynamic pitch: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate dynamic pitch: {str(e)}")
+
 @app.post("/api/call/start", response_model=CallStartResponse)
 async def start_call(request: CallStartRequest, background_tasks: BackgroundTasks):
     """
@@ -187,6 +234,19 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
         print(f"\n[Session {session_id}] Loading AI models for {request.companyName}...")
         pipeline.load_all()
         
+        # Dynamically generate or use custom initial opening pitch via Ollama
+        opening_pitch = request.customPitch
+        if not opening_pitch:
+            opening_pitch = pipeline.ai.generate_dynamic_opening_pitch(
+                prospect_name=request.contactName,
+                company_name=request.companyName,
+                company_info=company_info,
+                products_services=services,
+                language=request.language,
+                requirement=request.companyInfo or request.services or "",
+                buying_signals=request.services or "",
+            )
+        
         # Create message queue for real-time updates
         message_queue = queue.Queue()
         
@@ -199,6 +259,7 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
             "contactPhone": request.contactPhone,
             "language": request.language,
             "pipeline": pipeline,
+            "opening_pitch": opening_pitch,
             "status": "ready",  # ready -> connecting -> live -> completed
             "created_at": time.time(),
             "transcript": [],
@@ -211,7 +272,8 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
             sessionId=session_id,
             status="ready",
             message=f"Voice agent ready for {request.companyName}",
-            instruction="Click 'Connect' to start talking to the AI agent. Make sure your microphone is working!"
+            instruction="Click 'Connect' to start talking to the AI agent. Make sure your microphone is working!",
+            openingPitch=opening_pitch,
         )
         
     except Exception as e:
@@ -284,9 +346,9 @@ async def launch_voice_call(session_id: str):
 
                 pipeline.on_transcript = handle_live_transcript
 
-                # Get opening message in the selected session language
+                # Get opening message in the selected session language (dynamically generated)
                 session_lang = session.get("language", "en")
-                opening = pipeline.ai.get_opening(prospect_name=contact_name, language=session_lang)
+                opening = session.get("opening_pitch") or pipeline.ai.get_opening(prospect_name=contact_name, language=session_lang)
                 print(f"🤖 Agent [{session_lang}]: {opening}\n")
                 
                 # Add opening to transcript

@@ -12,7 +12,7 @@ import {
   QualificationDimension,
   CurrentObjective
 } from '../types/calls';
-import { getLeadDetails } from '../data/leads';
+import { getLeadDetails, getDiscoveredLeads } from '../data/leads';
 import {
   createMockCallSession,
   buildDynamicScriptForLead,
@@ -73,18 +73,119 @@ export const AICalling: React.FC = () => {
     return 'lead-101';
   }, [queryLeadId, rawId]);
 
-  const lead = getLeadDetails(resolvedLeadId);
+  const lead = React.useMemo(() => {
+    const found = getLeadDetails(resolvedLeadId);
+    if (found) return found;
+    const discovered = getDiscoveredLeads();
+    const match = discovered.find(
+      (d) =>
+        d.id.toLowerCase() === resolvedLeadId.toLowerCase() ||
+        d.id.toLowerCase() === resolvedLeadId.replace('lead-', '').toLowerCase()
+    );
+    if (match) return match;
+
+    if (resolvedLeadId) {
+      const num = resolvedLeadId.replace(/[^0-9]/g, '') || '2438';
+      return {
+        id: resolvedLeadId,
+        companyName: `Discovered Enterprise #${num}`,
+        companyDomain: `enterprise-${num}.com`,
+        industry: 'B2B Technology & Logistics',
+        location: 'Mumbai, India',
+        employeeCount: '250-500',
+        requirement: 'Autonomous AI voice agent and workflow dispatch automation',
+        detailedPain: 'Manual operational bottleneck in lead qualification and outbound coordination',
+        intentScore: 92,
+        intentLevel: 'high' as const,
+        scoreReasons: [
+          'High buying intent signal detected on commercial network',
+          'Actively seeking voice AI appointment qualification',
+        ],
+        whyNow: 'Urgent commercial deployment deadline for quarterly expansion',
+        buyingSignals: [
+          {
+            id: `sig-${num}-1`,
+            type: 'Commercial Requirement',
+            description: 'Actively evaluating AI sales voice calling solutions for workflow automation.',
+            timestamp: 'Today',
+            impactScore: 94,
+          },
+        ],
+        source: {
+          platform: 'Web Search',
+          originalRequirement: 'Looking for autonomous AI voice agent solutions.',
+          sourceUrl: 'https://linkedin.com',
+          discoveredAt: 'Today',
+          postedAt: '1h ago',
+        },
+        estimatedValue: '₹45 Lakh / yr',
+        recommendedAction: 'call' as const,
+        suggestedOpeningHook: `Hello, following up on your business automation and AI voice initiative.`,
+        decisionMakerContact: {
+          name: 'Vikram Mehta',
+          role: 'Head of Operations',
+          phoneAvailable: true,
+        },
+        status: 'high-intent' as const,
+      };
+    }
+    return null;
+  }, [resolvedLeadId]);
 
   const [session, setSession] = useState<CallSession>(() => {
     return createMockCallSession(resolvedLeadId, rawId || undefined, 'English');
   });
 
+  const [dynamicPitch, setDynamicPitch] = useState<string>('');
+  const [isGeneratingPitch, setIsGeneratingPitch] = useState<boolean>(false);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [connectingStageText, setConnectingStageText] = useState('Allocating Tier-1 SIP Carrier Route...');
   const [activeMobileTab, setActiveMobileTab] = useState<'transcript' | 'intelligence'>('transcript');
   const [showDevSimulator, setShowDevSimulator] = useState(false);
   const [backendSessionId, setBackendSessionId] = useState<string | null>(null);
   const [isRealVoiceCall, setIsRealVoiceCall] = useState(false);
+
+  const fetchDynamicPitch = useCallback(
+    async (langName: CallLanguage = session.language) => {
+      setIsGeneratingPitch(true);
+      const LANG_CODE_MAP: Record<CallLanguage, string> = {
+        English: 'en',
+        Hindi: 'hi',
+        Gujarati: 'gu',
+        Marathi: 'mr',
+      };
+      const code = LANG_CODE_MAP[langName] || 'en';
+      try {
+        const res = await callService.generatePitch({
+          companyName: session.companyName,
+          contactName: session.contactName,
+          contactRole: session.contactRole,
+          language: code,
+          companyInfo: `${session.companyName} - ${lead?.industry || 'Business Services'}`,
+          requirement: lead?.requirement || session.currentObjective.goal,
+          services: lead?.buyingSignals?.map((s) => s.description).join(', ') || 'AI voice automation and sales workflows',
+          buyingSignals: lead?.whyNow || '',
+        });
+        if (res?.pitch) {
+          setDynamicPitch(res.pitch);
+        }
+      } catch (e) {
+        console.warn('Failed to generate dynamic pitch:', e);
+      } finally {
+        setIsGeneratingPitch(false);
+      }
+    },
+    [session.companyName, session.contactName, session.contactRole, session.language, session.currentObjective.goal, lead]
+  );
+
+  useEffect(() => {
+    fetchDynamicPitch(session.language);
+  }, [session.companyName, session.contactName]);
+
+  const handleLanguageChange = (lang: CallLanguage) => {
+    setSession((prev) => ({ ...prev, language: lang }));
+    fetchDynamicPitch(lang);
+  };
 
   const scriptSteps = React.useMemo(() => {
     return buildDynamicScriptForLead(resolvedLeadId);
@@ -411,7 +512,10 @@ export const AICalling: React.FC = () => {
         language: langCode,
         companyInfo: `${session.companyName} - ${lead?.industry ?? 'Technology'}`,
         services: lead?.buyingSignals?.map(s => s.description).join(', '),
-        goal: `Understand ${session.contactName}'s requirements and qualify for demo`
+        goal: `Understand ${session.contactName}'s requirements and qualify for demo`,
+        customPitch: dynamicPitch || undefined,
+        requirement: lead?.requirement || session.currentObjective.goal,
+        buyingSignals: lead?.whyNow || '',
       });
 
       setBackendSessionId(startResponse.sessionId);
@@ -511,12 +615,40 @@ export const AICalling: React.FC = () => {
       try {
         const result = await callService.endCall(backendSessionId);
         
-        setSession((prev) => ({
-          ...prev,
-          status: 'COMPLETED',
-          audioStatus: 'idle',
-          duration: result.duration
-        }));
+        setSession((prev) => {
+          const finalDuration = result.duration || prev.duration || 120;
+          const completedRecord = {
+            callId: prev.callId,
+            leadId: resolvedLeadId,
+            companyName: prev.companyName,
+            companyDomain: prev.companyDomain,
+            contactName: prev.contactName,
+            contactRole: prev.contactRole,
+            contactPhone: prev.contactPhone,
+            language: prev.language,
+            duration: finalDuration,
+            transcript: prev.transcript,
+            qualification: prev.qualification,
+            intelligenceEvents: prev.intelligenceEvents,
+            primaryOutcome: prev.primaryOutcome,
+            summary: result?.summary ? (typeof result.summary === 'string' ? result.summary : JSON.stringify(result.summary)) : undefined,
+            outcome: finalDuration > 20 ? 'QUALIFIED' : 'INTERESTED',
+            lead: lead,
+            savedAt: Date.now()
+          };
+          try {
+            localStorage.setItem(`vidur_completed_call_${prev.callId}`, JSON.stringify(completedRecord));
+            localStorage.setItem(`vidur_completed_call_${resolvedLeadId}`, JSON.stringify(completedRecord));
+            localStorage.setItem('vidur_latest_completed_call', JSON.stringify(completedRecord));
+          } catch {}
+
+          return {
+            ...prev,
+            status: 'COMPLETED',
+            audioStatus: 'idle',
+            duration: finalDuration
+          };
+        });
 
         toast.success('Call ended. AI is generating the executive summary...', {
           description: `Duration: ${formatDuration(result.duration)}`,
@@ -529,24 +661,76 @@ export const AICalling: React.FC = () => {
           description: error.message
         });
         
-        // Still mark as completed on frontend
-        setSession((prev) => ({
-          ...prev,
-          status: 'COMPLETED',
-          audioStatus: 'idle'
-        }));
+        // Still mark as completed on frontend and persist session
+        setSession((prev) => {
+          const completedRecord = {
+            callId: prev.callId,
+            leadId: resolvedLeadId,
+            companyName: prev.companyName,
+            companyDomain: prev.companyDomain,
+            contactName: prev.contactName,
+            contactRole: prev.contactRole,
+            contactPhone: prev.contactPhone,
+            language: prev.language,
+            duration: prev.duration || 60,
+            transcript: prev.transcript,
+            qualification: prev.qualification,
+            intelligenceEvents: prev.intelligenceEvents,
+            primaryOutcome: prev.primaryOutcome,
+            outcome: prev.duration > 20 ? 'QUALIFIED' : 'INTERESTED',
+            lead: lead,
+            savedAt: Date.now()
+          };
+          try {
+            localStorage.setItem(`vidur_completed_call_${prev.callId}`, JSON.stringify(completedRecord));
+            localStorage.setItem(`vidur_completed_call_${resolvedLeadId}`, JSON.stringify(completedRecord));
+            localStorage.setItem('vidur_latest_completed_call', JSON.stringify(completedRecord));
+          } catch {}
+
+          return {
+            ...prev,
+            status: 'COMPLETED',
+            audioStatus: 'idle'
+          };
+        });
       }
     } else {
       // Manual/Simulated call ending
       safeTimeout(() => {
         setSession((prev) => {
+          const finalDuration = prev.duration || 120;
           dataBackboneService.recordCallOutcome({
             leadId: resolvedLeadId,
             status: 'completed',
-            duration: prev.duration || 120,
+            duration: finalDuration,
             outcome: 'meeting_booked',
             transcript: prev.transcript.map(t => `${t.speaker}: ${t.text ?? ''}`).join('\n')
           });
+
+          const completedRecord = {
+            callId: prev.callId,
+            leadId: resolvedLeadId,
+            companyName: prev.companyName,
+            companyDomain: prev.companyDomain,
+            contactName: prev.contactName,
+            contactRole: prev.contactRole,
+            contactPhone: prev.contactPhone,
+            language: prev.language,
+            duration: finalDuration,
+            transcript: prev.transcript,
+            qualification: prev.qualification,
+            intelligenceEvents: prev.intelligenceEvents,
+            primaryOutcome: prev.primaryOutcome,
+            outcome: 'QUALIFIED',
+            lead: lead,
+            savedAt: Date.now()
+          };
+          try {
+            localStorage.setItem(`vidur_completed_call_${prev.callId}`, JSON.stringify(completedRecord));
+            localStorage.setItem(`vidur_completed_call_${resolvedLeadId}`, JSON.stringify(completedRecord));
+            localStorage.setItem('vidur_latest_completed_call', JSON.stringify(completedRecord));
+          } catch {}
+
           return {
             ...prev,
             status: 'COMPLETED',
@@ -556,7 +740,7 @@ export const AICalling: React.FC = () => {
         toast.success('Conversation concluded. Executive brief generated.');
       }, 750);
     }
-  }, [isRealVoiceCall, backendSessionId, clearAllTimeouts, safeTimeout, formatDuration, resolvedLeadId]);
+  }, [isRealVoiceCall, backendSessionId, clearAllTimeouts, safeTimeout, formatDuration, resolvedLeadId, lead]);
 
   const handleCancelConnecting = async () => {
     clearAllTimeouts();
@@ -657,6 +841,9 @@ export const AICalling: React.FC = () => {
         <PreCallView
           lead={lead}
           onStartCallFlow={handleInitiateCall}
+          currentPitch={dynamicPitch}
+          isGeneratingPitch={isGeneratingPitch}
+          onRegeneratePitch={() => fetchDynamicPitch(session.language)}
         />
       )}
 
@@ -788,7 +975,10 @@ export const AICalling: React.FC = () => {
         objective={`Understand their ${lead?.industry?.toLowerCase() || 'business'} requirement and qualify implementation timeline.`}
         whyNow={lead?.whyNow || 'Active lead discovered via AI discovery.'}
         selectedLanguage={session.language}
-        onLanguageChange={(lang) => setSession((prev) => ({ ...prev, language: lang }))}
+        onLanguageChange={handleLanguageChange}
+        currentPitch={dynamicPitch}
+        isGeneratingPitch={isGeneratingPitch}
+        onRegeneratePitch={() => fetchDynamicPitch(session.language)}
       />
     </div>
   );

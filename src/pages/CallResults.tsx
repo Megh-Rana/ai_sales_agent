@@ -156,10 +156,16 @@ export const CallResults: React.FC = () => {
       <div className="bg-surface border-b border-border-strong px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2 z-10 sticky top-0">
         <div className="flex items-center gap-2 text-foreground-secondary">
           <Layers className="w-3.5 h-3.5 text-primary" />
-          <span className="font-semibold text-foreground">Reviewer Scenarios:</span>
+          <span className="font-semibold text-foreground">Call Session Dossier:</span>
         </div>
 
         <nav aria-label="Reviewer scenario switcher" className="flex flex-wrap items-center gap-1.5">
+          {activeCallId !== 'call-101' && activeCallId !== 'call-102' && (
+            <span className="px-2.5 py-1 rounded text-xs font-semibold bg-primary/20 text-primary border border-primary/40 flex items-center gap-1.5 shadow-xs">
+              <CheckCircle2 className="w-3 h-3 text-primary" />
+              <span>{data.companyName} ({data.outcome})</span>
+            </span>
+          )}
           <button
             onClick={() => handleScenarioChange('call-101')}
             className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 ${
@@ -196,7 +202,7 @@ export const CallResults: React.FC = () => {
       <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-2xl border border-border-default bg-surface-0">
           <AnimatedCircularProgress
-            value={92}
+            value={data.outcome === 'QUALIFIED' ? 94 : data.outcome === 'INTERESTED' ? 84 : data.outcome === 'FAILED' ? 24 : 72}
             size={110}
             strokeWidth={8}
             label="QUALITY"
@@ -204,7 +210,7 @@ export const CallResults: React.FC = () => {
             sublabel="Call Quality Rating"
           />
           <AnimatedCircularProgress
-            value={88}
+            value={data.nextBestAction?.confidence || (data.outcome === 'QUALIFIED' ? 91 : 78)}
             size={110}
             strokeWidth={8}
             label="CONFIDENCE"
@@ -212,8 +218,16 @@ export const CallResults: React.FC = () => {
             sublabel="AI Confidence Index"
           />
           <div className="flex flex-col justify-center space-y-3">
-            <AnimatedProgressBar value={85} label="Qualification Progress" color="success" />
-            <AnimatedProgressBar value={94} label="Decision Maker Alignment" color="primary" />
+            <AnimatedProgressBar
+              value={Math.round((data.qualification.filter(q => q.status === 'confirmed').length / Math.max(data.qualification.length, 1)) * 100) || 75}
+              label="Qualification Progress"
+              color="success"
+            />
+            <AnimatedProgressBar
+              value={data.outcome === 'QUALIFIED' ? 96 : 82}
+              label="Decision Maker Alignment"
+              color="primary"
+            />
           </div>
         </div>
       </div>
