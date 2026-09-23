@@ -162,22 +162,48 @@ echo ""
 
 cd "$BACKEND_DIR"
 
-# Check if virtual environment exists
-if [ ! -d "venv" ]; then
-    print_info "Creating Python virtual environment..."
-    python3 -m venv venv
+# Check if virtual environment exists and is properly initialized
+if [ ! -d "venv" ] || [ ! -f "venv/bin/activate" ] || [ ! -f "venv/bin/pip" ]; then
+    print_info "Virtual environment not found or incomplete. Setting up Python virtual environment..."
+    python3 -m venv --clear venv
     print_status "Virtual environment created"
+
+    # Activate virtual environment
+    source venv/bin/activate
+    print_status "Virtual environment activated"
+
+    # Install dependencies
+    print_info "Installing Python dependencies (this may take a few minutes)..."
+    pip install --upgrade pip
+    pip install -r requirements.txt
+    print_status "Python dependencies installed successfully"
+else
+    # Activate existing virtual environment
+    source venv/bin/activate
+    print_status "Virtual environment activated ($(python --version))"
+
+    # Verify core dependencies are present; install if missing
+    if ! python -c "import fastapi, uvicorn" > /dev/null 2>&1; then
+        print_info "Missing dependencies detected in venv. Installing..."
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        print_status "Python dependencies installed successfully"
+    else
+        print_status "Python dependencies verified"
+    fi
 fi
 
-# Activate virtual environment
-source venv/bin/activate
-print_status "Virtual environment activated"
-
-# Install/upgrade dependencies
-print_info "Installing Python dependencies..."
-pip install --upgrade pip > /dev/null 2>&1
-pip install -r requirements.txt > /dev/null 2>&1
-print_status "Python dependencies installed"
+# Setup CUDA Library Paths for faster-whisper CTranslate2 (if available)
+SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])" 2>/dev/null || echo "")
+if [ -n "$SITE_PACKAGES" ] && [ -d "$SITE_PACKAGES/nvidia" ]; then
+    NVIDIA_LIBS=""
+    for dir in "$SITE_PACKAGES"/nvidia/*/lib; do
+        if [ -d "$dir" ]; then
+            NVIDIA_LIBS="$dir:$NVIDIA_LIBS"
+        fi
+    done
+    export LD_LIBRARY_PATH="$NVIDIA_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
 
 echo ""
 

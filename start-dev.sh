@@ -62,18 +62,22 @@ fi
 print_status "Node.js $(node --version) found"
 
 # Check Python in venv
-if [ ! -f "$VENV_PYTHON" ]; then
-    print_warning "Backend virtualenv not found at backend/venv. Creating..."
-    python3 -m venv "$BACKEND_DIR/venv"
+if [ ! -f "$VENV_PYTHON" ] || [ ! -f "$BACKEND_DIR/venv/bin/activate" ] || [ ! -f "$BACKEND_DIR/venv/bin/pip" ]; then
+    print_warning "Backend virtualenv not found or incomplete at backend/venv. Creating..."
+    if ! command -v python3 &> /dev/null; then
+        print_error "Python 3 is not installed. Please install Python 3.9+"
+        exit 1
+    fi
+    python3 -m venv --clear "$BACKEND_DIR/venv"
     "$VENV_PYTHON" -m pip install --upgrade pip
     "$VENV_PYTHON" -m pip install -r "$BACKEND_DIR/requirements.txt"
 fi
 print_status "Python virtualenv verified ($("$VENV_PYTHON" --version))"
 
 # Setup CUDA Library Paths for faster-whisper CTranslate2 (if available)
-SITE_PACKAGES="$BACKEND_DIR/venv/lib/python3.14/site-packages"
+SITE_PACKAGES=$("$VENV_PYTHON" -c "import site; print(site.getsitepackages()[0])" 2>/dev/null || echo "")
 NVIDIA_LIBS=""
-if [ -d "$SITE_PACKAGES/nvidia" ]; then
+if [ -n "$SITE_PACKAGES" ] && [ -d "$SITE_PACKAGES/nvidia" ]; then
     for dir in "$SITE_PACKAGES"/nvidia/*/lib; do
         if [ -d "$dir" ]; then
             NVIDIA_LIBS="$dir:$NVIDIA_LIBS"
