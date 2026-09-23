@@ -27,6 +27,11 @@ class CampaignService:
             primary_channel=campaign_in.primary_channel,
             status=campaign_in.status,
             estimated_pipeline_value=campaign_in.estimated_pipeline_value or "₹42.5L",
+            timezone=campaign_in.timezone or "UTC",
+            business_hours_start=campaign_in.business_hours_start or "09:00",
+            business_hours_end=campaign_in.business_hours_end or "18:00",
+            repeat_enabled=campaign_in.repeat_enabled or "false",
+            repeat_schedule=campaign_in.repeat_schedule,
         )
         db.add(campaign)
         db.commit()

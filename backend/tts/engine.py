@@ -33,10 +33,7 @@ class TTSEngine:
 
     def _get_client(self):
         if not getattr(config, "HAS_SARVAM_KEY", False):
-            raise RuntimeError(
-                "[TTS] SARVAM_API_KEY is not set or invalid. "
-                "Only Sarvam API is supported for TTS. Please add a valid key in .env"
-            )
+            return None
         if self._client is None:
             from sarvamai import SarvamAI
             self._client = SarvamAI(api_subscription_key=config.SARVAM_API_KEY)
@@ -45,16 +42,14 @@ class TTSEngine:
     # ─── Lifecycle ──────────────────────────────────────────────────
 
     def load(self):
-        """Validate Sarvam API key and initialize Sarvam Bulbul v3 client."""
-        if not getattr(config, "HAS_SARVAM_KEY", False):
-            raise RuntimeError(
-                "[TTS] SARVAM_API_KEY is not set. "
-                "Vidur is configured to work exclusively with Sarvam API for TTS. "
-                "Please configure SARVAM_API_KEY in your .env file."
-            )
-        self._get_client()
-        self.provider = "sarvam"
-        print(f"[TTS] Sarvam Bulbul v3 initialized successfully — speaker: {self.speaker}")
+        """Validate Sarvam API key and initialize Sarvam Bulbul v3 client with Edge-TTS fallback."""
+        if getattr(config, "HAS_SARVAM_KEY", False):
+            self._get_client()
+            self.provider = "sarvam"
+            print(f"[TTS] Sarvam Bulbul v3 initialized successfully — speaker: {self.speaker}")
+        else:
+            self.provider = "edge-tts"
+            print(f"[TTS] SARVAM_API_KEY not set. Using Edge-TTS fallback for TTS.")
         self._loaded = True
 
     def unload(self):
@@ -74,61 +69,121 @@ class TTSEngine:
 
     # ─── Single-shot synthesis ──────────────────────────────────────
 
+    def _synthesize_edge_tts_fallback(self, text: str, language: str = None) -> np.ndarray:
+        """Fallback TTS using edge-tts (Microsoft Edge free TTS) when Sarvam API fails."""
+        try:
+            import edge_tts
+            import asyncio
+            import tempfile
+            import soundfile as sf
+            
+            lang_code = self._lang_code(language)
+            # Map to Edge TTS voices
+            voice_map = {
+                "en-IN": "en-IN-NeerjaNeural",  # Female
+                "hi-IN": "hi-IN-SwaraNeural",   # Female
+                "mr-IN": "mr-IN-AarohiNeural",  # Female
+                "gu-IN": "gu-IN-DhwaniNeural",  # Female
+            }
+            
+            voice = voice_map.get(lang_code, "en-IN-NeerjaNeural")
+            
+            async def _synthesize():
+                with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+                    tmp_path = tmp.name
+                
+                communicate = edge_tts.Communicate(text.strip(), voice)
+                await communicate.save(tmp_path)
+                
+                # Load and resample
+                audio, sr = sf.read(tmp_path, dtype="float32")
+                os.unlink(tmp_path)
+                
+                # Resample if needed
+                if sr != config.TTS_SAMPLE_RATE:
+                    import torchaudio
+                    import torch
+                    audio_tensor = torch.from_numpy(audio).unsqueeze(0)
+                    resampler = torchaudio.transforms.Resample(sr, config.TTS_SAMPLE_RATE)
+                    audio_tensor = resampler(audio_tensor)
+                    audio = audio_tensor.squeeze(0).numpy()
+                
+                # Convert to mono if stereo
+                if audio.ndim > 1:
+                    audio = audio.mean(axis=1)
+                
+                return audio
+            
+            audio = asyncio.run(_synthesize())
+            print(f"[TTS] Edge-TTS fallback {len(text)} chars -> {len(audio)/config.TTS_SAMPLE_RATE:.1f}s audio [{voice}]")
+            return audio
+            
+        except Exception as edge_error:
+            print(f"[TTS] Edge-TTS fallback also failed: {edge_error}")
+            # Return silence as last resort
+            return np.zeros(int(config.TTS_SAMPLE_RATE * 0.5), dtype=np.float32)
+
     def synthesize(self, text: str, language: str = None) -> np.ndarray:
-        """Synthesize full text using Sarvam Bulbul v3 API."""
+        """Synthesize full text using Sarvam Bulbul v3 API with Edge-TTS fallback."""
         if not text or not text.strip():
             return np.array([], dtype=np.float32)
-
-        if not getattr(config, "HAS_SARVAM_KEY", False):
-            raise RuntimeError("[TTS] SARVAM_API_KEY is missing. Only Sarvam API is supported for TTS.")
 
         lang_code = self._lang_code(language)
         t0 = time.time()
 
-        try:
-            client = self._get_client()
-            response = client.text_to_speech.convert(
-                model="bulbul:v3",
-                text=text.strip(),
-                language_code=lang_code,
-                speaker=self.speaker,
-                speech_sample_rate=config.TTS_SAMPLE_RATE,
-            )
-            audio = self._b64_to_numpy(response.audios[0])
-            elapsed = time.time() - t0
-            duration = len(audio) / config.TTS_SAMPLE_RATE
-            print(f"[TTS] Sarvam {len(text)} chars -> {duration:.1f}s audio in {elapsed:.2f}s [{lang_code}/{self.speaker}]")
-            return audio
-        except Exception as e:
-            # Fallback to direct Sarvam REST endpoint if SDK call encounters an issue
-            print(f"[TTS] Sarvam SDK call failed ({e}). Trying Sarvam direct REST API...")
-            import requests
-
-            headers = {"api-subscription-key": config.SARVAM_API_KEY}
-            payload = {
-                "inputs": [text.strip()],
-                "target_language_code": lang_code,
-                "speaker": self.speaker,
-                "pitch": 0,
-                "pace": 1.0,
-                "loudness": 1.5,
-                "speech_sample_rate": config.TTS_SAMPLE_RATE,
-                "enable_preprocessing": True,
-                "model": "bulbul:v3",
-            }
-            res = requests.post(
-                "https://api.sarvam.ai/text-to-speech",
-                json=payload,
-                headers=headers,
-                timeout=15.0,
-            )
-            res.raise_for_status()
-            data = res.json()
-            audio = self._b64_to_numpy(data["audios"][0])
-            elapsed = time.time() - t0
-            duration = len(audio) / config.TTS_SAMPLE_RATE
-            print(f"[TTS] Sarvam REST {len(text)} chars -> {duration:.1f}s audio in {elapsed:.2f}s [{lang_code}/{self.speaker}]")
-            return audio
+        # Try Sarvam API if key is available
+        if getattr(config, "HAS_SARVAM_KEY", False):
+            try:
+                client = self._get_client()
+                response = client.text_to_speech.convert(
+                    model="bulbul:v3",
+                    text=text.strip(),
+                    language_code=lang_code,
+                    speaker=self.speaker,
+                    speech_sample_rate=config.TTS_SAMPLE_RATE,
+                )
+                audio = self._b64_to_numpy(response.audios[0])
+                elapsed = time.time() - t0
+                duration = len(audio) / config.TTS_SAMPLE_RATE
+                print(f"[TTS] Sarvam {len(text)} chars -> {duration:.1f}s audio in {elapsed:.2f}s [{lang_code}/{self.speaker}]")
+                return audio
+            except Exception as e:
+                # Try direct Sarvam REST endpoint
+                print(f"[TTS] Sarvam SDK call failed ({e}). Trying Sarvam direct REST API...")
+                try:
+                    import requests
+                    headers = {"api-subscription-key": config.SARVAM_API_KEY}
+                    payload = {
+                        "inputs": [text.strip()],
+                        "target_language_code": lang_code,
+                        "speaker": self.speaker,
+                        "pitch": 0,
+                        "pace": 1.0,
+                        "loudness": 1.5,
+                        "speech_sample_rate": config.TTS_SAMPLE_RATE,
+                        "enable_preprocessing": True,
+                        "model": "bulbul:v3",
+                    }
+                    res = requests.post(
+                        "https://api.sarvam.ai/text-to-speech",
+                        json=payload,
+                        headers=headers,
+                        timeout=15.0,
+                    )
+                    res.raise_for_status()
+                    data = res.json()
+                    audio = self._b64_to_numpy(data["audios"][0])
+                    elapsed = time.time() - t0
+                    duration = len(audio) / config.TTS_SAMPLE_RATE
+                    print(f"[TTS] Sarvam REST {len(text)} chars -> {duration:.1f}s audio in {elapsed:.2f}s [{lang_code}/{self.speaker}]")
+                    return audio
+                except Exception as rest_error:
+                    print(f"[TTS] Sarvam REST API also failed ({rest_error}). Falling back to Edge-TTS...")
+                    return self._synthesize_edge_tts_fallback(text, language)
+        else:
+            # No Sarvam key, use Edge-TTS directly
+            print(f"[TTS] SARVAM_API_KEY not set. Using Edge-TTS fallback...")
+            return self._synthesize_edge_tts_fallback(text, language)
 
     def synthesize_sentence(self, text: str, language: str = None) -> np.ndarray | None:
         """Synthesize a single sentence using Sarvam Bulbul v3. Returns None on empty input."""

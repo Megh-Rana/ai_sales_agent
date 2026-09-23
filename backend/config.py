@@ -34,10 +34,18 @@ CHUNK_DURATION_S = 0.3       # 300ms audio chunks — more responsive VAD
 SILENCE_THRESHOLD_S = 0.6    # Seconds of silence before considering turn complete
 VAD_THRESHOLD = 0.5          # Silero VAD confidence threshold
 
-# ─── STT Config (Exclusively Sarvam saaras:v3) ──────────────────────
-# Speech-to-Text strictly uses Sarvam Cloud API
-STT_PROVIDER = "sarvam"
+# ─── STT Config (Sarvam saaras:v3 with Whisper fallback) ────────────
+# Speech-to-Text uses Sarvam Cloud API when available, falls back to local Whisper
+STT_PROVIDER = os.getenv("STT_PROVIDER", "sarvam")
 SARVAM_STT_MODEL = "saaras:v3"
+
+# Local Whisper fallback settings
+STT_MODEL_SIZE = os.getenv("STT_MODEL_SIZE", "base")  # tiny, base, small, medium, large
+STT_DEVICE = os.getenv("STT_DEVICE", "cpu")  # cpu or cuda
+STT_COMPUTE_TYPE = os.getenv("STT_COMPUTE_TYPE", "int8")  # int8, float16, float32
+STT_LANGUAGE = None  # Auto-detect by default
+STT_BEAM_SIZE = 3    # Beam search size for better accuracy
+STT_VAD_FILTER = True  # Enable VAD filtering to remove silence
 
 # ─── TTS Config (Exclusively Sarvam Bulbul v3) ──────────────────────
 # Text-to-Speech strictly uses Sarvam Cloud API
@@ -58,20 +66,26 @@ SARVAM_LANG_MAP = {
 }
 
 # ─── LLM & AI Provider Config ─────────────────────────────────────────
-# Default to Sarvam AI Cloud API across reasoning & voice intelligence
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "sarvam")
-AI_PROVIDER = os.getenv("AI_PROVIDER", "sarvam")
+# LLM Provider: Use Ollama (local Gemma model) by default for conversational AI
+# Only use Sarvam for STT/TTS, not for LLM
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")  # Changed from "sarvam" to "ollama"
+AI_PROVIDER = os.getenv("AI_PROVIDER", "ollama")     # Changed from "sarvam" to "ollama"
 SARVAM_LLM_MODEL = os.getenv("SARVAM_LLM_MODEL", "sarvam-105b")
 
-# Param-1-7B HuggingFace Model ID
+# AI Model defaults to Ollama Gemma
+AI_MODEL = os.getenv("AI_MODEL", "gemma3:4b")  # Gemma 3 4B model via Ollama
+AI_TEMPERATURE = float(os.getenv("AI_TEMPERATURE", "0.5"))
+AI_TIMEOUT = float(os.getenv("AI_TIMEOUT", "60.0"))
+
+# Param-1-7B HuggingFace Model ID (alternative local model)
 PARAM_MODEL_ID = "arunvenkat17/Param-1-7B-GodMode-4bit"
 
-# Ollama options
-OLLAMA_MODEL = "gemma3:4b"
-OLLAMA_HOST = "http://localhost:11434"
-OLLAMA_TEMPERATURE = 0.5
-OLLAMA_NUM_CTX = 2048        # Context window — 2K is plenty for short sales calls
-OLLAMA_NUM_GPU = 99          # All layers on GPU
+# Ollama configuration for local Gemma model
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma3:4b")  # Gemma 3 4B - lightweight and fast
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.5"))
+OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "8192"))  # Increased to 8K for better context
+OLLAMA_NUM_GPU = int(os.getenv("OLLAMA_NUM_GPU", "99"))   # All layers on GPU
 
 # ─── Streaming Pipeline ──────────────────────────────────────────────
 # Enables LLM → TTS sentence-level streaming:

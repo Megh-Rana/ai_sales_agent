@@ -32,6 +32,9 @@ class Lead(Base):
     # Stored intent_score - note: no AI scoring logic here, strictly storage
     intent_score = Column(Float, nullable=True, index=True)
     
+    # Preferred language for AI calling (TC-33) - auto-selected based on location
+    preferred_language = Column(String(10), nullable=False, default="en")  # ISO 639-1 codes: en, hi, gu, mr
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

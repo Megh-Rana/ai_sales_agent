@@ -12,6 +12,7 @@ class Profile(Base):
     full_name = Column(String(255), nullable=True)
     hashed_password = Column(String(255), nullable=True)  # Nullable for Supabase-auth users
     role = Column(String(50), nullable=False, default="sales_rep")  # "sales_rep" or "admin"
+    subscription_tier = Column(String(50), nullable=False, default="Starter")  # "Starter", "Growth", or "Enterprise"
     must_change_password = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

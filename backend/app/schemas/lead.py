@@ -36,6 +36,7 @@ class LeadBase(BaseModel):
         le=100.0,
         description="Stored intent score between 0 and 100 (pure storage, no AI scoring computed here)"
     )
+    preferred_language: str = Field(default="en", max_length=10, description="ISO 639-1 language code (en, hi, gu, mr)")
 
 
 class LeadCreate(LeadBase):
@@ -58,6 +59,7 @@ class LeadUpdate(BaseModel):
     website: Optional[str] = Field(None, max_length=500)
     status: Optional[LeadStatus] = None
     intent_score: Optional[float] = Field(None, ge=0.0, le=100.0)
+    preferred_language: Optional[str] = Field(None, max_length=10, description="ISO 639-1 language code")
 
 
 class LeadResponse(LeadBase):

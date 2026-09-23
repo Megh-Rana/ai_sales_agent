@@ -197,6 +197,29 @@ class WebsiteDiscoveryService:
                 return industry
         return "Business Services"
 
+    def _infer_language_from_location(self, location: str) -> str:
+        """Infer preferred language from location string (TC-33)."""
+        location_lower = location.lower()
+        
+        # Gujarati regions
+        if any(region in location_lower for region in ["ahmedabad", "surat", "rajkot", "vadodara", "gujarat", "gj"]):
+            return "gu"
+        
+        # Marathi regions
+        if any(region in location_lower for region in ["mumbai", "pune", "nagpur", "nashik", "maharashtra", "mh"]):
+            return "mr"
+        
+        # Hindi regions (broader North India)
+        if any(region in location_lower for region in [
+            "delhi", "noida", "gurgaon", "gurugram", "jaipur", "lucknow", "kanpur",
+            "agra", "varanasi", "patna", "indore", "bhopal", "chandigarh",
+            "uttar pradesh", "up", "rajasthan", "madhya pradesh", "mp", "bihar", "haryana", "hr"
+        ]):
+            return "hi"
+        
+        # Default to English for other regions and international
+        return "en"
+
     def _make_contact(self, domain: str) -> Dict[str, Any]:
         rnd = random.Random(sum(ord(c) for c in domain))
         fn = rnd.choice(["Arjun", "Vikram", "Neha", "Pooja", "Rahul", "Siddharth", "Ananya", "Rohan", "Priya", "Amit"])
@@ -245,6 +268,9 @@ class WebsiteDiscoveryService:
             if pat in text_corpus.lower():
                 location = loc
                 break
+
+        # Auto-infer preferred language based on location (TC-33)
+        preferred_language = self._infer_language_from_location(location)
 
         lead_id = f"lead-{abs(hash(domain + query)) % 9000 + 1000}"
         intent_score = min(96, max(72, 85 + hash(domain) % 12))
@@ -315,6 +341,7 @@ class WebsiteDiscoveryService:
             "status": "high-intent" if intent_score >= 80 else "discovered",
             "lastActivity": "Just now",
             "enrichmentState": "completed",
+            "preferredLanguage": preferred_language,  # TC-33: Auto-selected language based on location
             "companyIntelligence": {
                 "overview": f"{brand} — {snippet[:150]}" if snippet else f"{brand} operates within the {industry} sector.",
                 "scale": f"Active web presence at {domain} · {location}",

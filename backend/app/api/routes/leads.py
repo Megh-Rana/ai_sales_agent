@@ -1,7 +1,10 @@
 import math
+import csv
+import io
 from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.core.security import AuthenticatedUser, get_current_user
 from app.db.database import get_db
@@ -194,3 +197,98 @@ def delete_lead(
             detail=f"Lead with ID '{lead_id}' not found.",
         )
     return None
+
+
+@router.get(
+    "/export/csv",
+    summary="Export leads to CSV with same filters as list endpoint",
+)
+def export_leads_csv(
+    business_id: Optional[UUID] = Query(None, description="Filter by business ID"),
+    status_filter: Optional[str] = Query(None, alias="status", description="Filter by status"),
+    industry: Optional[str] = Query(None, description="Partial match filter by industry"),
+    location: Optional[str] = Query(None, description="Partial match filter by location"),
+    source: Optional[str] = Query(None, description="Filter by acquisition source"),
+    min_intent_score: Optional[float] = Query(None, ge=0.0, le=100.0, description="Filter by minimum intent score"),
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Exports leads to CSV format with all enrichment fields.
+    Uses same filtering logic as list endpoint but returns all results (no pagination).
+    """
+    # Fetch all matching leads without pagination
+    items, total = LeadService.list_leads(
+        db=db,
+        owner_id=current_user.id,
+        business_id=business_id,
+        status=status_filter,
+        industry=industry,
+        location=location,
+        source=source,
+        min_intent_score=min_intent_score,
+        sort_by="created_at",
+        sort_order="desc",
+        page=1,
+        page_size=10000,  # Large limit to get all results
+    )
+
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        "ID",
+        "Company Name",
+        "Contact Name",
+        "Contact Email",
+        "Contact Phone",
+        "Job Title",
+        "Industry",
+        "Location",
+        "Company Size",
+        "Website",
+        "LinkedIn Profile",
+        "Status",
+        "Intent Score",
+        "Source",
+        "Requirement",
+        "Created At",
+        "Updated At",
+    ])
+    
+    # Write data rows
+    for lead in items:
+        writer.writerow([
+            str(lead.id),
+            lead.company_name or "",
+            lead.contact_name or "",
+            lead.contact_email or "",
+            lead.contact_phone or "",
+            lead.job_title or "",
+            lead.industry or "",
+            lead.location or "",
+            lead.company_size or "",
+            lead.website or "",
+            lead.linkedin_profile or "",
+            lead.status or "",
+            lead.intent_score if lead.intent_score is not None else "",
+            lead.source or "",
+            lead.requirement or "",
+            lead.created_at.isoformat() if lead.created_at else "",
+            lead.updated_at.isoformat() if lead.updated_at else "",
+        ])
+    
+    # Prepare response
+    output.seek(0)
+    filename = f"leads_export_{current_user.id}_{items[0].created_at.strftime('%Y%m%d') if items else 'empty'}.csv"
+    
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "text/csv; charset=utf-8",
+        }
+    )

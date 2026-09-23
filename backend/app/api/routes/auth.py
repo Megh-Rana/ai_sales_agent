@@ -58,6 +58,7 @@ class UserResponse(BaseModel):
     email: str
     role: str
     full_name: Optional[str] = None
+    subscription_tier: str = "Starter"
     must_change_password: bool = False
 
 
@@ -193,6 +194,7 @@ def me(current_user: AuthenticatedUser = Depends(get_current_user), db: Session 
         email=current_user.email or (profile.email if profile else ""),
         role=current_user.role,
         full_name=profile.full_name if profile else None,
+        subscription_tier=getattr(profile, "subscription_tier", "Starter") if profile else "Starter",
         must_change_password=bool(getattr(profile, "must_change_password", False)) if profile else False,
     )
 
@@ -237,4 +239,55 @@ def change_password(
         "status": "success",
         "message": "Password changed successfully. You can now use your new password for all future logins.",
         "must_change_password": False,
+    }
+
+
+class UpdateSubscriptionRequest(BaseModel):
+    subscription_tier: str  # "Starter", "Growth", or "Enterprise"
+
+
+@router.put(
+    "/subscription",
+    summary="Update subscription tier for authenticated user",
+)
+def update_subscription(
+    body: UpdateSubscriptionRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Updates the user's subscription tier.
+    Allowed tiers: Starter, Growth, Enterprise.
+    """
+    allowed_tiers = ["Starter", "Growth", "Enterprise"]
+    if body.subscription_tier not in allowed_tiers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid subscription tier. Allowed: {', '.join(allowed_tiers)}",
+        )
+
+    profile = db.query(Profile).filter(Profile.id == current_user.id).first()
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User profile not found.")
+
+    old_tier = getattr(profile, "subscription_tier", "Starter")
+    profile.subscription_tier = body.subscription_tier
+    db.commit()
+    db.refresh(profile)
+
+    try:
+        log_activity(
+            db,
+            profile.id,
+            "subscription_change",
+            metadata={"old_tier": old_tier, "new_tier": body.subscription_tier}
+        )
+    except Exception:
+        pass
+
+    return {
+        "status": "success",
+        "message": f"Subscription tier updated to {body.subscription_tier}",
+        "subscription_tier": body.subscription_tier,
+        "old_tier": old_tier,
     }

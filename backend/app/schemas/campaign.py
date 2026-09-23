@@ -18,6 +18,11 @@ class CampaignCreate(BaseModel):
     status: str = Field("RUNNING", description="Initial campaign execution status")
     estimated_pipeline_value: Optional[str] = Field(None, description="Estimated total pipeline value")
     business_id: Optional[UUID] = Field(None, description="Optional business ID")
+    timezone: Optional[str] = Field("UTC", description="IANA timezone for scheduling (e.g., Asia/Kolkata)")
+    business_hours_start: Optional[str] = Field("09:00", description="Business hours start time (HH:MM)")
+    business_hours_end: Optional[str] = Field("18:00", description="Business hours end time (HH:MM)")
+    repeat_enabled: Optional[str] = Field("false", description="Enable repeat campaign (true/false)")
+    repeat_schedule: Optional[str] = Field(None, description="Repeat frequency: daily, weekly, monthly")
     lead_ids: Optional[List[UUID]] = Field(default_factory=list, description="List of real lead IDs to attach")
     leads: Optional[List[CampaignLeadCreate]] = Field(default_factory=list, description="Detailed lead hooks to attach")
 
@@ -52,6 +57,11 @@ class CampaignResponse(BaseModel):
     primary_channel: str
     status: str
     estimated_pipeline_value: Optional[str] = None
+    timezone: str = "UTC"
+    business_hours_start: str = "09:00"
+    business_hours_end: str = "18:00"
+    repeat_enabled: str = "false"
+    repeat_schedule: Optional[str] = None
     target_audience_count: int = 0
     contacted_count: int = 0
     qualified_count: int = 0
