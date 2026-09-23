@@ -14,11 +14,14 @@ import {
   CheckCircle2,
   Flame,
   Radio,
-  Languages
+  Languages,
+  Mail,
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import { DiscoveredLead } from '../../types/leads';
 import { Button } from '../ui/Button';
-import { Sparkles, RotateCcw } from 'lucide-react';
+import { getProspectTimezone, getCallingWindowStatus } from '../../utils/timezoneUtils';
 
 export interface PreCallViewProps {
   lead: DiscoveredLead;
@@ -26,6 +29,7 @@ export interface PreCallViewProps {
   currentPitch?: string;
   isGeneratingPitch?: boolean;
   onRegeneratePitch?: () => void;
+  onOpenEmailModal?: () => void;
 }
 
 export const PreCallView: React.FC<PreCallViewProps> = ({
@@ -33,7 +37,8 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
   onStartCallFlow,
   currentPitch,
   isGeneratingPitch,
-  onRegeneratePitch
+  onRegeneratePitch,
+  onOpenEmailModal
 }) => {
   const navigate = useNavigate();
 
@@ -43,6 +48,10 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
     lead.decisionMakerContact?.role || lead.decisionMaker?.role || 'Executive Leader';
   const decisionMakerPhone =
     lead.decisionMaker?.phone || (lead.decisionMakerContact?.phoneAvailable ? '+91 98201 54890' : '+91 98000 00000');
+
+  // Prospect Timezone & Calling Window Safety Analysis
+  const prospectTimezone = getProspectTimezone(lead.location, decisionMakerPhone);
+  const callingWindow = getCallingWindowStatus(prospectTimezone);
 
   const primarySignal = lead.buyingSignals?.[0];
   const brief = lead.callBrief;
@@ -111,12 +120,21 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
                 <span>{lead.location}</span>
                 <span className="text-foreground-tertiary">·</span>
                 <span>{lead.industry}</span>
+                <span className="text-foreground-tertiary">·</span>
+                {/* Prospect Local Time & Calling Window Badge */}
+                <span className="inline-flex items-center gap-1.5 font-medium text-foreground bg-surface-elevated px-2 py-0.5 rounded border border-border-subtle">
+                  <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span className="font-mono text-[11px] font-semibold">{callingWindow.localTimeFormatted}</span>
+                  <span className={`text-[10px] font-mono px-2 py-0.2 rounded-full border font-semibold ${callingWindow.badgeClass}`}>
+                    {callingWindow.label}
+                  </span>
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Primary Action Button */}
-          <div className="shrink-0 flex items-center gap-3">
+          {/* Primary Action Buttons */}
+          <div className="shrink-0 flex items-center gap-2.5">
             <Button
               variant="secondary"
               size="md"
@@ -126,12 +144,25 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
               Back to Lead
             </Button>
 
+            {onOpenEmailModal && (
+              <Button
+                variant="secondary"
+                size="md"
+                leftIcon={<Mail className="w-3.5 h-3.5 text-primary" />}
+                onClick={onOpenEmailModal}
+                className="text-xs font-medium"
+                title="Send prepared pitch to prospect via email"
+              >
+                Send Email
+              </Button>
+            )}
+
             <Button
               variant="primary"
               size="lg"
               leftIcon={<PhoneCall className="w-4 h-4" />}
               onClick={onStartCallFlow}
-              className="text-xs font-semibold px-6 shadow-sm"
+              className="text-xs font-semibold px-5 shadow-sm"
               title="Launch autonomous outbound call"
             >
               Start AI Call
@@ -173,7 +204,10 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
             <span>Default Language: English</span>
           </span>
           <span>·</span>
-          <span>Target Window: Active Business Hours</span>
+          <span className="flex items-center gap-1.5 text-foreground-secondary">
+            <Clock className="w-3 h-3 text-primary" />
+            <span>Target Window: {callingWindow.label} ({callingWindow.timezoneAbbr} · {callingWindow.localTimeFormatted})</span>
+          </span>
         </div>
       </header>
 
@@ -227,18 +261,31 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
                 <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
                 <span>AI Dynamically Generated Opening Pitch (Ollama)</span>
               </div>
-              {onRegeneratePitch && (
-                <button
-                  type="button"
-                  onClick={onRegeneratePitch}
-                  disabled={isGeneratingPitch}
-                  className="inline-flex items-center gap-1 text-[11px] font-mono text-primary hover:text-primary-hover transition-colors disabled:opacity-50 cursor-pointer"
-                  title="Regenerate dynamic pitch with Ollama"
-                >
-                  <RotateCcw className={`w-3 h-3 ${isGeneratingPitch ? 'animate-spin' : ''}`} />
-                  <span>{isGeneratingPitch ? 'Generating...' : 'Regenerate Pitch'}</span>
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {onOpenEmailModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenEmailModal}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-300 hover:text-white transition-colors cursor-pointer bg-slate-800/90 hover:bg-slate-700 px-2.5 py-1 rounded-md border border-slate-700/80 shadow-xs"
+                    title="Send this prepared pitch directly to the prospect via email"
+                  >
+                    <Mail className="w-3 h-3 text-primary" />
+                    <span>Send via Email</span>
+                  </button>
+                )}
+                {onRegeneratePitch && (
+                  <button
+                    type="button"
+                    onClick={onRegeneratePitch}
+                    disabled={isGeneratingPitch}
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-primary hover:text-primary-hover transition-colors disabled:opacity-50 cursor-pointer"
+                    title="Regenerate dynamic pitch with Ollama"
+                  >
+                    <RotateCcw className={`w-3 h-3 ${isGeneratingPitch ? 'animate-spin' : ''}`} />
+                    <span>{isGeneratingPitch ? 'Generating...' : 'Regenerate Pitch'}</span>
+                  </button>
+                )}
+              </div>
             </div>
             <p className="text-foreground leading-relaxed italic font-serif text-sm">
               "{currentPitch || brief?.opening || lead.suggestedOpeningHook || `Hello ${decisionMakerName}, this is Alex from Vidur AI regarding ${lead.companyName}. Do you have a quick minute?`}"

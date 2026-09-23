@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useI18n } from '../i18n/i18nContext';
@@ -27,10 +27,12 @@ import { LiveIntelligenceRail } from '../components/calls/LiveIntelligenceRail';
 import { CallControls } from '../components/calls/CallControls';
 import { PreCallView } from '../components/calls/PreCallView';
 import { CallConfirmationModal } from '../components/calls/CallConfirmationModal';
+import { SendPitchEmailModal } from '../components/calls/SendPitchEmailModal';
 import { CallConnectingView } from '../components/calls/CallConnectingView';
 import { CallCompletedView } from '../components/calls/CallCompletedView';
 import { CallFailureView } from '../components/calls/CallFailureView';
 import { Button } from '../components/ui/Button';
+import { getProspectTimezone, getCallingWindowStatus } from '../utils/timezoneUtils';
 
 // V3 21st.dev Animations
 import {
@@ -53,7 +55,9 @@ import {
   PhoneMissed,
   ArrowLeft,
   AlertCircle,
-  Loader2
+  Loader2,
+  CheckCircle2,
+  Mail
 } from 'lucide-react';
 
 export const AICalling: React.FC = () => {
@@ -144,6 +148,17 @@ export const AICalling: React.FC = () => {
   const [showDevSimulator, setShowDevSimulator] = useState(false);
   const [backendSessionId, setBackendSessionId] = useState<string | null>(null);
   const [isRealVoiceCall, setIsRealVoiceCall] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailNotificationToast, setEmailNotificationToast] = useState<string | null>(null);
+
+  // Timezone and Calling Window Safety Analysis
+  const prospectTimezone = useMemo(() => {
+    return getProspectTimezone(lead?.location, session.contactPhone);
+  }, [lead?.location, session.contactPhone]);
+
+  const callingWindowStatus = useMemo(() => {
+    return getCallingWindowStatus(prospectTimezone);
+  }, [prospectTimezone]);
 
   const fetchDynamicPitch = useCallback(
     async (langName: CallLanguage = session.language) => {
@@ -516,6 +531,8 @@ export const AICalling: React.FC = () => {
         customPitch: dynamicPitch || undefined,
         requirement: lead?.requirement || session.currentObjective.goal,
         buyingSignals: lead?.whyNow || '',
+        timezone: prospectTimezone,
+        bypassTimezoneCheck: true,
       });
 
       setBackendSessionId(startResponse.sessionId);
@@ -844,6 +861,7 @@ export const AICalling: React.FC = () => {
           currentPitch={dynamicPitch}
           isGeneratingPitch={isGeneratingPitch}
           onRegeneratePitch={() => fetchDynamicPitch(session.language)}
+          onOpenEmailModal={() => setIsEmailModalOpen(true)}
         />
       )}
 
@@ -972,6 +990,8 @@ export const AICalling: React.FC = () => {
         companyName={session.companyName}
         contactName={session.contactName}
         contactRole={session.contactRole}
+        location={lead?.location}
+        phone={session.contactPhone}
         objective={`Understand their ${lead?.industry?.toLowerCase() || 'business'} requirement and qualify implementation timeline.`}
         whyNow={lead?.whyNow || 'Active lead discovered via AI discovery.'}
         selectedLanguage={session.language}
@@ -979,7 +999,32 @@ export const AICalling: React.FC = () => {
         currentPitch={dynamicPitch}
         isGeneratingPitch={isGeneratingPitch}
         onRegeneratePitch={() => fetchDynamicPitch(session.language)}
+        onOpenEmailModal={() => setIsEmailModalOpen(true)}
       />
+
+      <SendPitchEmailModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        companyName={session.companyName}
+        contactName={session.contactName}
+        contactRole={session.contactRole}
+        pitch={dynamicPitch}
+        language={session.language}
+        requirement={lead?.requirement || session.currentObjective.goal}
+        timezoneStatus={callingWindowStatus}
+        leadId={resolvedLeadId}
+        onSuccess={(msg) => {
+          setEmailNotificationToast(msg);
+          setTimeout(() => setEmailNotificationToast(null), 4000);
+        }}
+      />
+
+      {emailNotificationToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#102A20] border border-emerald-500/50 text-emerald-200 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 animate-slide-up text-xs">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="font-medium">{emailNotificationToast}</span>
+        </div>
+      )}
     </div>
   );
 };

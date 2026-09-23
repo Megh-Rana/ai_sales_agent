@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   PhoneCall,
   Languages,
@@ -8,12 +8,17 @@ import {
   Building2,
   User,
   Radio,
-  Zap
+  Zap,
+  Clock,
+  AlertTriangle,
+  Mail,
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { CallLanguage } from '../../types/calls';
-import { Sparkles, RotateCcw } from 'lucide-react';
+import { getProspectTimezone, getCallingWindowStatus } from '../../utils/timezoneUtils';
 
 export interface CallConfirmationModalProps {
   isOpen: boolean;
@@ -22,6 +27,8 @@ export interface CallConfirmationModalProps {
   companyName: string;
   contactName: string;
   contactRole: string;
+  location?: string;
+  phone?: string;
   objective: string;
   whyNow?: string;
   selectedLanguage: CallLanguage;
@@ -29,6 +36,7 @@ export interface CallConfirmationModalProps {
   currentPitch?: string;
   isGeneratingPitch?: boolean;
   onRegeneratePitch?: () => void;
+  onOpenEmailModal?: () => void;
 }
 
 const AVAILABLE_LANGUAGES: CallLanguage[] = ['English', 'Hindi', 'Gujarati', 'Marathi'];
@@ -40,14 +48,24 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
   companyName,
   contactName,
   contactRole,
+  location,
+  phone,
   objective,
   whyNow,
   selectedLanguage,
   onLanguageChange,
   currentPitch,
   isGeneratingPitch,
-  onRegeneratePitch
+  onRegeneratePitch,
+  onOpenEmailModal
 }) => {
+  const [overrideRestricted, setOverrideRestricted] = useState(false);
+
+  // Timezone and Calling Window Evaluation
+  const prospectTimezone = getProspectTimezone(location, phone);
+  const callingWindow = getCallingWindowStatus(prospectTimezone);
+  const isRestricted = callingWindow.status === 'restricted';
+  const canLaunchCall = !isRestricted || overrideRestricted;
   return (
     <Modal
       isOpen={isOpen}
@@ -70,6 +88,16 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
               <p className="text-foreground-secondary">
                 {contactName} · <span className="text-foreground-tertiary">{contactRole}</span>
               </p>
+              {/* Prospect Local Time Display */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-foreground-secondary">
+                <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>
+                  Prospect Local Time: <strong className="text-foreground font-mono">{callingWindow.localTimeFormatted}</strong> ({callingWindow.timezoneAbbr})
+                </span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border font-semibold ${callingWindow.badgeClass}`}>
+                  {callingWindow.label}
+                </span>
+              </div>
             </div>
 
             <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/25 flex items-center justify-center text-primary font-mono font-bold text-xs shrink-0">
@@ -116,6 +144,43 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
           </div>
         </div>
 
+        {/* Restricted Window Compliance Warning */}
+        {isRestricted && (
+          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 space-y-2 text-xs animate-fade-in">
+            <div className="flex items-start gap-2 text-red-400 font-semibold">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>Quiet Hours Notice: Calling Outside Standard Hours</span>
+            </div>
+            <p className="text-slate-300 text-[11px] leading-relaxed">
+              {callingWindow.reason} Calling now risks low answer rate or non-compliance with outreach quiet hours.
+            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-red-500/20">
+              <label className="flex items-center gap-2 cursor-pointer text-slate-200 text-[11px] select-none">
+                <input
+                  type="checkbox"
+                  checked={overrideRestricted}
+                  onChange={(e) => setOverrideRestricted(e.target.checked)}
+                  className="rounded border-slate-700 text-primary focus:ring-primary h-3.5 w-3.5"
+                />
+                <span className="font-medium">Override warning and proceed with call</span>
+              </label>
+              {onOpenEmailModal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenEmailModal();
+                  }}
+                  className="text-primary hover:underline text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Send Pitch Email Instead</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Spoken Language Selection */}
         <div className="space-y-2">
           <label className="text-[10px] font-mono uppercase text-foreground-tertiary font-bold flex items-center gap-1.5">
@@ -153,17 +218,33 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
               <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
               Initial Spoken Pitch ({selectedLanguage})
             </span>
-            {onRegeneratePitch && (
-              <button
-                type="button"
-                onClick={onRegeneratePitch}
-                disabled={isGeneratingPitch}
-                className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
-              >
-                <RotateCcw className={`w-3 h-3 ${isGeneratingPitch ? 'animate-spin' : ''}`} />
-                <span>{isGeneratingPitch ? 'Generating...' : 'Regenerate'}</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {onOpenEmailModal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenEmailModal();
+                  }}
+                  className="text-[10px] font-mono text-slate-300 hover:text-white flex items-center gap-1 cursor-pointer bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700"
+                  title="Send this pitch via email"
+                >
+                  <Mail className="w-3 h-3 text-primary" />
+                  <span>Email Pitch</span>
+                </button>
+              )}
+              {onRegeneratePitch && (
+                <button
+                  type="button"
+                  onClick={onRegeneratePitch}
+                  disabled={isGeneratingPitch}
+                  className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  <RotateCcw className={`w-3 h-3 ${isGeneratingPitch ? 'animate-spin' : ''}`} />
+                  <span>{isGeneratingPitch ? 'Generating...' : 'Regenerate'}</span>
+                </button>
+              )}
+            </div>
           </div>
           <p className="text-foreground text-xs leading-relaxed italic font-serif">
             {isGeneratingPitch ? (
@@ -181,24 +262,45 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border-subtle">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
+        <div className="flex items-center justify-between pt-3 border-t border-border-subtle">
+          <div>
+            {onOpenEmailModal && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Mail className="w-3.5 h-3.5 text-primary" />}
+                onClick={() => {
+                  onClose();
+                  onOpenEmailModal();
+                }}
+                className="text-xs"
+              >
+                Send Email Instead
+              </Button>
+            )}
+          </div>
 
-          <Button
-            variant="primary"
-            size="md"
-            leftIcon={<PhoneCall className="w-4 h-4" />}
-            onClick={() => onConfirm(selectedLanguage)}
-            className="font-semibold text-xs px-5 shadow-sm"
-          >
-            Start AI Call
-          </Button>
+          <div className="flex items-center gap-2.5">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="primary"
+              size="md"
+              leftIcon={<PhoneCall className="w-4 h-4" />}
+              disabled={!canLaunchCall}
+              onClick={() => onConfirm(selectedLanguage)}
+              className="font-semibold text-xs px-5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!canLaunchCall ? 'Calling is restricted during prospect quiet hours. Please check override checkbox.' : 'Launch autonomous voice call'}
+            >
+              Start AI Call
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>

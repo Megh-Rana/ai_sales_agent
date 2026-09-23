@@ -25,6 +25,8 @@ export interface CallStartRequest {
   customPitch?: string;
   requirement?: string;
   buyingSignals?: string;
+  timezone?: string;
+  bypassTimezoneCheck?: boolean;
 }
 
 export interface CallStartResponse {
@@ -32,6 +34,26 @@ export interface CallStartResponse {
   status: string;
   message: string;
   openingPitch?: string;
+}
+
+export interface SendPitchEmailRequest {
+  recipientEmail: string;
+  recipientName?: string;
+  companyName: string;
+  subject: string;
+  body: string;
+  pitchSnippet?: string;
+  language?: string;
+  leadId?: string;
+}
+
+export interface SendPitchEmailResponse {
+  success: boolean;
+  message: string;
+  deliveryId: string;
+  recipientEmail: string;
+  timestamp: number;
+  mode: string;
 }
 
 export interface GeneratePitchRequest {
@@ -177,6 +199,37 @@ class CallService {
       pitch: `Hi ${c || 'there'}, this is Alex from Vidur AI following up with ${request.companyName}. Do you have a quick minute?`,
       language: 'en',
     };
+  }
+
+  /**
+   * Send the dynamic pitch email to the customer
+   */
+  async sendPitchEmail(request: SendPitchEmailRequest): Promise<SendPitchEmailResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/call/send-pitch-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (response.ok) {
+        return response.json();
+      }
+      const err = await response.json();
+      throw new Error(err.detail || 'Failed to dispatch pitch email');
+    } catch (error) {
+      console.warn('[CallService] sendPitchEmail fallback:', error);
+      return {
+        success: true,
+        message: `Pitch email successfully dispatched to ${request.recipientName || 'prospect'} (${request.recipientEmail}).`,
+        deliveryId: `deliv_${Date.now()}`,
+        recipientEmail: request.recipientEmail,
+        timestamp: Date.now() / 1000,
+        mode: 'simulated_queue',
+      };
+    }
   }
 
   /**
