@@ -175,7 +175,7 @@ class AIBrain:
         """Pre-load the model or verify cloud connection to avoid cold-start latency."""
         if self._model_warmed:
             return
-        provider = getattr(config, "LLM_PROVIDER", "sarvam")
+        provider = getattr(config, "LLM_PROVIDER", "ollama")
         if provider == "sarvam" and getattr(config, "HAS_SARVAM_KEY", False):
             try:
                 model_name = getattr(config, "SARVAM_LLM_MODEL", "sarvam-105b")
@@ -299,8 +299,8 @@ class AIBrain:
         return clean_text
 
     def _stream_raw_tokens(self, messages: list[dict]) -> Generator[str, None, None]:
-        """Stream raw tokens from the selected LLM provider (strictly Sarvam Cloud API by default)."""
-        provider = getattr(config, "LLM_PROVIDER", "sarvam")
+        """Stream raw tokens from the selected LLM provider (Ollama by default)."""
+        provider = getattr(config, "LLM_PROVIDER", "ollama")
 
         if provider == "sarvam" and getattr(config, "HAS_SARVAM_KEY", False):
             from sarvamai import SarvamAI

@@ -559,9 +559,9 @@ async def get_config():
         "maxConversationTurns": config.MAX_CONVERSATION_TURNS,
         "streamingEnabled": config.STREAMING_PIPELINE,
         "sttProvider": getattr(config, "STT_PROVIDER", "sarvam"),
-        "llmProvider": getattr(config, "LLM_PROVIDER", "sarvam"),
+        "llmProvider": getattr(config, "LLM_PROVIDER", "ollama"),
         "ttsProvider": getattr(config, "TTS_PROVIDER", "sarvam"),
-        "aiProvider": getattr(config, "AI_PROVIDER", "sarvam"),
+        "aiProvider": getattr(config, "AI_PROVIDER", "ollama"),
         "sarvamKeyConfigured": getattr(config, "HAS_SARVAM_KEY", False),
         "mode": "voice_interactive",
         "instruction": "This is a real voice agent powered by Sarvam AI. You will talk through your microphone."

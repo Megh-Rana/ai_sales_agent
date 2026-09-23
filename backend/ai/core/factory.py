@@ -34,7 +34,7 @@ def get_ai_provider(
     Factory function to retrieve an AI provider instance.
 
     Args:
-        provider_name: 'sarvam', 'ollama', 'mock', 'local' (defaults to config.AI_PROVIDER or env AI_PROVIDER, standard 'sarvam')
+        provider_name: 'ollama', 'sarvam', 'mock', 'local' (defaults to config.AI_PROVIDER or env AI_PROVIDER, standard 'ollama')
         model: Optional model name override
         force_new: If True, creates a fresh instance instead of returning cached singleton
         **kwargs: Additional parameters passed to provider constructor
@@ -49,7 +49,7 @@ def get_ai_provider(
         return _DEFAULT_PROVIDER_INSTANCE
 
     target_provider = (
-        provider_name or getattr(config, "AI_PROVIDER", os.getenv("AI_PROVIDER", "sarvam"))
+        provider_name or getattr(config, "AI_PROVIDER", os.getenv("AI_PROVIDER", "ollama"))
     ).lower()
 
     if target_provider not in _PROVIDER_MAP:

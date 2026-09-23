@@ -56,12 +56,21 @@ def main():
         "--no-stream", action="store_true",
         help="Disable streaming pipeline (synthesize full response before playing)"
     )
+    parser.add_argument(
+        "--provider", type=str,
+        default=getattr(config, "LLM_PROVIDER", "ollama"),
+        choices=["ollama", "sarvam", "param"],
+        help="LLM provider (default: ollama)"
+    )
 
     args = parser.parse_args()
 
     # Apply flag overrides to config before pipeline starts
     if args.no_stream:
         config.STREAMING_PIPELINE = False
+
+    config.LLM_PROVIDER = args.provider
+    config.AI_PROVIDER = args.provider
 
     print("\n🚀 AI Sales Voice Agent")
     print(f"   Company:   {args.company}")
@@ -70,13 +79,14 @@ def main():
     print(f"   Goal:      {args.goal}")
     print(f"   Mode:      {'Text' if args.text else 'Voice'}")
     print(f"   Streaming: {'Off' if args.no_stream else 'On'}")
-    provider = getattr(config, "LLM_PROVIDER", "sarvam")
+    provider = getattr(config, "LLM_PROVIDER", "ollama")
     if provider == "sarvam":
         model_str = "Sarvam 105B (Cloud API)"
     elif provider == "param":
         model_str = f"Param-1-7B (HF {config.PARAM_MODEL_ID})"
     else:
         model_str = f"Ollama ({config.OLLAMA_MODEL})"
+    print(f"   Provider:  {provider}")
     print(f"   Model:     {model_str}")
 
     pipeline = PipelineOrchestrator(
