@@ -183,7 +183,7 @@ else
     print_status "Virtual environment activated ($(python --version))"
 
     # Verify core dependencies are present; install if missing
-    if ! python -c "import fastapi, uvicorn" > /dev/null 2>&1; then
+    if ! python -c "import fastapi, uvicorn, bcrypt" > /dev/null 2>&1; then
         print_info "Missing dependencies detected in venv. Installing..."
         pip install --upgrade pip
         pip install -r requirements.txt

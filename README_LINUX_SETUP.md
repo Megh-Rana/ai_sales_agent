@@ -76,8 +76,17 @@ Backend (FastAPI)     :8000
 | Frontend UI | http://localhost:5173 | React web interface |
 | Backend API | http://localhost:8000 | FastAPI REST API |
 | API Docs (Swagger) | http://localhost:8000/docs | Interactive API docs |
-| ReDoc | http://localhost:8000/redoc | Alternative API docs |
-| Ollama | http://localhost:11434 | Local LLM service |
+---
+
+## 🔑 Default Seeded User Credentials
+
+| Name | Email | Password | Role | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Neel Agrawal** | `neel@vidur.in` | `neelit002` | `admin` | Pre-filled default on Login screen |
+| **Megh Rana** | `megh@vidur.in` | `meghce099` | `admin` | Full administrator privileges |
+| **Vidur Administrator** | `admin@vidur.in` | `admin@2026` | `admin` | Primary platform administrator |
+| **Vidur Admin (v1)** | `admin@vidur.ai` | `Admin@Vidur2024!` | `admin` | Legacy admin account |
+| **Test Rep** | `rep@vidur.ai` | `Rep@Vidur2024!` | `sales_rep` | Standard sales representative |
 
 ---
 

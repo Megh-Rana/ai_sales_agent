@@ -22,10 +22,20 @@ chmod +x run-all-linux.sh stop-all-linux.sh
 
 ## Access Points
 
-- **Frontend:** http://localhost:5173
+- **Frontend:** http://localhost:3000 (or http://localhost:5173)
 - **Backend API:** http://localhost:8000
 - **API Docs:** http://localhost:8000/docs
 - **Ollama:** http://localhost:11434
+
+## Seeded User Credentials
+
+| Name | Email | Password | Role | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Neel Agrawal** | `neel@vidur.in` | `neelit002` | `admin` | Default on login page |
+| **Megh Rana** | `megh@vidur.in` | `meghce099` | `admin` | Administrator |
+| **Vidur Administrator** | `admin@vidur.in` | `admin@2026` | `admin` | Primary Administrator |
+| **Vidur Admin (v1)** | `admin@vidur.ai` | `Admin@Vidur2024!` | `admin` | Legacy Admin |
+| **Test Rep** | `rep@vidur.ai` | `Rep@Vidur2024!` | `sales_rep` | Sales Representative |
 
 ## View Logs
 
