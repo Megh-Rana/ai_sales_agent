@@ -39,21 +39,21 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
               <Radar className="w-5 h-5 animate-pulse" />
             </div>
             <span className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold">
-              Live Sales Command
+              {t.opportunities?.liveSalesCommand || 'Live Sales Command'}
             </span>
           </div>
 
           <h1 className="text-h2 font-bold text-foreground tracking-tight flex items-center gap-3">
             <span>{t.navigation?.opportunities || 'Opportunity Radar'}</span>
             <span className="text-sm font-mono font-medium px-2.5 py-0.5 rounded-full bg-surface-1 border border-border-subtle text-foreground-secondary">
-              {totalCount} Active
+              {totalCount} {t.opportunities?.activeCount || 'Active'}
             </span>
           </h1>
 
           <p className="text-small text-foreground-tertiary mt-0.5 flex items-center gap-2">
-            <span className="text-amber-400 font-medium">{urgentCount} high-priority opportunities</span>
+            <span className="text-amber-400 font-medium">{urgentCount} {t.opportunities?.urgentSubtitle || 'high-priority opportunities'}</span>
             <span className="text-border-subtle">•</span>
-            <span>{newSignalsCount} new buying signals today</span>
+            <span>{newSignalsCount} {t.opportunities?.newSignalsToday || 'new buying signals today'}</span>
           </p>
         </div>
 
@@ -67,7 +67,7 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
             title="Scan for live market signals"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-amber-400' : ''}`} />
-            <span>{isRefreshing ? 'Scanning signals...' : 'Scan Signals'}</span>
+            <span>{isRefreshing ? (t.opportunities?.scanningSignals || 'Scanning signals...') : (t.opportunities?.scanSignals || 'Scan Signals')}</span>
           </button>
         </div>
       </div>
@@ -86,7 +86,7 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>All Radar ({totalCount})</span>
+            <span>{t.opportunities?.allRadar || 'All Radar'} ({totalCount})</span>
           </button>
 
           <button
@@ -99,7 +99,7 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
             }`}
           >
             <Flame className="w-3.5 h-3.5 text-amber-400" />
-            <span>Action Required ({urgentCount})</span>
+            <span>{t.opportunities?.actionRequired || 'Action Required'} ({urgentCount})</span>
           </button>
 
           <button
@@ -112,7 +112,7 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-            <span>Emerging / Warming ({totalCount - urgentCount})</span>
+            <span>{t.opportunities?.emergingWarming || 'Emerging / Warming'} ({totalCount - urgentCount})</span>
           </button>
         </div>
 
@@ -125,7 +125,7 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
               type="text"
               value={filters.search}
               onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
-              placeholder="Search lead or company..."
+              placeholder={t.opportunities?.searchPlaceholder || 'Search lead or company...'}
               aria-label="Search lead or company"
               className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-1 border border-border-subtle rounded-lg text-foreground placeholder:text-foreground-tertiary focus:outline-none focus:border-amber-500/50 transition-colors"
             />
@@ -138,10 +138,10 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
             aria-label="Filter by priority level"
             className="px-2.5 py-1.5 text-xs bg-surface-1 border border-border-subtle rounded-lg text-foreground focus:outline-none focus:border-amber-500/50 transition-colors cursor-pointer"
           >
-            <option value="all">All Priorities</option>
-            <option value="high">🔥 High Priority</option>
-            <option value="medium">Medium Priority</option>
-            <option value="low">Low Priority</option>
+            <option value="all">{t.opportunities?.allPriorities || 'All Priorities'}</option>
+            <option value="high">{t.opportunities?.highPriority || '🔥 High Priority'}</option>
+            <option value="medium">{t.opportunities?.mediumPriority || 'Medium Priority'}</option>
+            <option value="low">{t.opportunities?.lowPriority || 'Low Priority'}</option>
           </select>
 
           {/* Type Filter Select */}
@@ -151,7 +151,7 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
             aria-label="Filter by opportunity type"
             className="px-2.5 py-1.5 text-xs bg-surface-1 border border-border-subtle rounded-lg text-foreground focus:outline-none focus:border-amber-500/50 transition-colors cursor-pointer hidden lg:block"
           >
-            <option value="all">All Types</option>
+            <option value="all">{t.opportunities?.allTypes || 'All Types'}</option>
             <option value="BUYING_SIGNAL">Buying Signals</option>
             <option value="HOT_OPPORTUNITY">Hot Opportunities</option>
             <option value="POSITIVE_RESPONSE">Positive Responses</option>

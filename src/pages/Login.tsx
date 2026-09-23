@@ -3,10 +3,12 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Lock, Mail, AlertCircle, Timer } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-// Auth via real API: POST /api/auth/login (see AuthContext.tsx)
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../i18n/i18nContext';
+import { LanguageSelector } from '../components/ui/LanguageSelector';
 
 export const Login: React.FC = () => {
+  const { t } = useI18n();
   const [email, setEmail] = useState('neel@vidur.in');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,12 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 select-none">
+    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 select-none relative">
+      {/* Language Switcher in top right corner */}
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSelector variant="minimal" />
+      </div>
+
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
         {/* Brand Aperture */}
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-surface-1 border border-primary/40 text-primary shadow-md">
@@ -61,7 +68,7 @@ export const Login: React.FC = () => {
             Vidur
           </h2>
           <p className="text-caption text-foreground-secondary mt-1">
-            Enterprise AI Sales Intelligence Platform
+            {t.navigation?.aiSalesPlatform || 'Enterprise AI Sales Intelligence Platform'}
           </p>
         </div>
       </div>
@@ -69,9 +76,11 @@ export const Login: React.FC = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-surface-0 border border-border-default rounded-xl p-6 sm:p-8 shadow-2xl space-y-6">
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-foreground">Sign In to Workspace</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              {t.auth?.signInTitle || 'Sign In to Workspace'}
+            </h3>
             <p className="text-xs text-foreground-tertiary">
-              Enter your credentials to access the sales platform.
+              {t.auth?.signInSubtitle || 'Enter your credentials to access the sales platform.'}
             </p>
           </div>
 
@@ -97,7 +106,7 @@ export const Login: React.FC = () => {
 
           <form onSubmit={handleSignIn} className="space-y-4">
             <Input
-              label="Work Email"
+              label={t.auth?.emailLabel || 'Work Email'}
               type="email"
               id="login-email"
               required
@@ -110,7 +119,7 @@ export const Login: React.FC = () => {
 
             <div className="space-y-1">
               <Input
-                label="Password"
+                label={t.auth?.passwordLabel || 'Password'}
                 type="password"
                 id="login-password"
                 required
@@ -136,14 +145,14 @@ export const Login: React.FC = () => {
               disabled={isLockedOut}
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
-              {isLockedOut ? 'Account Locked' : 'Enter Sales Workspace'}
+              {isLockedOut ? 'Account Locked' : (t.auth?.signInButton || 'Enter Sales Workspace')}
             </Button>
           </form>
 
           <div className="pt-2 border-t border-border-subtle flex items-center justify-between text-xs text-foreground-secondary">
-            <span>Need a new sales workspace?</span>
+            <span>{t.auth?.dontHaveAccount || 'Need a new sales workspace?'}</span>
             <Link to="/register" className="text-primary hover:text-primary-hover font-semibold">
-              Create account
+              {t.auth?.registerNow || 'Create account'}
             </Link>
           </div>
         </div>

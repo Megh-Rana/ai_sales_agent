@@ -14,8 +14,10 @@ import { CardSkeleton, MetricSkeleton } from '../components/feedback/Skeleton';
 import { EmptyState } from '../components/feedback/EmptyState';
 import { ErrorState } from '../components/feedback/ErrorState';
 import { Zap, Activity } from 'lucide-react';
+import { useI18n } from '../i18n/i18nContext';
 
 export const Dashboard: React.FC = () => {
+  const { t } = useI18n();
   const [data, setData] = useState<DashboardData>(mockDashboardData);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [viewState, setViewState] = useState<'normal' | 'loading' | 'empty' | 'error'>('normal');
@@ -115,10 +117,10 @@ export const Dashboard: React.FC = () => {
               </div>
               <div>
                 <div className="text-small font-bold text-foreground flex items-center gap-2">
-                  <span>Revenue Command Center • 7 Opportunities & 4 Urgent Actions Pending</span>
+                  <span>{t.dashboard?.commandCenterBanner || 'Revenue Command Center • 7 Opportunities & 4 Urgent Actions Pending'}</span>
                 </div>
                 <div className="text-caption text-foreground-tertiary">
-                  ₹1.54 Cr Active Pipeline Value • 88% Automated Voice Qualification Rating
+                  {t.dashboard?.commandCenterSub || '₹1.54 Cr Active Pipeline Value • 88% Automated Voice Qualification Rating'}
                 </div>
               </div>
             </div>
@@ -127,7 +129,7 @@ export const Dashboard: React.FC = () => {
               type="button"
               className="px-3.5 py-1.5 text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary-hover rounded-lg transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
             >
-              Open Revenue Command Center →
+              {t.dashboard?.openCommandCenter || 'Open Revenue Command Center →'}
             </button>
           </div>
 
@@ -177,7 +179,7 @@ export const Dashboard: React.FC = () => {
                       }`}
                     >
                       <Zap className="w-3 h-3 text-signal-high" />
-                      <span>Live Signals (4)</span>
+                      <span>{t.dashboard?.liveSignalsTab || 'Live Signals'} (4)</span>
                     </button>
                     <button
                       type="button"
@@ -189,7 +191,7 @@ export const Dashboard: React.FC = () => {
                       }`}
                     >
                       <Activity className="w-3 h-3 text-primary" />
-                      <span>Agent Activity</span>
+                      <span>{t.dashboard?.agentActivityTab || 'Agent Activity'}</span>
                     </button>
                   </div>
                 </div>

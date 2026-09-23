@@ -3,21 +3,25 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Zap, Bot, ShieldCheck, Sun, Moon } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../i18n/i18nContext';
 
 function SettingsThemePanel() {
   const { theme, setTheme } = useTheme();
+  const { t } = useI18n();
 
   return (
     <div className="p-5 bg-surface rounded-xl border border-border-strong space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-h4 font-semibold text-foreground">Global Appearance Theme</h3>
+          <h3 className="text-h4 font-semibold text-foreground">
+            {t.routePlaceholder?.globalThemeTitle || 'Global Appearance Theme'}
+          </h3>
           <p className="text-caption text-foreground-secondary mt-0.5">
-            Select your preferred visual environment for long working sessions. Preference is saved automatically.
+            {t.routePlaceholder?.globalThemeDesc || 'Select your preferred visual environment for long working sessions. Preference is saved automatically.'}
           </p>
         </div>
         <span className="text-xs font-mono font-bold uppercase px-2 py-0.5 rounded bg-primary-muted text-primary border border-primary/30">
-          {theme === 'light' ? '☀ Day Mode Active' : '🌙 Night Mode Active'}
+          {theme === 'light' ? (t.routePlaceholder?.dayModeActive || '☀ Day Mode Active') : (t.routePlaceholder?.nightModeActive || '🌙 Night Mode Active')}
         </span>
       </div>
 
@@ -35,8 +39,12 @@ function SettingsThemePanel() {
             <Sun className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-small font-bold text-foreground">Day Mode (Light)</div>
-            <div className="text-caption text-foreground-tertiary">Soft neutral paper workspace for bright environments.</div>
+            <div className="text-small font-bold text-foreground">
+              {t.routePlaceholder?.dayMode || 'Day Mode (Light)'}
+            </div>
+            <div className="text-caption text-foreground-tertiary">
+              {t.routePlaceholder?.dayModeDesc || 'Soft neutral paper workspace for bright environments.'}
+            </div>
           </div>
         </button>
 
@@ -53,8 +61,12 @@ function SettingsThemePanel() {
             <Moon className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-small font-bold text-foreground">Night Mode (Dark)</div>
-            <div className="text-caption text-foreground-tertiary">Calm charcoal graphite theme for low-light focus.</div>
+            <div className="text-small font-bold text-foreground">
+              {t.routePlaceholder?.nightMode || 'Night Mode (Dark)'}
+            </div>
+            <div className="text-caption text-foreground-tertiary">
+              {t.routePlaceholder?.nightModeDesc || 'Calm charcoal graphite theme for low-light focus.'}
+            </div>
           </div>
         </button>
       </div>
@@ -71,12 +83,20 @@ export interface RoutePlaceholderProps {
 export const RoutePlaceholder: React.FC<RoutePlaceholderProps> = ({
   title,
   description,
-  badge = 'Pipeline Route Shell Active',
+  badge = 'Settings',
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const getPageTitle = () => {
+    if (location.pathname === '/settings') return t.routePlaceholder?.settingsTitle || title || 'Workspace Settings';
+    if (location.pathname === '/settings/profile') return t.routePlaceholder?.profileTitle || title || 'User Profile Settings';
+    if (location.pathname === '/settings/business') return t.routePlaceholder?.businessTitle || title || 'Business Workspace Settings';
+    if (location.pathname === '/settings/team') return t.routePlaceholder?.teamTitle || title || 'Team & Member Seats';
+    if (location.pathname === '/settings/notifications') return t.routePlaceholder?.notificationsTitle || title || 'Notification Channels';
+    if (location.pathname === '/settings/subscription') return t.routePlaceholder?.subscriptionTitle || title || 'Subscription & Billing';
+    if (location.pathname === '/settings/security') return t.routePlaceholder?.securityTitle || title || 'Security & SSO Settings';
     if (title) return title;
     const path = location.pathname.replace(/^\//, '');
     if (!path) return 'Dashboard Overview';
@@ -87,6 +107,13 @@ export const RoutePlaceholder: React.FC<RoutePlaceholderProps> = ({
   };
 
   const getPageDescription = () => {
+    if (location.pathname === '/settings') return t.routePlaceholder?.settingsDesc || description;
+    if (location.pathname === '/settings/profile') return t.routePlaceholder?.profileDesc || description;
+    if (location.pathname === '/settings/business') return t.routePlaceholder?.businessDesc || description;
+    if (location.pathname === '/settings/team') return t.routePlaceholder?.teamDesc || description;
+    if (location.pathname === '/settings/notifications') return t.routePlaceholder?.notificationsDesc || description;
+    if (location.pathname === '/settings/subscription') return t.routePlaceholder?.subscriptionDesc || description;
+    if (location.pathname === '/settings/security') return t.routePlaceholder?.securityDesc || description;
     if (description) return description;
     return `This structural route (${location.pathname}) is mounted in the Vidur App Shell architecture. Autonomous sales agent workflows and data models will connect here.`;
   };
@@ -96,7 +123,7 @@ export const RoutePlaceholder: React.FC<RoutePlaceholderProps> = ({
       {/* Route Header Badge & Path */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="px-2 py-0.5 rounded bg-primary-muted text-primary text-xs font-mono font-bold uppercase border border-primary/30">
-          {badge}
+          {t.navigation?.settings || badge}
         </span>
         <span className="text-caption font-mono text-foreground-tertiary bg-surface-1 px-2 py-0.5 rounded border border-border-subtle">
           {location.pathname}
@@ -119,30 +146,30 @@ export const RoutePlaceholder: React.FC<RoutePlaceholderProps> = ({
         <div className="p-4 bg-surface-1 rounded-lg border border-border-subtle space-y-1.5">
           <div className="flex items-center gap-2 text-small font-semibold text-foreground">
             <Zap className="w-4 h-4 text-signal-high shrink-0" />
-            <span>Intent Detection Engine</span>
+            <span>{t.routePlaceholder?.intentEngine || 'Intent Detection Engine'}</span>
           </div>
           <p className="text-caption text-foreground-secondary leading-normal">
-            Real-time trigger monitoring connected to workspace signal feeds.
+            {t.routePlaceholder?.intentEngineDesc || 'Real-time trigger monitoring connected to workspace signal feeds.'}
           </p>
         </div>
 
         <div className="p-4 bg-surface-1 rounded-lg border border-border-subtle space-y-1.5">
           <div className="flex items-center gap-2 text-small font-semibold text-foreground">
             <Bot className="w-4 h-4 text-primary shrink-0" />
-            <span>Autonomous Sales Agent</span>
+            <span>{t.routePlaceholder?.voiceAgent || 'Autonomous Sales Agent'}</span>
           </div>
           <p className="text-caption text-foreground-secondary leading-normal">
-            Voice agent dispatch, pitch brief synthesis, and qualification scorecard ready.
+            {t.routePlaceholder?.voiceAgentDesc || 'Voice agent dispatch, pitch brief synthesis, and qualification scorecard ready.'}
           </p>
         </div>
 
         <div className="p-4 bg-surface-1 rounded-lg border border-border-subtle space-y-1.5">
           <div className="flex items-center gap-2 text-small font-semibold text-foreground">
             <ShieldCheck className="w-4 h-4 text-signal-qualified shrink-0" />
-            <span>Enterprise RBAC</span>
+            <span>{t.routePlaceholder?.enterpriseRbac || 'Enterprise RBAC'}</span>
           </div>
           <p className="text-caption text-foreground-secondary leading-normal">
-            Strict workspace isolation and immutable audit logging enforced.
+            {t.routePlaceholder?.enterpriseRbacDesc || 'Strict workspace isolation and immutable audit logging enforced.'}
           </p>
         </div>
       </div>
@@ -158,12 +185,12 @@ export const RoutePlaceholder: React.FC<RoutePlaceholderProps> = ({
         )}
         <Link to="/dashboard">
           <Button variant="secondary" size="md" leftIcon={<ArrowLeft className="w-4 h-4" />}>
-            Back to Dashboard
+            {t.routePlaceholder?.backToDashboard || 'Back to Dashboard'}
           </Button>
         </Link>
         <Link to="/leads">
           <Button variant="ghost" size="md">
-            View Opportunities
+            {t.routePlaceholder?.viewOpportunities || 'View Opportunities'}
           </Button>
         </Link>
       </div>

@@ -11,8 +11,10 @@ import { CampaignSkeleton } from '../components/campaigns/CampaignSkeleton';
 import { CampaignEmptyState } from '../components/campaigns/CampaignEmptyState';
 import { CampaignErrorState } from '../components/campaigns/CampaignErrorState';
 import { Target } from 'lucide-react';
+import { useI18n } from '../i18n/i18nContext';
 
 export const Campaigns: React.FC = () => {
+  const { t } = useI18n();
   const [campaignsList, setCampaignsList] = useState<SalesCampaign[]>(mockCampaignsData);
   const [viewState, setViewState] = useState<'normal' | 'loading' | 'empty' | 'error'>('normal');
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
@@ -106,11 +108,11 @@ export const Campaigns: React.FC = () => {
                   <Target className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <h2 className="text-caption font-bold text-foreground tracking-tight uppercase font-mono">
-                  Active & Scheduled Campaigns ({campaignsList.length})
+                  {t.campaigns?.activeScheduled || 'Active & Scheduled Campaigns'} ({campaignsList.length})
                 </h2>
               </div>
               <span className="text-caption text-foreground-tertiary font-mono">
-                Sorted by Recency & Pipeline Value
+                {t.campaigns?.sortedByRecency || 'Sorted by Recency & Pipeline Value'}
               </span>
             </div>
 

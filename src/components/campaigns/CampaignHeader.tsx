@@ -33,14 +33,14 @@ export const CampaignHeader: React.FC<CampaignHeaderProps> = ({
               <Target className="w-5 h-5" aria-hidden="true" />
             </div>
             <h1 className="text-h2 font-bold text-foreground tracking-tight">
-              {t.navigation?.campaigns || 'Outreach Cadences & Campaigns'}
+              {t.campaigns?.title || 'Outreach Cadences & Campaigns'}
             </h1>
             <span className="px-2.5 py-0.5 text-caption font-semibold rounded-full bg-signal-qualified/10 text-signal-qualified border border-signal-qualified/30">
-              {activeCount} Active Cadences
+              {activeCount} {t.campaigns?.activeCadences || 'Active Cadences'}
             </span>
           </div>
           <p className="text-small text-foreground-secondary font-normal pl-0.5">
-            Turn high-intent discovered leads into structured, multi-touch sales campaigns.
+            {t.campaigns?.subtitle || 'Turn high-intent discovered leads into structured, multi-touch sales campaigns.'}
           </p>
         </div>
 
@@ -48,7 +48,7 @@ export const CampaignHeader: React.FC<CampaignHeaderProps> = ({
         <div className="flex flex-wrap items-center gap-3">
           {/* Pipeline Value Badge */}
           <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-surface-1 border border-border-subtle text-caption font-mono">
-            <span className="text-foreground-tertiary">Pipeline Value:</span>
+            <span className="text-foreground-tertiary">{t.campaigns?.pipelineValue || 'Pipeline Value:'}</span>
             <span className="text-foreground font-bold">{totalPipelineValue}</span>
           </div>
 
@@ -97,7 +97,7 @@ export const CampaignHeader: React.FC<CampaignHeaderProps> = ({
             className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-caption transition-all shadow-xs focus:outline-none focus:ring-1 focus:ring-primary"
           >
             <Plus className="w-4 h-4" aria-hidden="true" />
-            <span>Create Campaign</span>
+            <span>{t.campaigns?.createCampaign || 'Create Campaign'}</span>
           </button>
         </div>
       </div>

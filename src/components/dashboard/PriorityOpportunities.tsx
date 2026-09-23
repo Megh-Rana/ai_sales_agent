@@ -4,6 +4,7 @@ import { Opportunity } from '../../types/sales';
 import { PriorityOpportunity } from './PriorityOpportunity';
 import { Button } from '../ui/Button';
 import { Link } from 'react-router-dom';
+import { useI18n } from '../../i18n/i18nContext';
 
 export interface PriorityOpportunitiesProps {
   opportunities: Opportunity[];
@@ -16,6 +17,7 @@ export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
   onCallOpportunity,
   className = '',
 }) => {
+  const { t } = useI18n();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'high' | 'qualified'>('all');
 
@@ -40,14 +42,14 @@ export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-h4 font-bold text-foreground tracking-tight">
-                Priority Opportunities Queue
+                {t.dashboard?.priorityQueueTitle || 'Priority Opportunities Queue'}
               </h3>
               <span className="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold bg-surface-elevated text-foreground-secondary border border-border-subtle">
                 {filtered.length} of {opportunities.length}
               </span>
             </div>
             <div className="text-caption text-foreground-tertiary">
-              Ranked dynamically by intent momentum and actionable buying signals
+              {t.dashboard?.priorityQueueSub || 'Ranked dynamically by intent momentum and actionable buying signals'}
             </div>
           </div>
         </div>
@@ -63,7 +65,7 @@ export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
                 : 'text-foreground-secondary hover:text-foreground'
             }`}
           >
-            All Leads
+            {t.dashboard?.allOpportunities || 'All Leads'}
           </button>
           <button
             type="button"
@@ -74,7 +76,7 @@ export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
                 : 'text-foreground-secondary hover:text-foreground'
             }`}
           >
-            Score &ge; 85
+            {t.dashboard?.highIntent || 'Score ≥ 85'}
           </button>
           <button
             type="button"
@@ -85,7 +87,7 @@ export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
                 : 'text-foreground-secondary hover:text-foreground'
             }`}
           >
-            Qualified Only
+            {t.dashboard?.filterCallReady || 'Qualified Only'}
           </button>
         </div>
       </div>

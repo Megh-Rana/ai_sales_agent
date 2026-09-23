@@ -11,6 +11,7 @@ import { OpportunityEmptyState } from '../components/opportunities/OpportunityEm
 import { OpportunityErrorState } from '../components/opportunities/OpportunityErrorState';
 import { Flame, Sparkles, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useI18n } from '../i18n/i18nContext';
 
 // Convert queued DiscoveredLeads into SalesOpportunity format
 function buildOpportunitiesFromQueue(): SalesOpportunity[] {
@@ -67,6 +68,7 @@ function buildOpportunitiesFromQueue(): SalesOpportunity[] {
 }
 
 export const Opportunities: React.FC = () => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { id: paramOppId } = useParams<{ id?: string }>();
   const [opportunities, setOpportunities] = useState<SalesOpportunity[]>(() => {
@@ -211,10 +213,10 @@ export const Opportunities: React.FC = () => {
                       <Flame className="w-4 h-4" />
                     </div>
                     <h2 className="text-h4 font-bold text-foreground tracking-tight">
-                      Action Required Now
+                      {t.opportunities?.actionRequiredNow || 'Action Required Now'}
                     </h2>
                     <span className="text-xs font-mono font-medium text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-                      {urgentOpportunities.length} Urgent
+                      {urgentOpportunities.length} {t.dashboard?.urgentActionable || 'Urgent'}
                     </span>
                   </div>
                   <span className="text-caption text-foreground-tertiary">
@@ -247,10 +249,10 @@ export const Opportunities: React.FC = () => {
                       <Sparkles className="w-4 h-4" />
                     </div>
                     <h2 className="text-h4 font-bold text-foreground tracking-tight">
-                      Emerging & Warming Opportunities
+                      {t.opportunities?.emergingOpportunities || 'Emerging & Warming Opportunities'}
                     </h2>
                     <span className="text-xs font-mono font-medium text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/30">
-                      {emergingOpportunities.length} Warming
+                      {emergingOpportunities.length} {t.opportunities?.emergingWarming || 'Warming'}
                     </span>
                   </div>
                   <span className="text-caption text-foreground-tertiary">

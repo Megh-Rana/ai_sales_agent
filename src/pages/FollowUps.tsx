@@ -10,8 +10,10 @@ import { FollowUpErrorState } from '../components/followUps/FollowUpErrorState';
 import { FollowUpSchedulerModal } from '../components/sales/workflow/FollowUpSchedulerModal';
 import { FollowUpItem } from '../types/followUp';
 import { CalendarCheck, Filter, Zap, Clock, ShieldCheck } from 'lucide-react';
+import { useI18n } from '../i18n/i18nContext';
 
 export const FollowUps: React.FC = () => {
+  const { t } = useI18n();
   const [items, setItems] = useState<ExtendedFollowUpItem[]>(mockFollowUpDataset);
   const [activeTab, setActiveTab] = useState<'ALL' | 'CRITICAL' | 'DUE_TODAY' | 'UPCOMING' | 'WAITING'>('ALL');
   const [viewState, setViewState] = useState<'normal' | 'loading' | 'empty' | 'error'>('normal');
@@ -125,11 +127,11 @@ export const FollowUps: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-3">
             <div className="flex flex-wrap items-center gap-2">
               {[
-                { id: 'ALL', label: `All Items (${items.length})` },
-                { id: 'CRITICAL', label: `Critical Urgent (${urgentCount})` },
-                { id: 'DUE_TODAY', label: `Due Today (${dueTodayCount})` },
-                { id: 'UPCOMING', label: 'Upcoming' },
-                { id: 'WAITING', label: 'Waiting for Prospect' },
+                { id: 'ALL', label: `${t.followUps?.allItems || 'All Items'} (${items.length})` },
+                { id: 'CRITICAL', label: `${t.followUps?.criticalUrgent || 'Critical Urgent'} (${urgentCount})` },
+                { id: 'DUE_TODAY', label: `${t.followUps?.dueToday || 'Due Today'} (${dueTodayCount})` },
+                { id: 'UPCOMING', label: t.followUps?.upcoming || 'Upcoming' },
+                { id: 'WAITING', label: t.followUps?.waiting || 'Waiting for Prospect' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -147,7 +149,7 @@ export const FollowUps: React.FC = () => {
             </div>
 
             <span className="text-caption text-foreground-tertiary font-mono hidden md:inline">
-              Prioritized by Buying Intent & Urgency
+              {t.followUps?.prioritizedBy || 'Prioritized by Buying Intent & Urgency'}
             </span>
           </div>
 
