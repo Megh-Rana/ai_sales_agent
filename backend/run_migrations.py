@@ -11,79 +11,100 @@ from pathlib import Path
 # Add backend to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from sqlalchemy import text
-from app.db.database import engine
+from sqlalchemy import text, inspect
+from app.db.database import engine, is_sqlite
+
+
+MIGRATION_COLUMNS = [
+    # (table, column, type_and_default_sqlite, type_and_default_postgres)
+    ("profiles", "subscription_tier", "VARCHAR(50) DEFAULT 'Starter' NOT NULL", "VARCHAR(50) DEFAULT 'Starter' NOT NULL"),
+    ("campaigns", "timezone", "VARCHAR(50) DEFAULT 'UTC' NOT NULL", "VARCHAR(50) DEFAULT 'UTC' NOT NULL"),
+    ("campaigns", "business_hours_start", "VARCHAR(10) DEFAULT '09:00' NOT NULL", "VARCHAR(10) DEFAULT '09:00' NOT NULL"),
+    ("campaigns", "business_hours_end", "VARCHAR(10) DEFAULT '18:00' NOT NULL", "VARCHAR(10) DEFAULT '18:00' NOT NULL"),
+    ("campaigns", "repeat_enabled", "VARCHAR(10) DEFAULT 'false' NOT NULL", "VARCHAR(10) DEFAULT 'false' NOT NULL"),
+    ("campaigns", "repeat_schedule", "VARCHAR(50)", "VARCHAR(50)"),
+    ("leads", "preferred_language", "VARCHAR(10) DEFAULT 'en' NOT NULL", "VARCHAR(10) DEFAULT 'en' NOT NULL"),
+]
+
+MIGRATION_INDEXES = [
+    ("idx_profiles_subscription_tier", "profiles", "subscription_tier"),
+    ("idx_campaigns_timezone", "campaigns", "timezone"),
+    ("idx_campaigns_repeat_enabled", "campaigns", "repeat_enabled"),
+    ("idx_leads_preferred_language", "leads", "preferred_language"),
+]
 
 
 def run_migration():
-    """Run the improvements migration SQL script"""
-    
-    migration_file = Path(__file__).parent / "migrations" / "add_improvements_fields.sql"
-    
-    if not migration_file.exists():
-        print(f"❌ Migration file not found: {migration_file}")
-        return False
-    
+    """Run the improvements migration across supported database engines (SQLite and PostgreSQL)"""
     print("=" * 70)
     print("Database Migration: Add Improvements Fields")
     print("=" * 70)
     print()
-    
-    # Read migration SQL
-    with open(migration_file, 'r') as f:
-        migration_sql = f.read()
-    
+
     try:
         print("📊 Connecting to database...")
         with engine.connect() as conn:
-            # Check current database
-            result = conn.execute(text("SELECT current_database()"))
-            db_name = result.scalar()
-            print(f"✓ Connected to database: {db_name}")
+            if is_sqlite:
+                db_name = engine.url.database or "SQLite (local)"
+            else:
+                db_name = conn.execute(text("SELECT current_database()")).scalar()
+            print(f"✓ Connected to database: {db_name} (engine: {'SQLite' if is_sqlite else 'PostgreSQL'})")
             print()
-            
+
             print("🔄 Applying migrations...")
             print("-" * 70)
-            
-            # Execute migration (it's wrapped in BEGIN/COMMIT)
-            conn.execute(text(migration_sql))
-            conn.commit()
-            
+
+            inspector = inspect(conn)
+            existing_tables = set(inspector.get_table_names())
+
+            for table, col, sqlite_def, pg_def in MIGRATION_COLUMNS:
+                if table not in existing_tables:
+                    print(f"  ⚠ Table '{table}' does not exist yet, skipping column '{col}'")
+                    continue
+
+                existing_cols = {c["name"] for c in inspector.get_columns(table)}
+                if col not in existing_cols:
+                    col_def = sqlite_def if is_sqlite else pg_def
+                    if is_sqlite:
+                        sql = f"ALTER TABLE {table} ADD COLUMN {col} {col_def};"
+                    else:
+                        sql = f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {col_def};"
+                    conn.execute(text(sql))
+                    conn.commit()
+                    # Re-inspect so subsequent checks see the newly added column
+                    inspector = inspect(conn)
+                    print(f"  ✓ Added {table}.{col}")
+                else:
+                    print(f"  ℹ Column {table}.{col} already exists")
+
+            # Create indexes
+            for idx_name, table, col in MIGRATION_INDEXES:
+                if table in existing_tables:
+                    try:
+                        conn.execute(text(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table}({col});"))
+                        conn.commit()
+                    except Exception:
+                        pass
+
             print("-" * 70)
             print()
-            
+
             # Verify columns exist
             print("✓ Verifying new columns...")
-            
-            tables_to_check = [
-                ("profiles", "subscription_tier"),
-                ("campaigns", "timezone"),
-                ("campaigns", "business_hours_start"),
-                ("campaigns", "business_hours_end"),
-                ("campaigns", "repeat_enabled"),
-                ("campaigns", "repeat_schedule"),
-                ("leads", "preferred_language"),
-            ]
-            
+            inspector = inspect(conn)
             all_exist = True
-            for table, column in tables_to_check:
-                check_sql = text("""
-                    SELECT EXISTS (
-                        SELECT 1 FROM information_schema.columns 
-                        WHERE table_name = :table AND column_name = :column
-                    )
-                """)
-                result = conn.execute(check_sql, {"table": table, "column": column})
-                exists = result.scalar()
-                
+            for table, col, _, _ in MIGRATION_COLUMNS:
+                if table not in existing_tables:
+                    continue
+                current_cols = {c["name"] for c in inspector.get_columns(table)}
+                exists = col in current_cols
                 status = "✓" if exists else "✗"
-                print(f"  {status} {table}.{column}")
-                
+                print(f"  {status} {table}.{col}")
                 if not exists:
                     all_exist = False
-            
+
             print()
-            
+
             if all_exist:
                 print("=" * 70)
                 print("✅ Migration completed successfully!")
@@ -99,7 +120,7 @@ def run_migration():
             else:
                 print("❌ Migration verification failed - some columns are missing")
                 return False
-                
+
     except Exception as e:
         print()
         print("=" * 70)

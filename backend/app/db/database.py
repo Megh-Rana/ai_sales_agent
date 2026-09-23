@@ -56,12 +56,43 @@ def init_db():
                 except Exception:
                     pass
 
-            # Safe migration for profiles.must_change_password
+            # Safe migration for profiles.must_change_password and subscription_tier
+            for col_name, col_def_sq, col_def_pg in [
+                ("must_change_password", "BOOLEAN DEFAULT 0", "BOOLEAN DEFAULT FALSE"),
+                ("subscription_tier", "VARCHAR(50) DEFAULT 'Starter' NOT NULL", "VARCHAR(50) DEFAULT 'Starter' NOT NULL"),
+            ]:
+                try:
+                    if is_sqlite:
+                        conn.execute(text(f"ALTER TABLE profiles ADD COLUMN {col_name} {col_def_sq};"))
+                    else:
+                        conn.execute(text(f"ALTER TABLE profiles ADD COLUMN IF NOT EXISTS {col_name} {col_def_pg};"))
+                    conn.commit()
+                except Exception:
+                    pass
+
+            # Safe migration for campaigns scheduling fields
+            for col_name, col_def in [
+                ("timezone", "VARCHAR(50) DEFAULT 'UTC' NOT NULL"),
+                ("business_hours_start", "VARCHAR(10) DEFAULT '09:00' NOT NULL"),
+                ("business_hours_end", "VARCHAR(10) DEFAULT '18:00' NOT NULL"),
+                ("repeat_enabled", "VARCHAR(10) DEFAULT 'false' NOT NULL"),
+                ("repeat_schedule", "VARCHAR(50)"),
+            ]:
+                try:
+                    if is_sqlite:
+                        conn.execute(text(f"ALTER TABLE campaigns ADD COLUMN {col_name} {col_def};"))
+                    else:
+                        conn.execute(text(f"ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS {col_name} {col_def};"))
+                    conn.commit()
+                except Exception:
+                    pass
+
+            # Safe migration for leads.preferred_language
             try:
                 if is_sqlite:
-                    conn.execute(text("ALTER TABLE profiles ADD COLUMN must_change_password BOOLEAN DEFAULT 0;"))
+                    conn.execute(text("ALTER TABLE leads ADD COLUMN preferred_language VARCHAR(10) DEFAULT 'en' NOT NULL;"))
                 else:
-                    conn.execute(text("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE;"))
+                    conn.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS preferred_language VARCHAR(10) DEFAULT 'en' NOT NULL;"))
                 conn.commit()
             except Exception:
                 pass
