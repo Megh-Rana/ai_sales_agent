@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   PhoneCall,
+  Phone,
   Languages,
   Target,
   ShieldCheck,
@@ -23,7 +24,7 @@ import { getProspectTimezone, getCallingWindowStatus } from '../../utils/timezon
 export interface CallConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (selectedLanguage: CallLanguage, callMode?: 'browser' | 'twilio_pstn') => void;
+  onConfirm: (selectedLanguage: CallLanguage, callMode?: 'browser' | 'twilio_pstn', phoneNumber?: string) => void;
   companyName: string;
   contactName: string;
   contactRole: string;
@@ -61,6 +62,13 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
 }) => {
   const [overrideRestricted, setOverrideRestricted] = useState(false);
   const [callMode, setCallMode] = useState<'browser' | 'twilio_pstn'>('twilio_pstn');
+  const [targetPhone, setTargetPhone] = useState(phone || '+91 98201 54890');
+
+  useEffect(() => {
+    if (phone) {
+      setTargetPhone(phone);
+    }
+  }, [phone]);
 
   // Timezone and Calling Window Evaluation
   const prospectTimezone = getProspectTimezone(location, phone);
@@ -243,6 +251,30 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
               </div>
             </button>
           </div>
+
+          {callMode === 'twilio_pstn' && (
+            <div className="p-3 rounded-lg bg-surface-elevated/80 border border-primary/20 space-y-1.5 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-primary" />
+                  <span>Target Phone Number to Ring</span>
+                </label>
+                <span className="text-[10px] font-mono text-foreground-tertiary">
+                  E.164 format (with country code)
+                </span>
+              </div>
+              <input
+                type="tel"
+                value={targetPhone}
+                onChange={(e) => setTargetPhone(e.target.value)}
+                placeholder="+919876543210 or +15551234567"
+                className="w-full bg-surface border border-border-subtle rounded-md px-3 py-1.5 text-xs font-mono text-foreground placeholder:text-foreground-tertiary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+              <p className="text-[10px] text-foreground-tertiary">
+                Enter your mobile number to test an incoming call directly on your real phone.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Spoken Language Selection */}
@@ -358,7 +390,7 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
               size="md"
               leftIcon={<PhoneCall className="w-4 h-4" />}
               disabled={!canLaunchCall}
-              onClick={() => onConfirm(selectedLanguage, callMode)}
+              onClick={() => onConfirm(selectedLanguage, callMode, targetPhone)}
               className="font-semibold text-xs px-5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               title={!canLaunchCall ? 'Calling is restricted during prospect quiet hours. Please check override checkbox.' : 'Launch autonomous voice call'}
             >

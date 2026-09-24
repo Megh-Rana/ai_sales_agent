@@ -489,7 +489,11 @@ export const AICalling: React.FC = () => {
     setIsConfirmationOpen(true);
   };
 
-  const handleConfirmStart = async (language: CallLanguage, callMode: 'browser' | 'twilio_pstn' = 'twilio_pstn') => {
+  const handleConfirmStart = async (
+    language: CallLanguage,
+    callMode: 'browser' | 'twilio_pstn' = 'twilio_pstn',
+    targetPhone?: string
+  ) => {
     setIsConfirmationOpen(false);
     clearAllTimeouts();
     stepIndexRef.current = 0;
@@ -502,6 +506,7 @@ export const AICalling: React.FC = () => {
       'Marathi':  'mr',
     };
     const langCode = LANG_CODE_MAP[language] ?? 'en';
+    const effectivePhone = targetPhone?.trim() || session.contactPhone;
 
     setSession((prev) => ({
       ...prev,
@@ -511,6 +516,7 @@ export const AICalling: React.FC = () => {
       duration: 0,
       transcript: [],
       intelligenceEvents: [],
+      contactPhone: effectivePhone || prev.contactPhone,
       carrier: callMode === 'twilio_pstn' ? 'Twilio Elastic SIP Trunk' : 'Internal Web Audio',
       qualification: JSON.parse(JSON.stringify(INITIAL_QUALIFICATION_DIMENSIONS))
     }));
@@ -521,7 +527,7 @@ export const AICalling: React.FC = () => {
       try {
         const twilioCall = await callService.dialTwilioPstn({
           leadId: resolvedLeadId,
-          toPhone: session.contactPhone,
+          toPhone: effectivePhone,
           language: langCode,
           enableAmd: true,
         });
@@ -531,7 +537,7 @@ export const AICalling: React.FC = () => {
         setIsRealVoiceCall(true);
 
         setConnectingStageText(`Twilio PSTN carrier trunk active (SID: ${twilioCall.provider_call_id || twilioCall.id}). Ringing prospect...`);
-        toast.success(`Twilio carrier call dispatched to ${session.contactPhone || 'prospect'}`, {
+        toast.success(`Twilio carrier call dispatched to ${effectivePhone || 'prospect'}`, {
           description: 'PSTN trunk active. Audio powered by internal Sarvam Bulbul TTS + Ollama Gemma 3.',
         });
 
