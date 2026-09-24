@@ -35,6 +35,8 @@ cleanup() {
             kill "$pid" 2>/dev/null || true
         fi
     done
+    pkill -f "ssh.*localhost.run" 2>/dev/null || true
+    rm -f "$ROOT_DIR/logs/tunnel_url.txt" 2>/dev/null || true
     kill $(jobs -p) 2>/dev/null || true
     echo -e "${GREEN}✓ All services stopped cleanly.${NC}"
     exit 0
@@ -134,6 +136,34 @@ for i in {1..30}; do
 done
 
 # ==============================================================================
+# 3.5. START TWILIO PSTN CARRIER TUNNEL (localhost.run)
+# ==============================================================================
+echo -e "\n${BLUE}Configuring Twilio PSTN Carrier Tunnel (localhost.run)...${NC}"
+mkdir -p "$ROOT_DIR/logs"
+pkill -f "ssh.*localhost.run" 2>/dev/null || true
+rm -f "$ROOT_DIR/logs/tunnel_url.txt"
+
+# Launch SSH reverse tunnel to localhost.run
+# nokey@localhost.run enables instant keyless TLS tunneling for port 8000
+nohup ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -R 80:localhost:8000 nokey@localhost.run > "$ROOT_DIR/logs/tunnel.log" 2>&1 &
+TUNNEL_PID=$!
+PIDS+=($TUNNEL_PID)
+
+TUNNEL_URL=""
+for i in {1..12}; do
+    if [ -f "$ROOT_DIR/logs/tunnel.log" ]; then
+        TUNNEL_URL=$(grep -o -E 'https://[a-zA-Z0-9.-]+(\.lhr\.life|\.localhost\.run)' "$ROOT_DIR/logs/tunnel.log" | tail -n 1)
+        if [ -n "$TUNNEL_URL" ]; then
+            echo "$TUNNEL_URL" > "$ROOT_DIR/logs/tunnel_url.txt"
+            export TWILIO_WEBHOOK_BASE_URL="$TUNNEL_URL"
+            print_status "Twilio Carrier Public Tunnel active: $TUNNEL_URL"
+            break
+        fi
+    fi
+    sleep 0.5
+done
+
+# ==============================================================================
 # 4. START FRONTEND APPLICATION
 # ==============================================================================
 echo -e "\n${BLUE}[4/4] Launching Frontend Development Server...${NC}"
@@ -181,6 +211,7 @@ echo -e "  📡 Backend API Server:     ${CYAN}http://localhost:8000${NC}"
 echo -e "  📚 Interactive API Docs:   ${CYAN}http://localhost:8000/docs${NC}"
 echo -e "  🩺 Health Telemetry:       ${CYAN}http://localhost:8000/health${NC}"
 echo -e "  💾 Database Mode:          ${CYAN}Local SQLite (100% Offline / Zero Cloud)${NC}"
+echo -e "  🌐 Twilio Carrier Tunnel:  ${CYAN}${TUNNEL_URL:-"Active (PID: $TUNNEL_PID)"}${NC}"
 echo ""
 echo -e "  ${YELLOW}💡 QUICK DEMO INSTRUCTIONS:${NC}"
 echo -e "  1. Click or open: ${BOLD}http://localhost:${FRONTEND_PORT}${NC}"

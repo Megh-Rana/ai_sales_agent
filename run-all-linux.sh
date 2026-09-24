@@ -393,6 +393,50 @@ fi
 echo ""
 
 # =============================================================================
+# 6.5. Start SSH Reverse Tunnel for Twilio Carrier Webhooks (localhost.run)
+# =============================================================================
+
+echo -e "${BLUE}Configuring Twilio PSTN audio webhook tunnel (localhost.run)...${NC}"
+
+# Kill existing tunnel if running
+if [ -f "$LOG_DIR/tunnel.pid" ]; then
+    OLD_TUNNEL_PID=$(cat "$LOG_DIR/tunnel.pid")
+    if ps -p $OLD_TUNNEL_PID > /dev/null 2>&1; then
+        kill $OLD_TUNNEL_PID 2>/dev/null || true
+        sleep 1
+    fi
+    rm -f "$LOG_DIR/tunnel.pid"
+fi
+pkill -f "ssh.*localhost.run" 2>/dev/null || true
+rm -f "$LOG_DIR/tunnel_url.txt"
+
+# Launch SSH reverse tunnel to localhost.run
+# nokey@localhost.run enables instant keyless TLS tunneling for port 8000
+nohup ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -R 80:localhost:8000 nokey@localhost.run > "$LOG_DIR/tunnel.log" 2>&1 &
+TUNNEL_PID=$!
+echo $TUNNEL_PID > "$LOG_DIR/tunnel.pid"
+
+TUNNEL_URL=""
+for i in {1..12}; do
+    if [ -f "$LOG_DIR/tunnel.log" ]; then
+        TUNNEL_URL=$(grep -o -E 'https://[a-zA-Z0-9.-]+(\.lhr\.life|\.localhost\.run)' "$LOG_DIR/tunnel.log" | tail -n 1)
+        if [ -n "$TUNNEL_URL" ]; then
+            echo "$TUNNEL_URL" > "$LOG_DIR/tunnel_url.txt"
+            export TWILIO_WEBHOOK_BASE_URL="$TUNNEL_URL"
+            print_status "Twilio Carrier Public Tunnel active: $TUNNEL_URL"
+            break
+        fi
+    fi
+    sleep 0.5
+done
+
+if [ -z "$TUNNEL_URL" ]; then
+    print_info "SSH tunnel running in background (PID: $TUNNEL_PID). See logs: $LOG_DIR/tunnel.log"
+fi
+
+echo ""
+
+# =============================================================================
 # 7. Start Frontend Server
 # =============================================================================
 
@@ -479,6 +523,7 @@ echo -e "  Database:             ${GREEN}$DB_ENGINE_NAME${NC} ($ACTIVE_DB_URL)"
 echo -e "  Ollama (Gemma 3 4B):  ${GREEN}Running${NC} at http://localhost:11434"
 echo -e "  Backend API:          ${GREEN}Running${NC} at http://localhost:8000"
 echo -e "  Frontend UI:          ${GREEN}Running${NC} at http://localhost:$FRONTEND_PORT"
+echo -e "  Twilio Carrier Tunnel:${GREEN} ${TUNNEL_URL:-"Active (PID: $TUNNEL_PID)"}${NC} (localhost.run)"
 echo ""
 echo -e "${BLUE}API Documentation:${NC}"
 echo -e "  Swagger UI:           http://localhost:8000/docs"
@@ -492,6 +537,7 @@ echo ""
 echo -e "${BLUE}Logs:${NC}"
 echo -e "  Backend:              $LOG_DIR/backend.log"
 echo -e "  Frontend:             $LOG_DIR/frontend.log"
+echo -e "  Twilio Tunnel:        $LOG_DIR/tunnel.log"
 echo ""
 echo -e "${YELLOW}To stop all services, run:${NC}"
 echo -e "  ./stop-all-linux.sh"

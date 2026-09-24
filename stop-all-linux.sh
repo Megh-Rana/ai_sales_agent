@@ -60,6 +60,24 @@ else
     print_info "No frontend PID file found"
 fi
 
+# Stop SSH Carrier Tunnel
+if [ -f "$LOG_DIR/tunnel.pid" ]; then
+    TUNNEL_PID=$(cat "$LOG_DIR/tunnel.pid")
+    if ps -p $TUNNEL_PID > /dev/null 2>&1; then
+        print_info "Stopping SSH carrier tunnel (PID: $TUNNEL_PID)..."
+        kill $TUNNEL_PID 2>/dev/null || true
+        rm "$LOG_DIR/tunnel.pid"
+        print_status "SSH carrier tunnel stopped"
+    else
+        print_info "SSH carrier tunnel not running"
+        rm "$LOG_DIR/tunnel.pid"
+    fi
+else
+    print_info "No SSH tunnel PID file found"
+fi
+pkill -f "ssh.*localhost.run" 2>/dev/null || true
+rm -f "$LOG_DIR/tunnel_url.txt"
+
 # Ensure ports are free
 fuser -k 8000/tcp 2>/dev/null || true
 fuser -k 3000/tcp 2>/dev/null || true
