@@ -6,6 +6,7 @@ When user clicks "Start Call", this actually runs the voice agent so they can ta
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 import asyncio
@@ -24,6 +25,14 @@ import config
 from pipeline.orchestrator import PipelineOrchestrator
 
 app = FastAPI(title="AI Sales Voice Agent API", version="1.0.0")
+
+# Trust X-Forwarded-* headers from cloudflared / localhost.run / nginx proxies.
+# This makes request.base_url and request.url reflect the real public HTTPS URL
+# that Twilio uses, so TwiML webhook URLs are always publicly reachable.
+try:
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+except Exception:
+    pass  # uvicorn not installed or older version — webhook URL helper handles this directly
 
 # Allowed origins for localhost and deployed environments
 default_origins = [
@@ -105,6 +114,21 @@ async def on_startup():
             print(f"Discovery lead seed notice: {seed_err}")
     except Exception as e:
         print(f"Database initialization warning: {e}")
+
+    # Pre-warm filler audio cache so there's no synthesis delay on the first call.
+    # Runs in the background — server is ready immediately, fillers synthesise quietly.
+    async def _prewarm_fillers():
+        try:
+            from app.api.routes.telephony import get_filler_audio, FILLER_RETRIES
+            for lang in ["en", "hi", "gu", "mr"]:
+                await get_filler_audio(lang, "first")
+                for i in range(len(FILLER_RETRIES.get(lang, []))):
+                    await get_filler_audio(lang, str(i))
+            print("Filler audio pre-warm complete.")
+        except Exception as e:
+            print(f"Filler pre-warm notice: {e}")
+
+    asyncio.ensure_future(_prewarm_fillers())
 
 # Request/Response Models
 class CallStartRequest(BaseModel):
