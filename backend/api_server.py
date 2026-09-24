@@ -551,27 +551,70 @@ async def launch_voice_call(session_id: str):
 
 @app.get("/api/call/{session_id}/status")
 async def get_call_status(session_id: str):
-    """Get current status of the voice call"""
-    if session_id not in active_sessions:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    session = active_sessions[session_id]
-    
-    # Calculate duration
-    if session["status"] == "live" and "start_time" in session:
-        duration = int(time.time() - session["start_time"])
-    else:
-        duration = session.get("duration", 0)
-    
-    return {
-        "sessionId": session_id,
-        "status": session["status"],
-        "duration": duration,
-        "transcript": session["transcript"],
-        "turns": len([t for t in session["transcript"] if t["speaker"] == "prospect"]),
-        "companyName": session["companyName"],
-        "contactName": session["contactName"]
-    }
+    """Get current status of the voice call (supports both mic sessions and PSTN carrier calls)"""
+    if session_id in active_sessions:
+        session = active_sessions[session_id]
+        if session["status"] == "live" and "start_time" in session:
+            duration = int(time.time() - session["start_time"])
+        else:
+            duration = session.get("duration", 0)
+        
+        return {
+            "sessionId": session_id,
+            "status": session["status"],
+            "duration": duration,
+            "transcript": session["transcript"],
+            "turns": len([t for t in session["transcript"] if t["speaker"] == "prospect"]),
+            "companyName": session["companyName"],
+            "contactName": session["contactName"]
+        }
+
+    # Fallback to database for Twilio PSTN carrier calls
+    try:
+        from app.db.database import SessionLocal
+        from app.db.models.call import Call
+        from sqlalchemy import select
+        import uuid as _uuid
+
+        db = SessionLocal()
+        try:
+            target_call = None
+            try:
+                c_uuid = _uuid.UUID(str(session_id))
+                target_call = db.scalars(select(Call).where(Call.id == c_uuid)).first()
+            except Exception:
+                pass
+            if not target_call:
+                target_call = db.scalars(select(Call).where(Call.provider_call_id == str(session_id))).first()
+
+            if target_call:
+                t_lines = (target_call.transcript or "").split("\n")
+                formatted_transcript = []
+                for line in t_lines:
+                    if not line.strip():
+                        continue
+                    if line.startswith("[Agent]:"):
+                        formatted_transcript.append({"speaker": "agent", "text": line.replace("[Agent]:", "").strip(), "timestamp": time.time(), "language": "en"})
+                    elif line.startswith("[Prospect]:"):
+                        formatted_transcript.append({"speaker": "prospect", "text": line.replace("[Prospect]:", "").strip(), "timestamp": time.time(), "language": "en"})
+                    else:
+                        formatted_transcript.append({"speaker": "agent", "text": line, "timestamp": time.time(), "language": "en"})
+
+                return {
+                    "sessionId": str(target_call.id),
+                    "status": "live" if target_call.status == "in_progress" else (target_call.status or "completed"),
+                    "duration": target_call.duration or 0,
+                    "transcript": formatted_transcript,
+                    "turns": max(1, len([t for t in formatted_transcript if t["speaker"] == "prospect"])),
+                    "companyName": target_call.lead.company_name if target_call.lead else "Prospect",
+                    "contactName": target_call.lead.contact_name if target_call.lead else "Customer",
+                }
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"[Warn] Error checking DB for call status: {e}")
+
+    raise HTTPException(status_code=404, detail="Session not found")
 
 @app.post("/api/call/{session_id}/end")
 async def end_call(session_id: str):

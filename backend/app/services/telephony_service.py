@@ -23,6 +23,7 @@ from app.services.call_lifecycle import validate_call_transition
 
 
 from app.services.twilio_service import TwilioService
+from app.services.telephony_audio import synthesize_speech_to_wav
 
 
 # Standardized Multilingual Voicemail Audio Scripts
@@ -127,10 +128,13 @@ class TelephonyService:
         carrier: str = "twilio",
         enable_amd: bool = True,
         webhook_base_url: Optional[str] = None,
+        custom_pitch: Optional[str] = None,
     ) -> Call:
         """
         Places a real outbound call to a prospect's phone number via PSTN/SIP carrier trunking.
         Creates an active Call session in the database with status 'in_progress'.
+        Pre-synthesizes the opening hook with internal TTS so when Twilio answers,
+        the TwiML response is returned in 1 millisecond.
         """
         lead = None
         parsed_lead_uuid = None
@@ -197,6 +201,66 @@ class TelephonyService:
         # Pre-generate internal ID to link webhooks
         call_id = uuid.uuid4()
 
+        # 1. Pre-generate opening pitch and pre-synthesize audio with internal TTS
+        opening_pitch = (custom_pitch or "").strip()
+        if not opening_pitch:
+            try:
+                from ai.brain import AIBrain
+                company_name = lead.company_name or "your company"
+                prospect_name = lead.contact_name or "there"
+                requirement = lead.requirement or ""
+
+                brain = AIBrain(
+                    company_info=requirement or f"{company_name} business prospect",
+                    products_services="AI voice sales intelligence and automation",
+                    campaign_goal=requirement or "Discover sales requirements",
+                    agent_name="Alex",
+                    company_name=company_name,
+                    default_language=language,
+                )
+                opening_pitch = brain.generate_dynamic_opening_pitch(
+                    prospect_name=prospect_name,
+                    company_name=company_name,
+                    requirement=requirement,
+                    language=language,
+                )
+            except Exception as e:
+                opening_pitch = f"Hello {lead.contact_name or 'there'}, this is Alex from Vidur AI. Am I speaking with {lead.contact_name or (lead.company_name or 'your team')}?"
+
+        audio_id = None
+        try:
+            audio_id, _ = synthesize_speech_to_wav(opening_pitch, language=language)
+        except Exception:
+            pass
+
+        carrier_metadata = {
+            "carrier": carrier.lower(),
+            "destination_phone": destination_phone,
+            "caller_id": caller_id,
+            "amd_enabled": enable_amd,
+            "trunk_protocol": "SIP/2.0",
+            "dial_initiated_at": datetime.now(timezone.utc).isoformat(),
+            "opening_pitch": opening_pitch,
+            "opening_audio_id": audio_id,
+        }
+
+        # Create active call record in DB BEFORE dialing so incoming webhooks immediately find it
+        call = Call(
+            id=call_id,
+            lead_id=lead.id,
+            status="in_progress",
+            language=language,
+            duration=0,
+            provider=carrier.lower(),
+            provider_call_id="",
+            transcript=f"[Agent]: {opening_pitch}" if opening_pitch else "",
+            metadata_json=carrier_metadata,
+        )
+        db.add(call)
+        if lead.status == "new":
+            lead.status = "contacted"
+        db.commit()
+
         # Carrier dispatch
         if carrier.lower() == "twilio":
             dispatch = TwilioService.make_outbound_call(
@@ -208,49 +272,22 @@ class TelephonyService:
                 enable_amd=enable_amd,
             )
             provider_call_sid = dispatch["provider_call_id"]
-            carrier_metadata = {
-                "carrier": "twilio",
-                "destination_phone": destination_phone,
-                "caller_id": caller_id,
-                "amd_enabled": enable_amd,
-                "trunk_protocol": "SIP/2.0",
-                "dial_initiated_at": datetime.now(timezone.utc).isoformat(),
+            carrier_metadata.update({
                 "sip_response_code": 200,
                 "audio_codec": "PCMU/8000",
                 "is_live_call": dispatch.get("live", False),
                 "voice_url": dispatch.get("voice_url"),
-            }
+            })
         else:
             provider_call_sid = f"CA{uuid.uuid4().hex[:32]}"
-            carrier_metadata = {
-                "carrier": carrier.lower(),
-                "destination_phone": destination_phone,
-                "caller_id": caller_id,
-                "amd_enabled": enable_amd,
-                "trunk_protocol": "SIP/2.0",
-                "dial_initiated_at": datetime.now(timezone.utc).isoformat(),
+            carrier_metadata.update({
                 "sip_response_code": 200,
                 "audio_codec": "PCMU/8000",
                 "is_live_call": False,
-            }
+            })
 
-        # Create active call record
-        call = Call(
-            id=call_id,
-            lead_id=lead.id,
-            status="in_progress",
-            language=language,
-            duration=0,
-            provider=carrier.lower(),
-            provider_call_id=provider_call_sid,
-            metadata_json=carrier_metadata,
-        )
-        db.add(call)
-
-        # Synchronize lead status to contacted
-        if lead.status == "new":
-            lead.status = "contacted"
-
+        call.provider_call_id = provider_call_sid
+        call.metadata_json = carrier_metadata
         db.commit()
         db.refresh(call)
         return call

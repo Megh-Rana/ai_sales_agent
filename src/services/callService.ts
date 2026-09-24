@@ -415,6 +415,7 @@ class CallService {
     fromPhone?: string;
     language?: string;
     enableAmd?: boolean;
+    customPitch?: string;
   }): Promise<any> {
     const token = localStorage.getItem('token');
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -430,6 +431,7 @@ class CallService {
         language: request.language || 'en',
         carrier: 'twilio',
         enable_amd: request.enableAmd !== false,
+        custom_pitch: request.customPitch,
       }),
     });
 

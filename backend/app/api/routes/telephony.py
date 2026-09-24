@@ -92,6 +92,7 @@ class DialRequest(BaseModel):
     language: str = Field(default="en", description="Conversation language (en, hi, mr, gu)")
     carrier: str = Field(default="twilio", description="Carrier backend: 'twilio' or 'exotel'")
     enable_amd: bool = Field(default=True, description="Enable answering machine detection")
+    custom_pitch: Optional[str] = Field(None, description="Pre-generated dynamic opening pitch")
 
 
 class AMDCheckRequest(BaseModel):
@@ -188,6 +189,7 @@ def dial_outbound(
             carrier=request.carrier,
             enable_amd=request.enable_amd,
             webhook_base_url=base_url,
+            custom_pitch=request.custom_pitch,
         )
         return call
     except ValueError as e:
@@ -294,25 +296,35 @@ async def twilio_voice_webhook(
         twiml = TwilioService.generate_audio_voicemail_twiml(audio_url=audio_url)
         return Response(content=twiml, media_type="application/xml")
 
-    # 2. Human Pickup — Generate Opening Sales Pitch via YOUR internal LLM (AIBrain)
-    company_name = "your company"
-    prospect_name = "there"
-    requirement = ""
-    if call and call.lead:
-        company_name = call.lead.company_name or company_name
-        prospect_name = call.lead.contact_name or prospect_name
-        requirement = call.lead.requirement or ""
+    # 2. Human Pickup — Check for pre-synthesized opening pitch
+    meta = dict(call.metadata_json or {}) if call else {}
+    cached_audio_id = meta.get("opening_audio_id")
+    opening_pitch = meta.get("opening_pitch")
 
-    brain = get_or_create_brain(call, language=lang)
-    opening_pitch = brain.generate_dynamic_opening_pitch(
-        prospect_name=prospect_name,
-        company_name=company_name,
-        requirement=requirement,
-        language=lang,
-    )
+    if cached_audio_id and get_audio_bytes(cached_audio_id):
+        audio_id = cached_audio_id
+        logger.info(f"[Twilio Voice] Instant dispatch: Serving pre-synthesized audio ({audio_id}) in 1ms for call {call_id}")
+    else:
+        # Fallback only if not pre-synthesized
+        company_name = "your company"
+        prospect_name = "there"
+        requirement = ""
+        if call and call.lead:
+            company_name = call.lead.company_name or company_name
+            prospect_name = call.lead.contact_name or prospect_name
+            requirement = call.lead.requirement or ""
 
-    # 3. Synthesize Opening Pitch with YOUR internal TTS Engine (Sarvam Bulbul v3 / Edge-TTS)
-    audio_id, _ = synthesize_speech_to_wav(opening_pitch, language=lang)
+        if not opening_pitch:
+            brain = get_or_create_brain(call, language=lang)
+            opening_pitch = brain.generate_dynamic_opening_pitch(
+                prospect_name=prospect_name,
+                company_name=company_name,
+                requirement=requirement,
+                language=lang,
+            )
+
+        audio_id, _ = synthesize_speech_to_wav(opening_pitch, language=lang)
+
     audio_url = f"{base_url}/api/telephony/audio/{audio_id}.wav"
     gather_url = f"{base_url}/api/telephony/twilio/gather?call_id={call.id if call else ''}&lang={lang}"
 
