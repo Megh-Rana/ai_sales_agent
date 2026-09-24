@@ -11,14 +11,13 @@ import os
 import json
 import uuid
 import base64
-import asyncio
 import logging
 from typing import Any, Dict, Optional, Tuple, Union
 from uuid import UUID
 from datetime import datetime, timezone
 
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, WebSocket, WebSocketDisconnect, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, WebSocket, WebSocketDisconnect, status, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -43,75 +42,6 @@ router = APIRouter(prefix="/telephony", tags=["Telephony"])
 
 # Active brain instances per call session for conversational memory
 _CALL_BRAINS: Dict[str, AIBrain] = {}
-
-# ── Async gather-response job store ───────────────────────────────────────────
-# Maps job_id -> {"audio_url": str, "next_gather_url": str, "hangup": bool}
-# Populated by the background task; polled by /twilio/gather-response/{job_id}
-_GATHER_JOBS: Dict[str, Optional[Dict]] = {}
-
-# Filler audio cache: { "lang:type" -> audio_id }
-# "type" is "first" (longer, buys ~6s) or one of the short retry variants
-_FILLER_CACHE: Dict[str, str] = {}
-_FILLER_LOCK = asyncio.Lock()
-
-# First-time fillers — longer phrases (~5-6s of audio) so LLM+TTS can finish
-FILLER_FIRST: Dict[str, str] = {
-    "en": "Great, let me look into that for you. Just a moment.",
-    "hi": "बिल्कुल, मैं अभी देखता हूँ। एक पल।",
-    "gu": "ચોક્કસ, હું જોઉં છું. એક ક્ષણ.",
-    "mr": "नक्की, मी बघतो. एक क्षण.",
-}
-
-# Retry fillers — short natural-sounding thinking phrases, cycled through on polls
-FILLER_RETRIES: Dict[str, list] = {
-    "en": [
-        "Hmm, let me check.",
-        "Ummm, one sec.",
-        "Hold on.",
-        "Let me think.",
-        "Wait a moment.",
-    ],
-    "hi": [
-        "हम्म, देखता हूँ।",
-        "एक सेकंड।",
-        "रुकिए।",
-        "सोच रहा हूँ।",
-    ],
-    "gu": [
-        "હમ્મ, જોઉં.",
-        "એક સેકન્ડ.",
-        "રાહ જુઓ.",
-    ],
-    "mr": [
-        "हम्म, बघतो.",
-        "एक सेकंद.",
-        "थांबा.",
-    ],
-}
-
-
-async def get_filler_audio(lang: str, variant: str) -> str:
-    """
-    Returns a cached audio_id for the given filler variant, synthesising on first use.
-    variant: "first" → long opening filler
-             "0","1","2",... → short retry fillers cycled by index
-    """
-    cache_key = f"{lang}:{variant}"
-    async with _FILLER_LOCK:
-        if cache_key in _FILLER_CACHE and get_audio_bytes(_FILLER_CACHE[cache_key]):
-            return _FILLER_CACHE[cache_key]
-
-        if variant == "first":
-            text = FILLER_FIRST.get(lang, FILLER_FIRST["en"])
-        else:
-            retries = FILLER_RETRIES.get(lang, FILLER_RETRIES["en"])
-            idx = int(variant) % len(retries)
-            text = retries[idx]
-
-        loop = asyncio.get_event_loop()
-        audio_id, _ = await loop.run_in_executor(None, synthesize_speech_to_wav, text, lang)
-        _FILLER_CACHE[cache_key] = audio_id
-        return audio_id
 
 
 def get_or_create_brain(call: Optional[Call], language: str = "en") -> AIBrain:
@@ -149,54 +79,6 @@ def get_or_create_brain(call: Optional[Call], language: str = "en") -> AIBrain:
 
     _CALL_BRAINS[call_id_str] = brain
     return brain
-
-
-def get_base_url_from_request(request: Request) -> str:
-    """
-    Resolves the correct public-facing base URL from an incoming Twilio webhook request.
-
-    Cloudflare Tunnel and localhost.run both terminate TLS and forward requests to
-    localhost:8000. They preserve the original public host in X-Forwarded-Host and the
-    original scheme in X-Forwarded-Proto (or X-Forwarded-Ssl). The raw `Host` header
-    on the socket-level request is the internal host (localhost:8000), NOT the tunnel
-    domain — so reading `Host` directly misidentifies the request as local and falls back
-    to localhost, causing all subsequent TwiML webhook URLs to be unreachable by Twilio.
-
-    Priority order:
-    1. X-Forwarded-Host (set by cloudflared, localhost.run, ngrok)
-    2. Host header — only if it is NOT a local address
-    3. TWILIO_WEBHOOK_BASE_URL env var
-    4. TwilioService.get_public_base_url() (reads logs/tunnel_url.txt etc.)
-    """
-    # 1. X-Forwarded-Host takes priority — this is what tunnel proxies set
-    forwarded_host = request.headers.get("x-forwarded-host", "").strip()
-    if forwarded_host and "localhost" not in forwarded_host and "127.0.0.1" not in forwarded_host:
-        proto = request.headers.get("x-forwarded-proto", "https").strip().rstrip(",").split(",")[0].strip()
-        base = f"{proto}://{forwarded_host}"
-        # Persist for later get_public_base_url() calls
-        try:
-            import os as _os
-            with open("/home/megh/working/ai_sales_agent/logs/tunnel_url.txt", "w") as f:
-                f.write(base)
-        except Exception:
-            pass
-        return base.rstrip("/")
-
-    # 2. Direct Host header (only if genuinely public)
-    host_header = request.headers.get("host", "").strip()
-    if host_header and "localhost" not in host_header and "127.0.0.1" not in host_header:
-        proto = request.headers.get("x-forwarded-proto", "https").strip().rstrip(",").split(",")[0].strip()
-        base = f"{proto}://{host_header}"
-        try:
-            import os as _os
-            with open("/home/megh/working/ai_sales_agent/logs/tunnel_url.txt", "w") as f:
-                f.write(base)
-        except Exception:
-            pass
-        return base.rstrip("/")
-
-    # 3 & 4. Fall through to env var / tunnel log / fallback
-    return TwilioService.get_public_base_url(fallback_url=str(request.base_url))
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -371,9 +253,17 @@ async def twilio_voice_webhook(
     call_sid = form_data.get("CallSid")
     answered_by = form_data.get("AnsweredBy", "")
 
-    # Resolve base_url using X-Forwarded-Host first (set by cloudflared / localhost.run),
-    # then fall back through Host header and env/tunnel-log detection.
-    base_url = get_base_url_from_request(request)
+    # Resolve base_url: prioritize the incoming host header that Twilio reached us on
+    host_header = request.headers.get("host", "").strip()
+    if host_header and "localhost" not in host_header and "127.0.0.1" not in host_header:
+        base_url = f"https://{host_header}"
+        try:
+            with open("/home/megh/working/ai_sales_agent/logs/tunnel_url.txt", "w") as f:
+                f.write(base_url)
+        except Exception:
+            pass
+    else:
+        base_url = TwilioService.get_public_base_url(fallback_url=str(request.base_url))
 
     # Look up call session in database
     call = None
@@ -458,7 +348,7 @@ async def twilio_voice_webhook(
 # TWILIO SPEECH GATHER (CONVERSATION LOOP) — POWERED BY YOUR INTERNAL LLM & TTS
 # ──────────────────────────────────────────────────────────────────────────────
 
-@router.post("/twilio/gather", summary="Twilio Recording callback — Sarvam STT conversation turn", operation_id="twilio_gather_turn")
+@router.post("/twilio/gather", summary="Twilio Speech Gather conversation turn webhook", operation_id="twilio_gather_turn")
 @router.get("/twilio/gather", include_in_schema=False)
 async def twilio_gather_webhook(
     request: Request,
@@ -467,11 +357,10 @@ async def twilio_gather_webhook(
     db: Session = Depends(get_db),
 ):
     """
-    Invoked by Twilio when a <Record> completes (caller spoke or timeout fired).
-    Downloads the recording WAV from Twilio, runs it through Sarvam STT internally
-    (no Twilio speech recognition used — bypasses unreliable Indian PSTN STT),
-    then feeds transcription into AIBrain + TTS in a background task.
-    Returns instantly with filler audio + <Redirect> to the polling endpoint.
+    Invoked by Twilio when prospect speaks on their phone.
+    Passes prospect utterance to YOUR internal AIBrain (Ollama / Sarvam LLM),
+    synthesizes response audio with YOUR internal TTSEngine,
+    and returns TwiML <Play> to stream back into the call.
     """
     form_data = {}
     try:
@@ -479,11 +368,15 @@ async def twilio_gather_webhook(
     except Exception:
         pass
 
-    recording_url = (form_data.get("RecordingUrl") or "").strip()
-    call_sid = form_data.get("CallSid") or ""
-    recording_duration = form_data.get("RecordingDuration") or "0"
+    speech_result = (form_data.get("SpeechResult") or "").strip()
+    call_sid = form_data.get("CallSid")
 
-    base_url = get_base_url_from_request(request)
+    # Resolve base_url: prioritize the incoming host header that Twilio reached us on
+    host_header = request.headers.get("host", "").strip()
+    if host_header and "localhost" not in host_header and "127.0.0.1" not in host_header:
+        base_url = f"https://{host_header}"
+    else:
+        base_url = TwilioService.get_public_base_url(fallback_url=str(request.base_url))
 
     call = None
     if call_id:
@@ -497,218 +390,67 @@ async def twilio_gather_webhook(
 
     next_gather_url = f"{base_url}/api/telephony/twilio/gather?call_id={call.id if call else ''}&lang={lang}"
 
-    # No recording or caller was silent — ask to repeat
-    if not recording_url or str(recording_duration) == "0":
-        fallback_texts = {
-            "en": "I didn't quite catch that. Could you say that again?",
-            "hi": "मुझे आपकी आवाज़ स्पष्ट नहीं आई। क्या आप दोबारा बोल सकते हैं?",
-            "gu": "મને સ્પષ્ટ સંભળાયું નહીં. શું તમે ફરી બોલી શકો?",
-            "mr": "मला नीट ऐकू आले नाही. पुन्हा सांगाल का?",
-        }
-        txt = fallback_texts.get(lang.lower(), fallback_texts["en"])
-        loop = asyncio.get_event_loop()
-        audio_id, _ = await loop.run_in_executor(None, synthesize_speech_to_wav, txt, lang)
+    # Handle silence / no speech captured
+    if not speech_result:
+        fallback_prompt = "I didn't quite hear that. Would you like me to send you our solution brief and schedule a demo?"
+        if lang.lower() == "hi":
+            fallback_prompt = "मुझे आपकी आवाज़ स्पष्ट नहीं आई। क्या मैं आपको ईमेल पर जानकारी भेजकर डेमो शेड्यूल कर दूँ?"
+
+        audio_id, _ = synthesize_speech_to_wav(fallback_prompt, language=lang)
         audio_url = f"{base_url}/api/telephony/audio/{audio_id}.wav"
         twiml = TwilioService.generate_audio_response_twiml(
             audio_url=audio_url,
             next_gather_url=next_gather_url,
             hangup=False,
-            language=lang,
         )
         return Response(content=twiml, media_type="application/xml")
 
-    # ── Non-blocking: download recording + STT + LLM + TTS in background ──────
-    job_id = str(uuid.uuid4())
-    _GATHER_JOBS[job_id] = None
-
-    call_id_str = str(call.id) if call else ""
-    call_db_id = call.id if call else None
+    # 1. Feed user speech into YOUR internal LLM (AIBrain)
     brain = get_or_create_brain(call, language=lang)
+    logger.info(f"[Twilio Gather] Prospect: '{speech_result}'. Generating LLM response with internal brain...")
 
-    async def _run_stt_llm_tts():
-        loop = asyncio.get_event_loop()
-        speech_result = ""
-        try:
-            # 1. Download the Twilio recording (WAV/MP3) using Twilio credentials
-            import tempfile, httpx
-            twilio_creds = TwilioService.get_credentials()
-            account_sid = twilio_creds.get("account_sid") or ""
-            auth_token = twilio_creds.get("auth_token") or ""
-            # Twilio appends .wav to get WAV format
-            wav_url = recording_url if recording_url.endswith(".wav") else recording_url + ".wav"
-            async with httpx.AsyncClient(auth=(account_sid, auth_token), timeout=15) as client:
-                resp = await client.get(wav_url)
-                audio_bytes = resp.content
+    try:
+        sentences = list(brain.think(speech_result, detected_language=lang))
+        ai_reply = " ".join(sentences).strip()
+    except Exception as e:
+        logger.error(f"[Twilio Gather] Brain thinking error ({e}). Using conversational fallback.")
+        ai_reply = "Thank you for sharing. Our autonomous AI voice agent integrates with your CRM in under 5 minutes. Would you have 15 minutes for a technical demo this Thursday?"
 
-            # 2. Save to temp file and run Sarvam STT
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-                tmp.write(audio_bytes)
-                tmp_path = tmp.name
+    # 2. Detect call outcome / completion signals
+    text_lower = speech_result.lower()
+    should_hangup = False
+    outcome = None
 
-            try:
-                from stt.engine import STTEngine
-                stt = STTEngine()
-                result = await loop.run_in_executor(None, stt.transcribe_file, tmp_path)
-                speech_result = (result.get("text") or "").strip()
-            finally:
-                import os as _os
-                _os.unlink(tmp_path)
+    if any(k in text_lower for k in ["not interested", "dont call", "don't call", "stop", "remove"]):
+        should_hangup = True
+        outcome = "not_interested"
+    elif any(k in text_lower for k in ["busy", "call back", "later", "driving", "meeting"]):
+        should_hangup = True
+        outcome = "callback_requested"
+    elif any(k in text_lower for k in ["demo", "yes", "sure", "book", "schedule", "pricing", "interested"]):
+        outcome = "meeting_booked"
 
-            logger.info(f"[Twilio Gather] Sarvam STT transcribed: '{speech_result}'")
-        except Exception as e:
-            logger.error(f"[Twilio Gather] STT failed ({e}), using empty transcript")
-            speech_result = ""
+    # 3. Synthesize response using YOUR internal TTSEngine (Sarvam Bulbul v3 / Edge-TTS)
+    audio_id, _ = synthesize_speech_to_wav(ai_reply, language=lang)
+    audio_url = f"{base_url}/api/telephony/audio/{audio_id}.wav"
 
-        if not speech_result:
-            _GATHER_JOBS[job_id] = {
-                "audio_url": None,
-                "next_gather_url": f"{base_url}/api/telephony/twilio/gather?call_id={call_id_str}&lang={lang}",
-                "hangup": False,
-            }
-            return
+    # 4. Record Transcript & State in DB
+    if call:
+        prev = call.transcript or ""
+        call.transcript = f"{prev}\n[Prospect]: {speech_result}\n[Agent]: {ai_reply}".strip()
+        if outcome:
+            call.outcome = outcome
+        if should_hangup:
+            call.status = "completed"
+            call.completed_at = datetime.now(timezone.utc)
+        db.commit()
 
-        # 3. LLM
-        try:
-            sentences = await loop.run_in_executor(
-                None,
-                lambda: list(brain.think(speech_result, detected_language=lang))
-            )
-            ai_reply = " ".join(sentences).strip()
-        except Exception as e:
-            logger.error(f"[Twilio Gather] LLM error ({e})")
-            ai_reply = "Thank you for sharing. Would you have 15 minutes for a quick demo this week?"
-
-        # 4. Detect hangup signals
-        text_lower = speech_result.lower()
-        should_hangup = any(k in text_lower for k in [
-            "not interested", "dont call", "don't call", "stop", "remove",
-            "busy", "call back", "later", "driving", "meeting",
-        ])
-        outcome = None
-        if any(k in text_lower for k in ["not interested", "dont call", "don't call", "stop", "remove"]):
-            outcome = "not_interested"
-        elif any(k in text_lower for k in ["busy", "call back", "later", "driving", "meeting"]):
-            outcome = "callback_requested"
-        elif any(k in text_lower for k in ["demo", "yes", "sure", "book", "schedule", "pricing", "interested"]):
-            outcome = "meeting_booked"
-
-        # 5. TTS
-        audio_id, _ = await loop.run_in_executor(
-            None, lambda: synthesize_speech_to_wav(ai_reply, language=lang)
-        )
-        audio_url = f"{base_url}/api/telephony/audio/{audio_id}.wav"
-        next_url = f"{base_url}/api/telephony/twilio/gather?call_id={call_id_str}&lang={lang}"
-
-        # 6. Persist transcript
-        if call_db_id is not None:
-            from app.db.database import SessionLocal
-            db2 = SessionLocal()
-            try:
-                c = db2.scalars(select(Call).where(Call.id == call_db_id)).first()
-                if c:
-                    prev = c.transcript or ""
-                    c.transcript = f"{prev}\n[Prospect]: {speech_result}\n[Agent]: {ai_reply}".strip()
-                    if outcome:
-                        c.outcome = outcome
-                    if should_hangup:
-                        c.status = "completed"
-                        c.completed_at = datetime.now(timezone.utc)
-                    db2.commit()
-            finally:
-                db2.close()
-
-        _GATHER_JOBS[job_id] = {
-            "audio_url": audio_url,
-            "next_gather_url": next_url if not should_hangup else None,
-            "hangup": should_hangup,
-        }
-        logger.info(f"[Twilio Gather] Job {job_id} ready — audio: {audio_url}")
-
-    asyncio.ensure_future(_run_stt_llm_tts())
-
-    filler_audio_id = await get_filler_audio(lang, "first")
-    filler_url = f"{base_url}/api/telephony/audio/{filler_audio_id}.wav"
-    poll_url = f"{base_url}/api/telephony/twilio/gather-response/{job_id}?call_id={call_id_str}&lang={lang}&retry=0"
-    twiml = TwilioService.generate_filler_redirect_twiml(filler_url=filler_url, redirect_url=poll_url)
-    return Response(content=twiml, media_type="application/xml")
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# TWILIO GATHER RESPONSE POLLER — serves real AI reply once background job done
-# ──────────────────────────────────────────────────────────────────────────────
-
-@router.post("/twilio/gather-response/{job_id}", include_in_schema=False)
-@router.get("/twilio/gather-response/{job_id}", include_in_schema=False)
-async def twilio_gather_response(
-    request: Request,
-    job_id: str,
-    call_id: Optional[str] = Query(None),
-    lang: str = Query("en"),
-    retry: int = Query(0),
-):
-    """
-    Called once by Twilio via <Redirect> after the filler audio plays.
-    Waits (async sleep loop) for the background LLM+TTS job to finish — up to 25s —
-    then returns the real <Play>+<Gather> TwiML in a single response.
-    This avoids Twilio's redirect chain limit entirely: one redirect, one response.
-
-    If the job takes longer than 25s (very unlikely), plays one more filler and
-    redirects a single additional time, resetting the wait budget.
-    """
-    base_url = get_base_url_from_request(request)
-
-    # Async-wait for job completion: check every 0.3s for up to 25s
-    waited = 0.0
-    poll_interval = 0.3
-    max_wait = 25.0
-
-    while waited < max_wait:
-        job = _GATHER_JOBS.get(job_id)
-        if job is not None:
-            break
-        await asyncio.sleep(poll_interval)
-        waited += poll_interval
-
-    job = _GATHER_JOBS.get(job_id)
-
-    if job is not None:
-        # Job complete — clean up and serve the real response
-        _GATHER_JOBS.pop(job_id, None)
-        audio_url = job.get("audio_url")
-        next_gather_url = job.get("next_gather_url")
-        hangup = job.get("hangup", False)
-
-        if not audio_url:
-            next_gather_url = f"{base_url}/api/telephony/twilio/gather?call_id={call_id or ''}&lang={lang}"
-            loop = asyncio.get_event_loop()
-            fallback_texts = {
-                "en": "Sorry, I had a moment of trouble. Could you repeat that?",
-                "hi": "माफ़ कीजिए, एक तकनीकी समस्या हुई। क्या आप दोबारा बोल सकते हैं?",
-                "gu": "માફ કરો, ટેક્નિકલ સમસ્યા આવી. ફરી બોલો.",
-                "mr": "माफ करा, तांत्रिक अडचण आली. पुन्हा सांगा.",
-            }
-            txt = fallback_texts.get(lang, fallback_texts["en"])
-            audio_id, _ = await loop.run_in_executor(None, synthesize_speech_to_wav, txt, lang)
-            audio_url = f"{base_url}/api/telephony/audio/{audio_id}.wav"
-            hangup = False
-
-        logger.info(f"[Twilio Gather Response] Job {job_id} ready after {waited:.1f}s — serving real audio")
-        twiml = TwilioService.generate_audio_response_twiml(
-            audio_url=audio_url,
-            next_gather_url=next_gather_url,
-            hangup=hangup,
-            language=lang,
-        )
-        return Response(content=twiml, media_type="application/xml")
-
-    # Timed out (>25s) — very rare. Play one more filler and redirect once more to reset budget.
-    logger.warning(f"[Twilio Gather Response] Job {job_id} timed out after {waited:.1f}s — single retry redirect")
-    next_retry = retry + 1
-    variant = str(retry % len(FILLER_RETRIES.get(lang, FILLER_RETRIES["en"])))
-    filler_audio_id = await get_filler_audio(lang, variant)
-    filler_url = f"{base_url}/api/telephony/audio/{filler_audio_id}.wav"
-    poll_url = f"{base_url}/api/telephony/twilio/gather-response/{job_id}?call_id={call_id or ''}&lang={lang}&retry={next_retry}"
-    twiml = TwilioService.generate_filler_redirect_twiml(filler_url=filler_url, redirect_url=poll_url)
+    # 5. Return TwiML with <Play> pointing to your synthesized audio
+    twiml = TwilioService.generate_audio_response_twiml(
+        audio_url=audio_url,
+        next_gather_url=next_gather_url if not should_hangup else None,
+        hangup=should_hangup,
+    )
     return Response(content=twiml, media_type="application/xml")
 
 
