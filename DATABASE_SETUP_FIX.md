@@ -3,10 +3,26 @@
 ## Problem
 Backend was failing to start with error:
 ```
-Database initialization warning: (psycopg2.OperationalError) connection to server at "localhost" (::1), port 5432 failed: Connection refused
+Database initialization warning: (psycopg2.OperationalError) connection to server at "localhost" (::1), port 5432 failed: FATAL:  Ident authentication failed for user "vidur_user"
 ```
 
-**Cause:** PostgreSQL is not installed or not running on your system.
+**Cause:** PostgreSQL is using "ident" authentication instead of "md5" (password-based authentication). This means it's trying to match your Linux username instead of using the password.
+
+---
+
+## Quick Fix (Run this)
+
+```bash
+./fix-postgres-auth.sh
+```
+
+Then restart services:
+```bash
+./stop-all-linux.sh
+./run-all-linux.sh
+```
+
+This will change PostgreSQL from ident to md5 authentication.
 
 ---
 

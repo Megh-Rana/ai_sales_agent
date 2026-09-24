@@ -79,6 +79,32 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE vidur_sales TO vidur_
 
 print_status "Database setup complete"
 
+# Fix PostgreSQL authentication to use md5 (password-based) instead of ident
+print_info "Configuring PostgreSQL authentication..."
+
+PG_HBA_CONF="/var/lib/pgsql/data/pg_hba.conf"
+
+if [ -f "$PG_HBA_CONF" ]; then
+    # Backup original
+    sudo cp "$PG_HBA_CONF" "${PG_HBA_CONF}.backup"
+    
+    # Replace 'ident' with 'md5' for local connections
+    sudo sed -i 's/local\s*all\s*all\s*ident/local   all             all                                     md5/g' "$PG_HBA_CONF"
+    sudo sed -i 's/host\s*all\s*all\s*127.0.0.1\/32\s*ident/host    all             all             127.0.0.1\/32            md5/g' "$PG_HBA_CONF"
+    sudo sed -i 's/host\s*all\s*all\s*::1\/128\s*ident/host    all             all             ::1\/128                 md5/g' "$PG_HBA_CONF"
+    
+    print_status "PostgreSQL authentication configured for password-based auth"
+    
+    # Restart PostgreSQL to apply changes
+    print_info "Restarting PostgreSQL..."
+    sudo systemctl restart postgresql
+    sleep 2
+    
+    print_status "PostgreSQL restarted successfully"
+else
+    print_error "Could not find pg_hba.conf at $PG_HBA_CONF"
+fi
+
 # Create or update .env file
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
