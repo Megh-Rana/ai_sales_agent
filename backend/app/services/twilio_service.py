@@ -80,6 +80,8 @@ class TwilioService:
                     with open(log_path, "r", errors="ignore") as f:
                         content = f.read()
                         matches = re.findall(r"https://[a-zA-Z0-9.-]+\.lhr\.life", content)
+                        if not matches:
+                            matches = re.findall(r"https://[a-zA-Z0-9.-]+\.trycloudflare\.com", content)
                         if matches:
                             latest_url = matches[-1].rstrip("/")
                             # Save to tunnel_url.txt for persistence

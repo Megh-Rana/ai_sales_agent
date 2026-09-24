@@ -138,29 +138,60 @@ done
 # ==============================================================================
 # 3.5. START TWILIO PSTN CARRIER TUNNEL (localhost.run)
 # ==============================================================================
-echo -e "\n${BLUE}Configuring Twilio PSTN Carrier Tunnel (localhost.run)...${NC}"
+# 3. CONFIGURE TWILIO PSTN CARRIER TUNNEL (Cloudflare / localhost.run)
+# ==============================================================================
+echo -e "\n${BLUE}Configuring Twilio PSTN Carrier Tunnel...${NC}"
 mkdir -p "$ROOT_DIR/logs"
 pkill -f "ssh.*localhost.run" 2>/dev/null || true
+pkill -f "cloudflared" 2>/dev/null || true
 rm -f "$ROOT_DIR/logs/tunnel_url.txt"
 
-# Launch SSH reverse tunnel to localhost.run with JSON event streaming
-nohup ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=15 -R 80:localhost:8000 nokey@localhost.run -- --output json > "$ROOT_DIR/logs/tunnel.log" 2>&1 &
-TUNNEL_PID=$!
-PIDS+=($TUNNEL_PID)
+CLOUDFLARED_BIN=""
+if command -v cloudflared &>/dev/null; then
+    CLOUDFLARED_BIN="cloudflared"
+elif [ -x "$HOME/.local/bin/cloudflared" ]; then
+    CLOUDFLARED_BIN="$HOME/.local/bin/cloudflared"
+fi
 
-TUNNEL_URL=""
-for i in {1..20}; do
-    if [ -f "$ROOT_DIR/logs/tunnel.log" ]; then
-        TUNNEL_URL=$(grep -o -E 'https://[a-zA-Z0-9.-]+\.lhr\.life' "$ROOT_DIR/logs/tunnel.log" | tail -n 1)
-        if [ -n "$TUNNEL_URL" ]; then
-            echo "$TUNNEL_URL" > "$ROOT_DIR/logs/tunnel_url.txt"
-            export TWILIO_WEBHOOK_BASE_URL="$TUNNEL_URL"
-            print_status "Twilio Carrier Public Tunnel active: $TUNNEL_URL"
-            break
+if [ -n "$CLOUDFLARED_BIN" ]; then
+    print_info "Using Cloudflare Tunnel (persistent, zero inactivity timeout)..."
+    nohup "$CLOUDFLARED_BIN" tunnel --url http://localhost:8000 --no-autoupdate > "$ROOT_DIR/logs/tunnel.log" 2>&1 &
+    TUNNEL_PID=$!
+    PIDS+=($TUNNEL_PID)
+
+    TUNNEL_URL=""
+    for i in {1..30}; do
+        if [ -f "$ROOT_DIR/logs/tunnel.log" ]; then
+            TUNNEL_URL=$(grep -o -E 'https://[a-zA-Z0-9.-]+\.trycloudflare\.com' "$ROOT_DIR/logs/tunnel.log" | head -n 1)
+            if [ -n "$TUNNEL_URL" ]; then
+                echo "$TUNNEL_URL" > "$ROOT_DIR/logs/tunnel_url.txt"
+                export TWILIO_WEBHOOK_BASE_URL="$TUNNEL_URL"
+                print_status "Twilio Carrier Public Tunnel active: $TUNNEL_URL"
+                break
+            fi
         fi
-    fi
-    sleep 0.5
-done
+        sleep 0.5
+    done
+else
+    print_info "Using localhost.run SSH reverse tunnel..."
+    nohup ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=15 -R 80:localhost:8000 nokey@localhost.run -- --output json > "$ROOT_DIR/logs/tunnel.log" 2>&1 &
+    TUNNEL_PID=$!
+    PIDS+=($TUNNEL_PID)
+
+    TUNNEL_URL=""
+    for i in {1..20}; do
+        if [ -f "$ROOT_DIR/logs/tunnel.log" ]; then
+            TUNNEL_URL=$(grep -o -E 'https://[a-zA-Z0-9.-]+\.lhr\.life' "$ROOT_DIR/logs/tunnel.log" | tail -n 1)
+            if [ -n "$TUNNEL_URL" ]; then
+                echo "$TUNNEL_URL" > "$ROOT_DIR/logs/tunnel_url.txt"
+                export TWILIO_WEBHOOK_BASE_URL="$TUNNEL_URL"
+                print_status "Twilio Carrier Public Tunnel active: $TUNNEL_URL"
+                break
+            fi
+        fi
+        sleep 0.5
+    done
+fi
 
 # ==============================================================================
 # 4. START FRONTEND APPLICATION

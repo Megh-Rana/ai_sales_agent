@@ -76,6 +76,7 @@ else
     print_info "No SSH tunnel PID file found"
 fi
 pkill -f "ssh.*localhost.run" 2>/dev/null || true
+pkill -f "cloudflared" 2>/dev/null || true
 rm -f "$LOG_DIR/tunnel_url.txt"
 
 # Ensure ports are free
