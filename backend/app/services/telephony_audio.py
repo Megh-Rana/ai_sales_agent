@@ -6,6 +6,7 @@ and serves broadcast-quality WAV audio streams to Twilio via <Play>.
 """
 
 import io
+import os
 import time
 import uuid
 import logging
@@ -51,6 +52,10 @@ def cleanup_audio_cache():
             _AUDIO_CACHE.pop(k, None)
 
 
+AUDIO_DISK_CACHE_DIR = "/tmp/ai_sales_audio"
+os.makedirs(AUDIO_DISK_CACHE_DIR, exist_ok=True)
+
+
 def store_audio_bytes(wav_bytes: bytes, text: str = "") -> str:
     """Stores generated WAV bytes in the audio cache and returns the audio_id."""
     cleanup_audio_cache()
@@ -60,14 +65,36 @@ def store_audio_bytes(wav_bytes: bytes, text: str = "") -> str:
         "created_at": time.time(),
         "text": text,
     }
+    try:
+        os.makedirs(AUDIO_DISK_CACHE_DIR, exist_ok=True)
+        file_path = os.path.join(AUDIO_DISK_CACHE_DIR, f"{audio_id}.wav")
+        with open(file_path, "wb") as f:
+            f.write(wav_bytes)
+    except Exception as e:
+        logger.warning(f"[Telephony Audio] Could not persist audio to disk: {e}")
     return audio_id
 
 
 def get_audio_bytes(audio_id: str) -> Optional[bytes]:
-    """Retrieves WAV audio bytes by audio_id."""
+    """Retrieves WAV audio bytes by audio_id, checking memory cache then disk."""
     clean_id = audio_id.replace(".wav", "").strip()
     item = _AUDIO_CACHE.get(clean_id)
-    return item["data"] if item else None
+    if item:
+        return item["data"]
+    file_path = os.path.join(AUDIO_DISK_CACHE_DIR, f"{clean_id}.wav")
+    if os.path.isfile(file_path):
+        try:
+            with open(file_path, "rb") as f:
+                data = f.read()
+                _AUDIO_CACHE[clean_id] = {
+                    "data": data,
+                    "created_at": time.time(),
+                    "text": "",
+                }
+                return data
+        except Exception:
+            pass
+    return None
 
 
 def synthesize_speech_to_wav(

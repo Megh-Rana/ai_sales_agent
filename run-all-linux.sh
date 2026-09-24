@@ -410,16 +410,15 @@ fi
 pkill -f "ssh.*localhost.run" 2>/dev/null || true
 rm -f "$LOG_DIR/tunnel_url.txt"
 
-# Launch SSH reverse tunnel to localhost.run
-# nokey@localhost.run enables instant keyless TLS tunneling for port 8000
-nohup ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -R 80:localhost:8000 nokey@localhost.run > "$LOG_DIR/tunnel.log" 2>&1 &
+# Launch SSH reverse tunnel to localhost.run with JSON event streaming
+nohup ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=15 -R 80:localhost:8000 nokey@localhost.run -- --output json > "$LOG_DIR/tunnel.log" 2>&1 &
 TUNNEL_PID=$!
 echo $TUNNEL_PID > "$LOG_DIR/tunnel.pid"
 
 TUNNEL_URL=""
-for i in {1..12}; do
+for i in {1..20}; do
     if [ -f "$LOG_DIR/tunnel.log" ]; then
-        TUNNEL_URL=$(grep -o -E 'https://[a-zA-Z0-9.-]+(\.lhr\.life|\.localhost\.run)' "$LOG_DIR/tunnel.log" | tail -n 1)
+        TUNNEL_URL=$(grep -o -E 'https://[a-zA-Z0-9.-]+\.lhr\.life' "$LOG_DIR/tunnel.log" | tail -n 1)
         if [ -n "$TUNNEL_URL" ]; then
             echo "$TUNNEL_URL" > "$LOG_DIR/tunnel_url.txt"
             export TWILIO_WEBHOOK_BASE_URL="$TUNNEL_URL"
