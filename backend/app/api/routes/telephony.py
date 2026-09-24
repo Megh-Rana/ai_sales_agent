@@ -12,7 +12,7 @@ import json
 import uuid
 import base64
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 from uuid import UUID
 from datetime import datetime, timezone
 
@@ -86,7 +86,7 @@ def get_or_create_brain(call: Optional[Call], language: str = "en") -> AIBrain:
 # ──────────────────────────────────────────────────────────────────────────────
 
 class DialRequest(BaseModel):
-    lead_id: UUID = Field(..., description="ID of the lead to dial")
+    lead_id: Union[UUID, str] = Field(..., description="ID of the lead to dial (UUID or string)")
     to_phone: Optional[str] = Field(None, description="Destination phone number")
     from_phone: Optional[str] = Field(None, description="Caller ID phone number")
     language: str = Field(default="en", description="Conversation language (en, hi, mr, gu)")
@@ -101,26 +101,26 @@ class AMDCheckRequest(BaseModel):
 
 
 class VoicemailDropRequest(BaseModel):
-    call_id: UUID = Field(..., description="Active call ID")
+    call_id: Union[UUID, str] = Field(..., description="Active call ID")
     language: str = Field(default="en", description="Voicemail audio language")
     custom_message: Optional[str] = Field(None, description="Optional custom voicemail text")
 
 
 class RetryCheckRequest(BaseModel):
-    call_id: UUID = Field(..., description="Unanswered call ID")
+    call_id: Union[UUID, str] = Field(..., description="Unanswered call ID")
     max_retries: int = Field(default=3, ge=1, le=10)
     retry_interval_minutes: int = Field(default=15, ge=1, le=1440)
 
 
 class CallbackScheduleRequest(BaseModel):
-    lead_id: UUID = Field(..., description="Lead ID")
+    lead_id: Union[UUID, str] = Field(..., description="Lead ID")
     callback_time_iso: str = Field(..., description="ISO 8601 timestamp for callback")
     prospect_timezone: str = Field(default="Asia/Kolkata", description="Prospect's local timezone")
     notes: Optional[str] = Field(None, description="Context or notes for the callback")
 
 
 class SendSmsRequest(BaseModel):
-    call_id: UUID = Field(..., description="Call ID to associate with SMS")
+    call_id: Union[UUID, str] = Field(..., description="Call ID to associate with SMS")
     message: str = Field(..., max_length=1600, description="SMS message body")
 
 
@@ -185,7 +185,7 @@ def dial_outbound(
 
 @router.post("/calls/{call_id}/hangup", response_model=CallResponse, summary="Terminate active call session")
 def hangup_call(
-    call_id: UUID,
+    call_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -219,7 +219,7 @@ def send_twilio_sms(
 @router.api_route("/twilio/voice", methods=["GET", "POST"], summary="Twilio Voice connect webhook")
 async def twilio_voice_webhook(
     request: Request,
-    call_id: Optional[UUID] = Query(None),
+    call_id: Optional[str] = Query(None),
     lang: str = Query("en"),
     db: Session = Depends(get_db),
 ):
@@ -243,8 +243,12 @@ async def twilio_voice_webhook(
     # Look up call session in database
     call = None
     if call_id:
-        call = db.scalars(select(Call).where(Call.id == call_id)).first()
-    elif call_sid:
+        try:
+            call_uuid = uuid.UUID(str(call_id))
+            call = db.scalars(select(Call).where(Call.id == call_uuid)).first()
+        except Exception:
+            call = db.scalars(select(Call).where(Call.provider_call_id == str(call_id))).first()
+    if not call and call_sid:
         call = db.scalars(select(Call).where(Call.provider_call_id == call_sid)).first()
 
     # 1. Answering Machine Detection (AMD) Handling
@@ -312,7 +316,7 @@ async def twilio_voice_webhook(
 @router.post("/twilio/gather", summary="Twilio Speech Gather conversation turn webhook")
 async def twilio_gather_webhook(
     request: Request,
-    call_id: Optional[UUID] = Query(None),
+    call_id: Optional[str] = Query(None),
     lang: str = Query("en"),
     db: Session = Depends(get_db),
 ):
@@ -334,8 +338,12 @@ async def twilio_gather_webhook(
 
     call = None
     if call_id:
-        call = db.scalars(select(Call).where(Call.id == call_id)).first()
-    elif call_sid:
+        try:
+            call_uuid = uuid.UUID(str(call_id))
+            call = db.scalars(select(Call).where(Call.id == call_uuid)).first()
+        except Exception:
+            call = db.scalars(select(Call).where(Call.provider_call_id == str(call_id))).first()
+    if not call and call_sid:
         call = db.scalars(select(Call).where(Call.provider_call_id == call_sid)).first()
 
     next_gather_url = f"{base_url}/api/telephony/twilio/gather?call_id={call.id if call else ''}&lang={lang}"
@@ -520,7 +528,7 @@ async def twilio_status_callback(
 @router.post("/twilio/amd-callback", summary="Twilio AMD Answering Machine Detection webhook")
 async def twilio_amd_callback(
     request: Request,
-    call_id: Optional[UUID] = Query(None),
+    call_id: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     form_data = {}
@@ -534,8 +542,12 @@ async def twilio_amd_callback(
 
     call = None
     if call_id:
-        call = db.scalars(select(Call).where(Call.id == call_id)).first()
-    elif call_sid:
+        try:
+            call_uuid = uuid.UUID(str(call_id))
+            call = db.scalars(select(Call).where(Call.id == call_uuid)).first()
+        except Exception:
+            call = db.scalars(select(Call).where(Call.provider_call_id == str(call_id))).first()
+    if not call and call_sid:
         call = db.scalars(select(Call).where(Call.provider_call_id == call_sid)).first()
 
     if call and answered_by:

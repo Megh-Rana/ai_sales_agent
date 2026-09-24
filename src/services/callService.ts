@@ -435,7 +435,15 @@ class CallService {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to place Twilio PSTN call');
+      let msg = 'Failed to place Twilio PSTN call';
+      if (typeof err.detail === 'string') {
+        msg = err.detail;
+      } else if (Array.isArray(err.detail)) {
+        msg = err.detail.map((e: any) => e.msg || e.message || (e.loc ? `${e.loc.join('.')}: ${e.type}` : JSON.stringify(e))).join('; ');
+      } else if (err.message) {
+        msg = err.message;
+      }
+      throw new Error(msg);
     }
 
     return response.json();
@@ -454,7 +462,8 @@ class CallService {
       headers,
     });
     if (!response.ok) {
-      throw new Error('Failed to hangup call');
+      const err = await response.json().catch(() => ({}));
+      throw new Error(typeof err.detail === 'string' ? err.detail : 'Failed to hangup call');
     }
     return response.json();
   }
@@ -474,7 +483,8 @@ class CallService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to dispatch Twilio SMS');
+      const err = await response.json().catch(() => ({}));
+      throw new Error(typeof err.detail === 'string' ? err.detail : 'Failed to dispatch Twilio SMS');
     }
     return response.json();
   }

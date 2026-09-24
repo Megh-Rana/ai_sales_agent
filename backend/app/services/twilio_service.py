@@ -239,22 +239,38 @@ class TwilioService:
         if cls.is_live_configured():
             client = cls.get_client()
             if client:
+                tw_call = None
                 try:
                     logger.info(f"[Twilio] Initiating live outbound call to {clean_to_phone} from {clean_caller_id}")
-                    tw_call = client.calls.create(
-                        to=clean_to_phone,
-                        from_=clean_caller_id,
-                        url=voice_url,
-                        status_callback=status_url,
-                        status_callback_event=["initiated", "ringing", "answered", "completed"],
-                        status_callback_method="POST",
-                        machine_detection="DetectMessageEnd" if enable_amd else "None",
-                        machine_detection_timeout=30,
-                        async_amd="true" if enable_amd else "false",
-                        async_amd_status_callback=amd_url if enable_amd else None,
-                        async_amd_status_callback_method="POST",
-                        record=record,
-                    )
+                    # Try with AMD if enabled
+                    if enable_amd:
+                        try:
+                            tw_call = client.calls.create(
+                                to=clean_to_phone,
+                                from_=clean_caller_id,
+                                url=voice_url,
+                                status_callback=status_url,
+                                machine_detection="DetectMessageEnd",
+                                machine_detection_timeout=30,
+                                record=record,
+                            )
+                        except TwilioRestException as amd_err:
+                            if "trial" in amd_err.msg.lower() or "disallowed" in amd_err.msg.lower():
+                                logger.info("[Twilio] Trial account detected. Retrying with standard call parameters...")
+                                tw_call = None
+                            else:
+                                raise amd_err
+
+                    # Standard parameters (guaranteed to work across all Twilio tiers, including free trials)
+                    if not tw_call:
+                        tw_call = client.calls.create(
+                            to=clean_to_phone,
+                            from_=clean_caller_id,
+                            url=voice_url,
+                            status_callback=status_url,
+                        )
+
+                    logger.info(f"[Twilio] Live call dispatched successfully! SID: {tw_call.sid}")
                     return {
                         "provider": "twilio",
                         "provider_call_id": tw_call.sid,
@@ -270,10 +286,10 @@ class TwilioService:
                     }
                 except TwilioRestException as e:
                     logger.error(f"[Twilio] Outbound call API error: {e.msg} (Code: {e.code})")
-                    # If live call failed due to trial account or unverified number, fall back cleanly
-                    logger.warning("[Twilio] Falling back to carrier mock dialer due to API restriction.")
+                    raise ValueError(f"Twilio dialing failed: {e.msg}")
                 except Exception as e:
                     logger.error(f"[Twilio] Unexpected error during call dispatch: {e}")
+                    raise ValueError(f"Call dispatch error: {str(e)}")
 
         # MOCK / SANDBOX CARRIER DISPATCH (Always succeeds for local testing)
         provider_call_sid = f"CA{uuid.uuid4().hex[:32]}"
