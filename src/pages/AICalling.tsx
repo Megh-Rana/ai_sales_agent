@@ -530,7 +530,7 @@ export const AICalling: React.FC = () => {
           toPhone: effectivePhone,
           language: langCode,
           enableAmd: true,
-          customPitch: openingPitch,
+          customPitch: dynamicPitch || undefined,
         });
 
         const activeId = twilioCall.id || twilioCall.provider_call_id;
