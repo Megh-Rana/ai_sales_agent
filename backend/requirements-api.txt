@@ -21,6 +21,9 @@ httpx>=0.25.0
 python-dotenv>=1.0.0
 numpy>=1.24.0
 
+# Telephony Carrier & PSTN Trunking
+twilio>=9.0.0
+
 # Voice & AI Engine dependencies
 faster-whisper>=1.0.0
 ollama>=0.4.0

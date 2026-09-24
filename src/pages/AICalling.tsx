@@ -489,7 +489,7 @@ export const AICalling: React.FC = () => {
     setIsConfirmationOpen(true);
   };
 
-  const handleConfirmStart = async (language: CallLanguage) => {
+  const handleConfirmStart = async (language: CallLanguage, callMode: 'browser' | 'twilio_pstn' = 'twilio_pstn') => {
     setIsConfirmationOpen(false);
     clearAllTimeouts();
     stepIndexRef.current = 0;
@@ -511,8 +511,56 @@ export const AICalling: React.FC = () => {
       duration: 0,
       transcript: [],
       intelligenceEvents: [],
+      carrier: callMode === 'twilio_pstn' ? 'Twilio Elastic SIP Trunk' : 'Internal Web Audio',
       qualification: JSON.parse(JSON.stringify(INITIAL_QUALIFICATION_DIMENSIONS))
     }));
+
+    // Twilio Real Outbound PSTN Dialing
+    if (callMode === 'twilio_pstn') {
+      setConnectingStageText('Allocating Twilio Elastic SIP Trunking Route...');
+      try {
+        const twilioCall = await callService.dialTwilioPstn({
+          leadId: resolvedLeadId,
+          toPhone: session.contactPhone,
+          language: langCode,
+          enableAmd: true,
+        });
+
+        const activeId = twilioCall.id || twilioCall.provider_call_id;
+        setBackendSessionId(activeId);
+        setIsRealVoiceCall(true);
+
+        setConnectingStageText(`Twilio PSTN carrier trunk active (SID: ${twilioCall.provider_call_id || twilioCall.id}). Ringing prospect...`);
+        toast.success(`Twilio carrier call dispatched to ${session.contactPhone || 'prospect'}`, {
+          description: 'PSTN trunk active. Audio powered by internal Sarvam Bulbul TTS + Ollama Gemma 3.',
+        });
+
+        setTimeout(() => {
+          setSession((prev) => ({
+            ...prev,
+            status: 'LIVE',
+            audioStatus: 'ai_speaking',
+            providerCallSid: twilioCall.provider_call_id,
+            carrier: 'Twilio Elastic SIP Trunk',
+          }));
+        }, 1200);
+
+        pollCallStatus(activeId);
+        return;
+      } catch (err: any) {
+        console.error('Twilio PSTN dial error:', err);
+        toast.error('Twilio PSTN call failed', {
+          description: err.message || 'Check Twilio credentials or carrier trunk status.',
+        });
+        setSession((prev) => ({
+          ...prev,
+          status: 'FAILED',
+          failureReason: err.message || 'Twilio carrier dispatch failed',
+        }));
+        setIsRealVoiceCall(false);
+        return;
+      }
+    }
 
     setConnectingStageText('Initializing AI Voice Agent...');
 
@@ -630,7 +678,12 @@ export const AICalling: React.FC = () => {
     // If this is a real voice call, end it on the backend
     if (isRealVoiceCall && backendSessionId) {
       try {
-        const result = await callService.endCall(backendSessionId);
+        let result: any = null;
+        if (session.carrier?.includes('Twilio')) {
+          result = await callService.hangupCall(backendSessionId).catch(() => ({ duration: session.duration }));
+        } else {
+          result = await callService.endCall(backendSessionId).catch(() => ({ duration: session.duration }));
+        }
         
         setSession((prev) => {
           const finalDuration = result.duration || prev.duration || 120;

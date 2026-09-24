@@ -60,6 +60,11 @@ else
     print_info "No frontend PID file found"
 fi
 
+# Ensure ports are free
+fuser -k 8000/tcp 2>/dev/null || true
+fuser -k 3000/tcp 2>/dev/null || true
+fuser -k 5173/tcp 2>/dev/null || true
+
 # Stop Ollama (optional - you may want to keep it running)
 if [ -f "$LOG_DIR/ollama.pid" ]; then
     OLLAMA_PID=$(cat "$LOG_DIR/ollama.pid")

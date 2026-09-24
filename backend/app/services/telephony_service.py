@@ -22,6 +22,9 @@ from app.services.call_service import CallService
 from app.services.call_lifecycle import validate_call_transition
 
 
+from app.services.twilio_service import TwilioService
+
+
 # Standardized Multilingual Voicemail Audio Scripts
 VOICEMAIL_SCRIPTS: Dict[str, str] = {
     "en": "Hello, this is Alex from Vidur AI following up on your sales automation inquiry. I'll follow up via email with more details. Have a great day!",
@@ -92,10 +95,8 @@ class TelephonyService:
 
     @staticmethod
     def get_carrier_config() -> Dict[str, Any]:
-        """Loads telephony carrier credentials from environment."""
-        twilio_sid = os.getenv("TWILIO_ACCOUNT_SID")
-        twilio_token = os.getenv("TWILIO_AUTH_TOKEN")
-        twilio_from = os.getenv("TWILIO_PHONE_NUMBER", "+1-555-0199")
+        """Loads telephony carrier credentials and Twilio readiness status."""
+        twilio_status = TwilioService.get_status()
         exotel_sid = os.getenv("EXOTEL_SID")
         exotel_token = os.getenv("EXOTEL_TOKEN")
 
@@ -105,9 +106,10 @@ class TelephonyService:
 
         return {
             "carrier": active_carrier,
-            "twilio_configured": bool(twilio_sid and twilio_token),
+            "twilio_configured": bool(os.getenv("TWILIO_ACCOUNT_SID") and os.getenv("TWILIO_AUTH_TOKEN")),
             "exotel_configured": bool(exotel_sid and exotel_token),
-            "from_phone": twilio_from,
+            "from_phone": twilio_status["phone_number"],
+            "twilio": twilio_status,
         }
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -124,6 +126,7 @@ class TelephonyService:
         language: str = "en",
         carrier: str = "twilio",
         enable_amd: bool = True,
+        webhook_base_url: Optional[str] = None,
     ) -> Call:
         """
         Places a real outbound call to a prospect's phone number via PSTN/SIP carrier trunking.
@@ -139,22 +142,50 @@ class TelephonyService:
 
         destination_phone = to_phone or lead.contact_phone or "+1-555-0100"
         caller_id = from_phone or os.getenv("TWILIO_PHONE_NUMBER", "+1-555-0199")
-        provider_call_sid = f"CA{uuid.uuid4().hex[:32]}"
 
-        # Carrier dispatch payload
-        carrier_metadata = {
-            "carrier": carrier.lower(),
-            "destination_phone": destination_phone,
-            "caller_id": caller_id,
-            "amd_enabled": enable_amd,
-            "trunk_protocol": "SIP/2.0",
-            "dial_initiated_at": datetime.now(timezone.utc).isoformat(),
-            "sip_response_code": 200,
-            "audio_codec": "PCMU/8000",
-        }
+        # Pre-generate internal ID to link webhooks
+        call_id = uuid.uuid4()
+
+        # Carrier dispatch
+        if carrier.lower() == "twilio":
+            dispatch = TwilioService.make_outbound_call(
+                to_phone=destination_phone,
+                from_phone=caller_id,
+                call_id=call_id,
+                language=language,
+                webhook_base_url=webhook_base_url,
+                enable_amd=enable_amd,
+            )
+            provider_call_sid = dispatch["provider_call_id"]
+            carrier_metadata = {
+                "carrier": "twilio",
+                "destination_phone": destination_phone,
+                "caller_id": caller_id,
+                "amd_enabled": enable_amd,
+                "trunk_protocol": "SIP/2.0",
+                "dial_initiated_at": datetime.now(timezone.utc).isoformat(),
+                "sip_response_code": 200,
+                "audio_codec": "PCMU/8000",
+                "is_live_call": dispatch.get("live", False),
+                "voice_url": dispatch.get("voice_url"),
+            }
+        else:
+            provider_call_sid = f"CA{uuid.uuid4().hex[:32]}"
+            carrier_metadata = {
+                "carrier": carrier.lower(),
+                "destination_phone": destination_phone,
+                "caller_id": caller_id,
+                "amd_enabled": enable_amd,
+                "trunk_protocol": "SIP/2.0",
+                "dial_initiated_at": datetime.now(timezone.utc).isoformat(),
+                "sip_response_code": 200,
+                "audio_codec": "PCMU/8000",
+                "is_live_call": False,
+            }
 
         # Create active call record
         call = Call(
+            id=call_id,
             lead_id=lead.id,
             status="in_progress",
             language=language,
@@ -172,6 +203,63 @@ class TelephonyService:
         db.commit()
         db.refresh(call)
         return call
+
+    @staticmethod
+    def hangup_call(
+        db: Session,
+        call_id: UUID,
+        owner_id: UUID,
+    ) -> Call:
+        """Terminates an active call session and updates call status to completed."""
+        call = CallService.get_call(db, call_id, owner_id)
+        if not call:
+            raise ValueError(f"Call {call_id} not found.")
+
+        if call.provider == "twilio" and call.provider_call_id:
+            TwilioService.hangup_call(call.provider_call_id)
+
+        if call.status in ("in_progress", "scheduled"):
+            call.status = "completed"
+            call.completed_at = datetime.now(timezone.utc)
+
+        db.commit()
+        db.refresh(call)
+        return call
+
+    @staticmethod
+    def send_sms(
+        db: Session,
+        call_id: UUID,
+        owner_id: UUID,
+        message: str,
+    ) -> Dict[str, Any]:
+        """Dispatches an SMS to the lead associated with this call via Twilio."""
+        call = CallService.get_call(db, call_id, owner_id)
+        if not call:
+            raise ValueError(f"Call {call_id} not found.")
+
+        lead = db.scalars(select(Lead).where(Lead.id == call.lead_id)).first()
+        if not lead or not lead.contact_phone:
+            raise ValueError("Lead phone number not found.")
+
+        result = TwilioService.send_sms(to_phone=lead.contact_phone, body=message)
+
+        # Track in call metadata
+        meta = dict(call.metadata_json or {})
+        sms_list = meta.get("sms_sent", [])
+        sms_list.append({
+            "message": message,
+            "sent_at": datetime.now(timezone.utc).isoformat(),
+            "sid": result.get("sid"),
+            "live": result.get("live", False),
+        })
+        meta["sms_sent"] = sms_list
+        call.metadata_json = meta
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(call, "metadata_json")
+        db.commit()
+
+        return result
 
     # ──────────────────────────────────────────────────────────────────────────
     # 2. ANSWERING MACHINE DETECTION (AMD)

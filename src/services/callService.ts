@@ -372,6 +372,112 @@ class CallService {
     const wsUrl = this.baseUrl.replace('http', 'ws');
     return new WebSocket(`${wsUrl}/ws/call/${sessionId}`);
   }
+
+  /**
+   * Get carrier telephony configuration & Twilio readiness
+   */
+  async getTelephonyConfig(): Promise<any> {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.baseUrl}/api/telephony/config`, { headers });
+    if (!response.ok) {
+      throw new Error('Failed to fetch telephony configuration');
+    }
+    return response.json();
+  }
+
+  /**
+   * Verify Twilio account credentials directly against Twilio REST API
+   */
+  async verifyTwilio(): Promise<any> {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.baseUrl}/api/telephony/twilio/verify`, {
+      method: 'POST',
+      headers,
+    });
+    if (!response.ok) {
+      throw new Error('Twilio verification request failed');
+    }
+    return response.json();
+  }
+
+  /**
+   * Dial an outbound PSTN phone call via Twilio carrier trunking
+   */
+  async dialTwilioPstn(request: {
+    leadId: string;
+    toPhone?: string;
+    fromPhone?: string;
+    language?: string;
+    enableAmd?: boolean;
+  }): Promise<any> {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.baseUrl}/api/telephony/dial`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        lead_id: request.leadId,
+        to_phone: request.toPhone,
+        from_phone: request.fromPhone,
+        language: request.language || 'en',
+        carrier: 'twilio',
+        enable_amd: request.enableAmd !== false,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to place Twilio PSTN call');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Terminate active telephone call
+   */
+  async hangupCall(callId: string): Promise<any> {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.baseUrl}/api/telephony/calls/${callId}/hangup`, {
+      method: 'POST',
+      headers,
+    });
+    if (!response.ok) {
+      throw new Error('Failed to hangup call');
+    }
+    return response.json();
+  }
+
+  /**
+   * Send follow-up SMS via Twilio
+   */
+  async sendTwilioSms(callId: string, message: string): Promise<any> {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.baseUrl}/api/telephony/twilio/sms`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ call_id: callId, message }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to dispatch Twilio SMS');
+    }
+    return response.json();
+  }
 }
 
 // Export singleton instance

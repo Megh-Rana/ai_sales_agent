@@ -71,6 +71,10 @@ class ConversationMemory:
                 messages.append({"role": "user", "content": turn.text})
         return messages
 
+    def get_recent_history(self, n: int = 6) -> list[dict]:
+        """Get recent conversation history formatted for LLM input."""
+        return self.get_context_for_llm(max_turns=n)
+
     def get_context_string(self, max_turns: int = 10) -> str:
         """Get conversation history as a formatted string."""
         recent = self.turns[-max_turns:] if len(self.turns) > max_turns else self.turns

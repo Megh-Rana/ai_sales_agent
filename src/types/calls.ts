@@ -83,6 +83,8 @@ export interface CallSession {
   isHumanTakeover: boolean;
   failureReason?: string;
   primaryOutcome?: string;
+  carrier?: string;
+  providerCallSid?: string;
   currentObjective: CurrentObjective;
   transcript: TranscriptItem[];
   intelligenceEvents: IntelligenceEvent[];

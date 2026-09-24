@@ -75,9 +75,29 @@ async def on_startup():
     global main_loop
     main_loop = asyncio.get_running_loop()
     try:
-        from app.db.database import init_db
+        from app.db.database import init_db, is_sqlite
         init_db()
-        print("Local SQLite database initialized successfully.")
+        engine_type = "SQLite" if is_sqlite else "PostgreSQL"
+        print(f"Database initialized successfully ({engine_type}).")
+        try:
+            from seed_users import SEED_USERS
+            from app.db.database import SessionLocal
+            from app.services.auth_service import register_user
+            db = SessionLocal()
+            for user in SEED_USERS:
+                try:
+                    register_user(
+                        db=db,
+                        email=user["email"],
+                        password=user["password"],
+                        full_name=user["full_name"],
+                        role=user["role"],
+                    )
+                except Exception:
+                    pass
+            db.close()
+        except Exception as seed_u_err:
+            print(f"User seed notice: {seed_u_err}")
         try:
             from seed_discovery_leads import parse_and_seed_discovery_leads
             parse_and_seed_discovery_leads()

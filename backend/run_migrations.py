@@ -52,7 +52,9 @@ def run_migration():
             print()
 
             print("🔄 Applying migrations...")
-            print("-" * 70)
+            # Ensure base tables exist before running schema migrations
+            from app.db.database import init_db
+            init_db()
 
             inspector = inspect(conn)
             existing_tables = set(inspector.get_table_names())

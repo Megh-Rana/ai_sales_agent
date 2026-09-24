@@ -32,7 +32,7 @@
     "module": "AI Voice Agent",
     "priority": "Critical",
     "status": "PASS",
-    "details": "Full outbound telephony layer verified: (1) Outbound PSTN carrier trunking active (SID: CA19310dae6c4649de8313e1c3f17643c1). (2) Dual-layer AMD correctly differentiates human vs answering machine. (3) Automated multilingual voicemail drop executed ('voicemail left'). (4) Automated unanswered retry logic verified, prospect timezone callback scheduled (2026-09-22 15:30:00 IST), and retries permanently halted once prospect reached. (5) Multilingual STT/TTS prompt pipeline, transcript persistence, and Next-Best-Action generation verified end-to-end.",
+    "details": "Full outbound telephony layer verified: (1) Outbound PSTN carrier trunking active (SID: CA7db4d6db4acb4bc2b87656e71aacbe76). (2) Dual-layer AMD correctly differentiates human vs answering machine. (3) Automated multilingual voicemail drop executed ('voicemail left'). (4) Automated unanswered retry logic verified, prospect timezone callback scheduled (2026-09-22 15:30:00 IST), and retries permanently halted once prospect reached. (5) Multilingual STT/TTS prompt pipeline, transcript persistence, and Next-Best-Action generation verified end-to-end.",
     "defect": null
   },
   {
@@ -59,7 +59,7 @@
     "module": "CRM Integration",
     "priority": "High",
     "status": "PASS",
-    "details": "Bi-directional HubSpot CRM sync verified successfully. OAuth2 client active (Portal: hubspot-portal-9941). Lead pushed to CRM with full field mapping (remote Contact ID: hs-contact-71bda939). Call outcome 'Interested' & transcript link synced to CRM engagement (hs-engagement-a28d9363). Sync failure safely caught and recorded in audit log (4 entries logged).",
+    "details": "Bi-directional HubSpot CRM sync verified successfully. OAuth2 client active (Portal: hubspot-portal-9941). Lead pushed to CRM with full field mapping (remote Contact ID: hs-contact-3c674440). Call outcome 'Interested' & transcript link synced to CRM engagement (hs-engagement-e42323aa). Sync failure safely caught and recorded in audit log (4 entries logged).",
     "defect": null
   },
   {

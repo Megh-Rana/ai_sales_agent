@@ -23,7 +23,7 @@ import { getProspectTimezone, getCallingWindowStatus } from '../../utils/timezon
 export interface CallConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (selectedLanguage: CallLanguage) => void;
+  onConfirm: (selectedLanguage: CallLanguage, callMode?: 'browser' | 'twilio_pstn') => void;
   companyName: string;
   contactName: string;
   contactRole: string;
@@ -60,6 +60,7 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
   onOpenEmailModal
 }) => {
   const [overrideRestricted, setOverrideRestricted] = useState(false);
+  const [callMode, setCallMode] = useState<'browser' | 'twilio_pstn'>('twilio_pstn');
 
   // Timezone and Calling Window Evaluation
   const prospectTimezone = getProspectTimezone(location, phone);
@@ -181,6 +182,69 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
           </div>
         )}
 
+        {/* Telephony Route & Carrier Selection */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-mono uppercase text-foreground-tertiary font-bold flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <PhoneCall className="w-3.5 h-3.5 text-primary" />
+              <span>Telephony Carrier Routing</span>
+            </span>
+            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              Twilio Elastic SIP Trunk Active
+            </span>
+          </label>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => setCallMode('twilio_pstn')}
+              className={`p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                callMode === 'twilio_pstn'
+                  ? 'bg-primary/10 border-primary shadow-xs ring-1 ring-primary'
+                  : 'bg-surface-elevated border-border-subtle text-foreground-secondary hover:text-foreground hover:border-border-default'
+              }`}
+            >
+              <div className="flex items-center justify-between w-full pb-1">
+                <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                  <Radio className="w-3.5 h-3.5 text-emerald-400" />
+                  Twilio PSTN Dialing
+                </span>
+                {callMode === 'twilio_pstn' && <Check className="w-3.5 h-3.5 text-primary stroke-[2.5]" />}
+              </div>
+              <p className="text-[11px] text-foreground-tertiary">
+                Dials <span className="font-mono text-foreground-secondary font-medium">{phone || '+91 98201 54890'}</span> via Twilio carrier trunk with live Answering Machine Detection (AMD).
+              </p>
+              <div className="pt-2 text-[10px] font-mono text-primary flex items-center gap-1">
+                <span>⚡ Voice & AI: Internal Sarvam Bulbul + Ollama</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCallMode('browser')}
+              className={`p-3 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                callMode === 'browser'
+                  ? 'bg-primary/10 border-primary shadow-xs ring-1 ring-primary'
+                  : 'bg-surface-elevated border-border-subtle text-foreground-secondary hover:text-foreground hover:border-border-default'
+              }`}
+            >
+              <div className="flex items-center justify-between w-full pb-1">
+                <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                  <Radio className="w-3.5 h-3.5 text-signal-high" />
+                  Browser Voice Agent
+                </span>
+                {callMode === 'browser' && <Check className="w-3.5 h-3.5 text-primary stroke-[2.5]" />}
+              </div>
+              <p className="text-[11px] text-foreground-tertiary">
+                Direct interactive voice conversation using your computer microphone and speaker.
+              </p>
+              <div className="pt-2 text-[10px] font-mono text-primary flex items-center gap-1">
+                <span>⚡ Voice & AI: Internal Sarvam Bulbul + Ollama</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
         {/* Spoken Language Selection */}
         <div className="space-y-2">
           <label className="text-[10px] font-mono uppercase text-foreground-tertiary font-bold flex items-center gap-1.5">
@@ -294,11 +358,11 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
               size="md"
               leftIcon={<PhoneCall className="w-4 h-4" />}
               disabled={!canLaunchCall}
-              onClick={() => onConfirm(selectedLanguage)}
+              onClick={() => onConfirm(selectedLanguage, callMode)}
               className="font-semibold text-xs px-5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               title={!canLaunchCall ? 'Calling is restricted during prospect quiet hours. Please check override checkbox.' : 'Launch autonomous voice call'}
             >
-              Start AI Call
+              {callMode === 'twilio_pstn' ? 'Dial Phone via Twilio' : 'Start Browser AI Call'}
             </Button>
           </div>
         </div>

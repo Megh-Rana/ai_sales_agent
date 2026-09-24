@@ -349,7 +349,8 @@ class AIBrain:
         # Add recent conversation history (last N turns)
         history = self.memory.get_recent_history(n=6)
         for turn in history:
-            messages.append({"role": turn["role"], "content": turn["text"]})
+            content = turn.get("content") if "content" in turn else turn.get("text", "")
+            messages.append({"role": turn["role"], "content": content})
 
         # Sentence buffer for streaming TTS
         sentence_buffer = ""
