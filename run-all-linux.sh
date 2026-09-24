@@ -3,11 +3,12 @@
 # AI Sales Agent Platform - Complete Linux Setup & Run Script
 # =============================================================================
 # This script:
-# 1. Checks and installs dependencies (Ollama, Python, Node.js)
-# 2. Sets up Ollama with Gemma model
-# 3. Runs database migrations
-# 4. Starts backend API server
-# 5. Starts frontend development server
+# 1. Checks and installs dependencies (PostgreSQL, Ollama, Python, Node.js)
+# 2. Sets up PostgreSQL database
+# 3. Sets up Ollama with Gemma model
+# 4. Runs database migrations
+# 5. Starts backend API server
+# 6. Starts frontend development server
 # =============================================================================
 
 set -e  # Exit on error
@@ -93,10 +94,96 @@ fi
 echo ""
 
 # =============================================================================
-# 2. Setup Ollama
+# 2. Setup PostgreSQL
 # =============================================================================
 
-echo -e "${BLUE}[2/6] Setting up Ollama...${NC}"
+echo -e "${BLUE}[2/7] Setting up PostgreSQL...${NC}"
+echo ""
+
+if check_command psql; then
+    print_status "PostgreSQL client is installed"
+else
+    print_info "PostgreSQL not found. Installing PostgreSQL..."
+    
+    # Detect Linux distribution
+    if [ -f /etc/fedora-release ]; then
+        # Fedora/RHEL-based
+        sudo dnf install -y postgresql-server postgresql-contrib
+        sudo postgresql-setup --initdb
+        sudo systemctl enable postgresql
+        sudo systemctl start postgresql
+    elif [ -f /etc/debian_version ]; then
+        # Debian/Ubuntu-based
+        sudo apt-get update
+        sudo apt-get install -y postgresql postgresql-contrib
+    elif [ -f /etc/arch-release ]; then
+        # Arch-based
+        sudo pacman -S --noconfirm postgresql
+        sudo -u postgres initdb -D /var/lib/postgres/data
+        sudo systemctl enable postgresql
+        sudo systemctl start postgresql
+    else
+        print_error "Unsupported Linux distribution. Please install PostgreSQL manually."
+        exit 1
+    fi
+    
+    print_status "PostgreSQL installed"
+fi
+
+# Check if PostgreSQL service is running
+if sudo systemctl is-active --quiet postgresql 2>/dev/null; then
+    print_status "PostgreSQL service is running"
+else
+    print_info "Starting PostgreSQL service..."
+    sudo systemctl start postgresql
+    sleep 2
+    
+    if sudo systemctl is-active --quiet postgresql; then
+        print_status "PostgreSQL service started"
+    else
+        print_error "Failed to start PostgreSQL service"
+        exit 1
+    fi
+fi
+
+# Setup database and user
+print_info "Setting up database and user..."
+
+# Create database user and database if they don't exist
+sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='vidur_user'" | grep -q 1 || \
+    sudo -u postgres psql -c "CREATE USER vidur_user WITH PASSWORD 'vidur_password';"
+
+sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw vidur_sales || \
+    sudo -u postgres psql -c "CREATE DATABASE vidur_sales OWNER vidur_user;"
+
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE vidur_sales TO vidur_user;"
+
+print_status "Database 'vidur_sales' and user 'vidur_user' configured"
+
+# Create .env file if it doesn't exist
+if [ ! -f "$PROJECT_ROOT/.env" ]; then
+    print_info "Creating .env file from template..."
+    cp "$PROJECT_ROOT/.env.example" "$PROJECT_ROOT/.env"
+    
+    # Update DATABASE_URL in .env
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' 's|DATABASE_URL=.*|DATABASE_URL=postgresql://vidur_user:vidur_password@localhost:5432/vidur_sales|g' "$PROJECT_ROOT/.env"
+    else
+        sed -i 's|DATABASE_URL=.*|DATABASE_URL=postgresql://vidur_user:vidur_password@localhost:5432/vidur_sales|g' "$PROJECT_ROOT/.env"
+    fi
+    
+    print_status ".env file created with database credentials"
+else
+    print_status ".env file already exists"
+fi
+
+echo ""
+
+# =============================================================================
+# 3. Setup Ollama
+# =============================================================================
+
+echo -e "${BLUE}[3/7] Setting up Ollama...${NC}"
 echo ""
 
 if check_command ollama; then
@@ -154,10 +241,10 @@ fi
 echo ""
 
 # =============================================================================
-# 3. Setup Python Backend
+# 4. Setup Python Backend
 # =============================================================================
 
-echo -e "${BLUE}[3/6] Setting up Python backend...${NC}"
+echo -e "${BLUE}[4/7] Setting up Python backend...${NC}"
 echo ""
 
 cd "$BACKEND_DIR"
@@ -208,10 +295,10 @@ fi
 echo ""
 
 # =============================================================================
-# 4. Run Database Migrations
+# 5. Run Database Migrations
 # =============================================================================
 
-echo -e "${BLUE}[4/6] Running database migrations...${NC}"
+echo -e "${BLUE}[5/7] Running database migrations...${NC}"
 echo ""
 
 if [ -f "$BACKEND_DIR/run_migrations.py" ]; then
@@ -231,10 +318,10 @@ fi
 echo ""
 
 # =============================================================================
-# 5. Start Backend Server
+# 6. Start Backend Server
 # =============================================================================
 
-echo -e "${BLUE}[5/6] Starting backend API server...${NC}"
+echo -e "${BLUE}[6/7] Starting backend API server...${NC}"
 echo ""
 
 # Kill existing backend process if running
@@ -249,6 +336,12 @@ fi
 
 # Start backend server
 print_info "Starting FastAPI backend on http://localhost:8000..."
+
+# Export environment variables from .env file if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+fi
+
 nohup python -m uvicorn api_server:app --host 0.0.0.0 --port 8000 --reload > "$LOG_DIR/backend.log" 2>&1 &
 BACKEND_PID=$!
 echo $BACKEND_PID > "$LOG_DIR/backend.pid"
@@ -279,10 +372,10 @@ fi
 echo ""
 
 # =============================================================================
-# 6. Start Frontend Server
+# 7. Start Frontend Server
 # =============================================================================
 
-echo -e "${BLUE}[6/6] Starting frontend development server...${NC}"
+echo -e "${BLUE}[7/7] Starting frontend development server...${NC}"
 echo ""
 
 cd "$PROJECT_ROOT"
