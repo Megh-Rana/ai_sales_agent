@@ -12,7 +12,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from sqlalchemy import text, inspect
-from app.db.database import engine, is_sqlite
+from app.db.database import init_db
+import app.db.database as db_mod
 
 
 MIGRATION_COLUMNS = [
@@ -42,19 +43,21 @@ def run_migration():
     print()
 
     try:
+        # Initialize DB first (handles PostgreSQL reachability check and SQLite fallback)
+        init_db()
+        current_engine = db_mod.engine
+        is_sq = db_mod.is_sqlite
+
         print("📊 Connecting to database...")
-        with engine.connect() as conn:
-            if is_sqlite:
-                db_name = engine.url.database or "SQLite (local)"
+        with current_engine.connect() as conn:
+            if is_sq:
+                db_name = current_engine.url.database or "SQLite (local)"
             else:
                 db_name = conn.execute(text("SELECT current_database()")).scalar()
-            print(f"✓ Connected to database: {db_name} (engine: {'SQLite' if is_sqlite else 'PostgreSQL'})")
+            print(f"✓ Connected to database: {db_name} (engine: {'SQLite' if is_sq else 'PostgreSQL'})")
             print()
 
             print("🔄 Applying migrations...")
-            # Ensure base tables exist before running schema migrations
-            from app.db.database import init_db
-            init_db()
 
             inspector = inspect(conn)
             existing_tables = set(inspector.get_table_names())
@@ -66,8 +69,8 @@ def run_migration():
 
                 existing_cols = {c["name"] for c in inspector.get_columns(table)}
                 if col not in existing_cols:
-                    col_def = sqlite_def if is_sqlite else pg_def
-                    if is_sqlite:
+                    col_def = sqlite_def if is_sq else pg_def
+                    if is_sq:
                         sql = f"ALTER TABLE {table} ADD COLUMN {col} {col_def};"
                     else:
                         sql = f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {col_def};"

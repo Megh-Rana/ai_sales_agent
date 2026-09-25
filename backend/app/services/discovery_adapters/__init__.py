@@ -4,6 +4,8 @@ from app.services.discovery_adapters.x_twitter_adapter import XTwitterSourceAdap
 from app.services.discovery_adapters.website_crawler_adapter import CompanyWebsiteCrawlerAdapter
 from app.services.discovery_adapters.freelance_bidding_adapter import FreelanceBiddingAdapter
 from app.services.discovery_adapters.job_inference_adapter import JobPostingInferenceAdapter
+from app.services.discovery_adapters.search_rfp_adapter import SearchEngineRfpAdapter
+from app.services.discovery_adapters.open_jobs_adapter import OpenJobBoardsAdapter
 from app.services.discovery_adapters.orchestrator import MultiSourceDiscoveryOrchestrator
 
 __all__ = [
@@ -14,5 +16,7 @@ __all__ = [
     "CompanyWebsiteCrawlerAdapter",
     "FreelanceBiddingAdapter",
     "JobPostingInferenceAdapter",
+    "SearchEngineRfpAdapter",
+    "OpenJobBoardsAdapter",
     "MultiSourceDiscoveryOrchestrator",
 ]

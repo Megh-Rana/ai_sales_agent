@@ -232,9 +232,9 @@ def update_call_language(
     clean_lang = request.language.lower()
     if call:
         call.language = clean_lang
-        meta = dict(call.carrier_metadata or {})
+        meta = dict(call.metadata_json or {})
         meta["language"] = clean_lang
-        call.carrier_metadata = meta
+        call.metadata_json = meta
         db.commit()
         logger.info(f"[Telephony] Switched active call {call.id} language to {clean_lang}")
         return {"status": "success", "call_id": str(call.id), "language": clean_lang}
@@ -342,63 +342,52 @@ async def twilio_voice_webhook(
         twiml = TwilioService.generate_audio_voicemail_twiml(audio_url=audio_url)
         return Response(content=twiml, media_type="application/xml")
 
-    # 2. Human Pickup 窶� Check for pre-synthesized opening pitch
-    meta = dict(call.metadata_json or {}) if call else {}
-    cached_audio_id = meta.get("opening_audio_id")
-    opening_pitch = meta.get("opening_pitch")
 
-    if cached_audio_id and get_audio_bytes(cached_audio_id):
-        audio_id = cached_audio_id
-        logger.info(f"[Twilio Voice] Instant dispatch: Serving pre-synthesized audio ({audio_id}) in 1ms for call {call_id}")
+# ──────────────────────────────────────────────────────────────────────────────
+# TWILIO SPEECH GATHER (CONVERSATION LOOP) — POWERED BY YOUR INTERNAL LLM & TTS
+# ──────────────────────────────────────────────────────────────────────────────
+
+@router.post("/twilio/gather", summary="Twilio Speech Gather conversation turn webhook", operation_id="twilio_gather_turn")
+@router.get("/twilio/gather", include_in_schema=False)
+async def twilio_gather_webhook(
+    request: Request,
+    call_id: Optional[str] = Query(None),
+    lang: str = Query("en"),
+    db: Session = Depends(get_db),
+):
+    """
+    Invoked by Twilio when prospect speaks on their phone.
+    Passes prospect utterance to YOUR internal AIBrain (Ollama / Sarvam LLM),
+    synthesizes response audio with YOUR internal TTSEngine,
+    and returns TwiML <Play> to stream back into the call.
+    """
+    form_data = {}
+    try:
+        form_data = await request.form()
+    except Exception:
+        pass
+
+    speech_result = (form_data.get("SpeechResult") or "").strip()
+    call_sid = form_data.get("CallSid")
+
+    # Resolve base_url: prioritize the incoming host header that Twilio reached us on
+    host_header = request.headers.get("host", "").strip()
+    if host_header and "localhost" not in host_header and "127.0.0.1" not in host_header:
+        base_url = f"https://{host_header}"
     else:
-        # Fallback only if not pre-synthesized
-        company_name = "your company"
-        prospect_name = "there"
-        requirement = ""
-        if call and call.lead:
-            company_name = call.lead.company_name or company_name
-            prospect_name = call.lead.contact_name or prospect_name
-            requirement = call.lead.requirement or ""
+        base_url = TwilioService.get_public_base_url(fallback_url=str(request.base_url))
 
-        if not opening_pitch:
-            brain = get_or_create_brain(call, language=lang)
-            opening_pitch = brain.generate_dynamic_opening_pitch(
-                prospect_name=prospect_name,
-                company_name=company_name,
-                requirement=requirement,
-                language=lang,
-            )
-        else:
-            brain = get_or_create_brain(call, language=lang)
+    call = None
+    if call_id:
+        try:
+            call_uuid = uuid.UUID(str(call_id))
+            call = db.scalars(select(Call).where(Call.id == call_uuid)).first()
+        except Exception:
+            call = db.scalars(select(Call).where(Call.provider_call_id == str(call_id))).first()
+    if not call and call_sid:
+        call = db.scalars(select(Call).where(Call.provider_call_id == call_sid)).first()
 
-        if not any(t.role == "agent" for t in brain.memory.turns):
-            brain.memory.add_turn("agent", opening_pitch, lang)
-        brain._prev_language = lang
-
-        audio_id, _ = synthesize_speech_to_wav(opening_pitch, language=lang)
-
-    audio_url = f"{base_url}/api/telephony/audio/{audio_id}.wav"
-    gather_url = f"{base_url}/api/telephony/twilio/gather?call_id={call.id if call else ''}&lang={lang}"
-
-    # 4. Update Database Transcript
-    if call:
-        call.status = "in_progress"
-        call.transcript = f"[Agent]: {opening_pitch}"
-        db.commit()
-
-    logger.info(f"[Twilio Voice] Serving opening pitch via internal TTS ({audio_url}) for call {call_id}")
-    twiml = TwilioService.generate_audio_greeting_twiml(
-        audio_url=audio_url,
-        gather_action_url=gather_url,
-        fallback_text=opening_pitch,
-        language=lang,
-    )
-    return Response(content=twiml, media_type="application/xml")
-
-
-# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
-# TWILIO SPEECH GATHER (CONVERSATION LOOP) 窶� POWERED BY YOUR INTERNAL LLM & TTS
-# 笏笏笏笏笏笏笏�    # 1. Determine active call language: check call.language, then query param, default 'en'
+    # 1. Determine active call language: check call.language, then query param, default 'en'
     current_lang = "en"
     if call and call.language:
         current_lang = call.language.lower()
@@ -550,7 +539,7 @@ async def twilio_voice_webhook(
     else:
         # Feed user speech into YOUR internal LLM (AIBrain)
         brain = get_or_create_brain(call, language=current_lang)
-        meta = call.carrier_metadata or {} if call else {}
+        meta = call.metadata_json or {} if call else {}
         pitch = meta.get("opening_pitch")
         if pitch and not any(t.role == "agent" for t in brain.memory.turns):
             brain.memory.add_turn("agent", pitch, current_lang)

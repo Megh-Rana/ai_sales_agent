@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vidur-cache-v2';
+const CACHE_NAME = 'vidur-cache-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -55,27 +55,62 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Never intercept local development, Vite internal requests, non-GET, API, or WebSocket requests
+  // Skip cross-origin requests
+  if (url.origin !== self.origin) {
+    return;
+  }
+
+  // Bypass API routes, WebSockets, and browser extensions
   if (
-    url.hostname === 'localhost' ||
-    url.hostname === '127.0.0.1' ||
-    url.port === '3000' ||
-    url.port === '5173' ||
     url.pathname.startsWith('/api') ||
     url.pathname.startsWith('/ws') ||
-    url.pathname.startsWith('/@') ||
-    url.pathname.startsWith('/src') ||
-    url.pathname.startsWith('/node_modules') ||
-    url.searchParams.has('t') ||
     url.protocol.startsWith('chrome-extension')
   ) {
     return;
   }
 
+  // Bypass Vite internal dev-only modules
+  if (
+    url.pathname.startsWith('/@') ||
+    url.pathname.startsWith('/src') ||
+    url.pathname.startsWith('/node_modules') ||
+    url.searchParams.has('t') ||
+    url.searchParams.has('import')
+  ) {
+    return;
+  }
+
+  // Handle SPA navigation requests: Network-first with cached index.html fallback
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cached = (await caches.match('/index.html')) || (await caches.match('/'));
+          if (cached) return cached;
+          return new Response('Offline', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain' },
+          });
+        })
+    );
+    return;
+  }
+
+  // Cache-first with background revalidation for static assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cache but update in background
+        // Return cached asset but revalidate in background
         fetch(event.request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
@@ -103,14 +138,6 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(async () => {
-          // If offline and requesting navigation, return cached root/index.html
-          if (event.request.mode === 'navigate') {
-            const cachedRoot = await caches.match('/');
-            if (cachedRoot) return cachedRoot;
-            const cachedIndex = await caches.match('/index.html');
-            if (cachedIndex) return cachedIndex;
-          }
-          // Always return a valid Response to avoid TypeError: Failed to convert value to 'Response'
           return new Response('Network offline or resource unavailable', {
             status: 503,
             statusText: 'Service Unavailable',
