@@ -156,11 +156,6 @@ export const Login: React.FC = () => {
             </Link>
           </div>
         </div>
-
-        {/* Dev hint */}
-        <p className="mt-4 text-center text-[11px] text-foreground-tertiary">
-          Admins: <code className="font-mono">admin@vidur.in</code> / <code className="font-mono">admin@2026</code> | <code className="font-mono">neel@vidur.in</code> / <code className="font-mono">neelit002</code> | <code className="font-mono">megh@vidur.in</code> / <code className="font-mono">meghce099</code>
-        </p>
       </div>
     </div>
   );
