@@ -53,20 +53,20 @@ export const ScheduleDemoModal: React.FC<ScheduleDemoModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label="Schedule Product Demo"
-        className="bg-[#121620] border border-[#263143] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-scale-up"
+        className="bg-surface border border-border rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-scale-up dark:bg-[#121620] dark:border-[#263143]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#232B3B] bg-[#151B28]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface-elevated dark:border-[#232B3B] dark:bg-[#151B28]">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400">
+            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-400">
               <CalendarPlus className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">
+              <h3 className="text-base font-bold text-foreground dark:text-white">
                 Schedule Product Demo
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-foreground-secondary dark:text-slate-400">
                 Recommended Action: Connect within 48 hours
               </p>
             </div>
@@ -74,7 +74,7 @@ export const ScheduleDemoModal: React.FC<ScheduleDemoModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-lg text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
           >
             <X className="w-5 h-5" />
           </button>
@@ -82,24 +82,24 @@ export const ScheduleDemoModal: React.FC<ScheduleDemoModalProps> = ({
 
         {scheduledSuccess ? (
           <div className="p-8 text-center">
-            <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center text-emerald-400 mx-auto mb-3">
+            <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto mb-3">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h4 className="text-lg font-bold text-white mb-1">Demo Scheduled Successfully</h4>
-            <p className="text-xs text-slate-400">
+            <h4 className="text-lg font-bold text-foreground dark:text-white mb-1">Demo Scheduled Successfully</h4>
+            <p className="text-xs text-foreground-secondary dark:text-slate-400">
               Calendar invite sent to {data.contactName} ({data.contactPhone}) for {selectedDate} at {selectedTime}.
             </p>
           </div>
         ) : (
           <form onSubmit={handleConfirm} className="p-6 space-y-4">
             {/* Prospect Summary Box */}
-            <div className="bg-[#151A25] border border-[#232B3B] p-3 rounded-lg flex items-center justify-between text-xs">
+            <div className="bg-surface-elevated border border-border p-3 rounded-lg flex items-center justify-between text-xs dark:bg-[#151A25] dark:border-[#232B3B]">
               <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-slate-400" />
-                <span className="font-semibold text-white">{data.contactName}</span>
-                <span className="text-slate-400">({data.contactRole})</span>
+                <User className="w-4 h-4 text-primary dark:text-slate-400" />
+                <span className="font-semibold text-foreground dark:text-white">{data.contactName}</span>
+                <span className="text-foreground-muted dark:text-slate-400">({data.contactRole})</span>
               </div>
-              <span className="text-slate-400 flex items-center gap-1">
+              <span className="text-foreground-secondary dark:text-slate-400 flex items-center gap-1">
                 <Building className="w-3.5 h-3.5" />
                 {data.companyName}
               </span>
@@ -108,27 +108,27 @@ export const ScheduleDemoModal: React.FC<ScheduleDemoModalProps> = ({
             {/* Date & Time Pickers */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-foreground-secondary dark:text-slate-300 mb-1.5">
                   Suggested Date (48h Window)
                 </label>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full bg-[#161B26] border border-[#263143] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-surface-elevated border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary dark:bg-[#161B26] dark:border-[#263143] dark:text-white dark:focus:border-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-foreground-secondary dark:text-slate-300 mb-1.5">
                   Time
                 </label>
                 <input
                   type="time"
                   value={selectedTime}
                   onChange={(e) => setSelectedTime(e.target.value)}
-                  className="w-full bg-[#161B26] border border-[#263143] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-surface-elevated border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary dark:bg-[#161B26] dark:border-[#263143] dark:text-white dark:focus:border-blue-500"
                   required
                 />
               </div>
@@ -136,7 +136,7 @@ export const ScheduleDemoModal: React.FC<ScheduleDemoModalProps> = ({
 
             {/* Meeting Type */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-foreground-secondary dark:text-slate-300 mb-1.5">
                 Meeting Format & Duration
               </label>
               <div className="grid grid-cols-3 gap-2 text-xs">
@@ -147,8 +147,8 @@ export const ScheduleDemoModal: React.FC<ScheduleDemoModalProps> = ({
                     onClick={() => setDuration(dur)}
                     className={`py-2 rounded-lg border font-medium transition-all ${
                       duration === dur
-                        ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                        : 'bg-[#161B26] border-[#263143] text-slate-400 hover:text-white'
+                        ? 'bg-primary/15 border-primary text-primary font-semibold dark:bg-blue-600/20 dark:border-blue-500 dark:text-blue-300'
+                        : 'bg-surface-elevated border-border text-foreground-secondary hover:text-foreground dark:bg-[#161B26] dark:border-[#263143] dark:text-slate-400 dark:hover:text-white'
                     }`}
                   >
                     {dur}
@@ -159,11 +159,11 @@ export const ScheduleDemoModal: React.FC<ScheduleDemoModalProps> = ({
 
             {/* Recommended Agenda Box */}
             <div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 mb-1.5">
-                <Zap className="w-3 h-3 text-blue-400" />
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground dark:text-slate-300 mb-1.5">
+                <Zap className="w-3 h-3 text-primary dark:text-blue-400" />
                 <span>Recommended Agenda (From Call Intelligence)</span>
               </div>
-              <div className="bg-[#0D1017] border border-[#1E2536] p-3 rounded-lg text-xs text-slate-300 space-y-1.5">
+              <div className="bg-surface-elevated border border-border p-3 rounded-lg text-xs text-foreground-secondary space-y-1.5 dark:bg-[#0D1017] dark:border-[#1E2536] dark:text-slate-300">
                 <p>• <strong>10m:</strong> Eliminating manual spreadsheet follow-up delays (Rahul's stated pain point)</p>
                 <p>• <strong>15m:</strong> Live walkthrough of automated multi-tier lead calling for 12 sales reps</p>
                 <p>• <strong>05m:</strong> 3-week phased onboarding plan & pricing breakdown</p>
@@ -171,11 +171,11 @@ export const ScheduleDemoModal: React.FC<ScheduleDemoModalProps> = ({
             </div>
 
             {/* Action Footer */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#232B3B]">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border dark:border-[#232B3B]">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white transition-colors"
+                className="px-4 py-2 text-xs font-medium text-foreground-muted hover:text-foreground transition-colors dark:text-slate-400 dark:hover:text-white"
               >
                 Cancel
               </button>

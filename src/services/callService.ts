@@ -22,6 +22,10 @@ export interface CallStartRequest {
   companyInfo?: string;
   services?: string;
   goal?: string;
+  agentName?: string;
+  agentCompany?: string;
+  contactEmail?: string;
+  leadStatus?: string;
   customPitch?: string;
   requirement?: string;
   buyingSignals?: string;
@@ -362,6 +366,26 @@ class CallService {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Failed to end call');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Dynamically update active response language of an ongoing voice call
+   */
+  async setCallLanguage(sessionId: string, language: string): Promise<{ status: string; language: string }> {
+    const response = await fetch(`${this.baseUrl}/api/call/${sessionId}/language`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ language }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Failed to update call language');
     }
 
     return response.json();

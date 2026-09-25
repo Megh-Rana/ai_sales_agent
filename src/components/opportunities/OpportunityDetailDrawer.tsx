@@ -75,7 +75,7 @@ export const OpportunityDetailDrawer: React.FC<OpportunityDetailDrawerProps> = (
         {/* Drawer Header */}
         <div className="p-5 border-b border-border-default flex items-center justify-between sticky top-0 bg-surface-0 z-10">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-semibold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+            <span className="text-xs font-mono font-semibold text-amber-950 dark:text-amber-300 px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30">
               OPPORTUNITY DETAILS
             </span>
             <span className="text-xs font-mono text-foreground-tertiary">

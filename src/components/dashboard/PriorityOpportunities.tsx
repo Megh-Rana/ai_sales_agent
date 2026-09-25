@@ -10,25 +10,34 @@ export interface PriorityOpportunitiesProps {
   opportunities: Opportunity[];
   onCallOpportunity?: (id: string) => void;
   className?: string;
+  activeFilter?: string;
+  onFilterChange?: (filter: string) => void;
+  totalCounts?: {
+    all: number;
+    callReady: number;
+    followup: number;
+  };
 }
 
 export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
   opportunities,
   onCallOpportunity,
   className = '',
+  activeFilter = 'all',
+  onFilterChange,
+  totalCounts,
 }) => {
   const { t } = useI18n();
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'high' | 'qualified'>('all');
-
-  const filtered = opportunities.filter((opp) => {
-    if (activeTab === 'high') return opp.intentScore >= 85;
-    if (activeTab === 'qualified') return opp.salesStatus === 'qualified' || opp.salesStatus === 'meeting';
-    return true;
-  });
 
   const handleToggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
+  };
+
+  const handleTabClick = (filterId: string) => {
+    if (onFilterChange) {
+      onFilterChange(filterId);
+    }
   };
 
   return (
@@ -44,8 +53,8 @@ export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
               <h3 className="text-h4 font-bold text-foreground tracking-tight">
                 {t.dashboard?.priorityQueueTitle || 'Priority Opportunities Queue'}
               </h3>
-              <span className="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold bg-surface-elevated text-foreground-secondary border border-border-subtle">
-                {filtered.length} of {opportunities.length}
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-surface-elevated text-foreground-secondary border border-border-subtle">
+                {opportunities.length} accounts
               </span>
             </div>
             <div className="text-caption text-foreground-tertiary">
@@ -55,42 +64,83 @@ export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
         </div>
 
         {/* Tab Filters */}
-        <div className="flex items-center gap-1 text-xs">
+        <div className="flex items-center gap-1 text-xs bg-surface-1 p-1 rounded-lg border border-border-subtle">
           <button
             type="button"
-            onClick={() => setActiveTab('all')}
-            className={`px-2.5 py-1 rounded-md transition-colors font-medium ${
-              activeTab === 'all'
-                ? 'bg-surface-elevated text-foreground font-semibold'
+            onClick={() => handleTabClick('all')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer ${
+              activeFilter === 'all'
+                ? 'bg-surface-elevated text-foreground font-semibold shadow-xs ring-1 ring-border-default'
                 : 'text-foreground-secondary hover:text-foreground'
             }`}
           >
-            {t.dashboard?.allOpportunities || 'All Leads'}
+            <span>{t.dashboard?.allOpportunities || 'All Leads'}</span>
+            {totalCounts?.all !== undefined && (
+              <span className="text-[10px] font-mono px-1 rounded bg-surface-2 text-foreground-tertiary">
+                {totalCounts.all}
+              </span>
+            )}
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('high')}
-            className={`px-2.5 py-1 rounded-md transition-colors font-medium ${
-              activeTab === 'high'
-                ? 'bg-surface-elevated text-foreground font-semibold'
+            onClick={() => handleTabClick('call-ready')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer ${
+              activeFilter === 'call-ready'
+                ? 'bg-surface-elevated text-foreground font-semibold shadow-xs ring-1 ring-border-default'
                 : 'text-foreground-secondary hover:text-foreground'
             }`}
           >
-            {t.dashboard?.highIntent || 'Score ≥ 85'}
+            <span>{t.dashboard?.filterCallReady || 'Call Ready'}</span>
+            {totalCounts?.callReady !== undefined && (
+              <span className="text-[10px] font-mono px-1 rounded bg-surface-2 text-foreground-tertiary">
+                {totalCounts.callReady}
+              </span>
+            )}
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('qualified')}
-            className={`px-2.5 py-1 rounded-md transition-colors font-medium ${
-              activeTab === 'qualified'
-                ? 'bg-surface-elevated text-foreground font-semibold'
+            onClick={() => handleTabClick('needs-followup')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all font-medium cursor-pointer ${
+              activeFilter === 'needs-followup'
+                ? 'bg-surface-elevated text-foreground font-semibold shadow-xs ring-1 ring-border-default'
                 : 'text-foreground-secondary hover:text-foreground'
             }`}
           >
-            {t.dashboard?.filterCallReady || 'Qualified Only'}
+            <span>{t.dashboard?.filterFollowup || 'Follow-ups'}</span>
+            {totalCounts?.followup !== undefined && (
+              <span className="text-[10px] font-mono px-1 rounded bg-surface-2 text-foreground-tertiary">
+                {totalCounts.followup}
+              </span>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Active Filter Context Banner */}
+      {activeFilter !== 'all' && (
+        <div className="px-4 py-2 bg-surface-1/70 border-b border-border-subtle flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-foreground flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              {activeFilter === 'call-ready' ? 'Call Ready Filter Active:' : 'Follow-ups Due Filter Active:'}
+            </span>
+            <span className="text-foreground-secondary">
+              {activeFilter === 'call-ready'
+                ? 'Showing accounts with verified direct-dial contacts ready for autonomous AI dialing.'
+                : 'Showing accounts with scheduled outreach touchpoints due today.'}
+            </span>
+          </div>
+          {onFilterChange && (
+            <button
+              type="button"
+              onClick={() => onFilterChange('all')}
+              className="text-primary hover:text-primary-hover font-medium underline text-[11px] shrink-0 cursor-pointer"
+            >
+              Reset to All Leads
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Column Headers (Desktop Only) */}
       <div className="hidden md:grid md:grid-cols-12 gap-3 px-3.5 py-2 bg-surface-1/40 border-b border-border-subtle text-[11px] font-mono uppercase text-foreground-tertiary font-semibold select-none">
@@ -102,19 +152,29 @@ export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
 
       {/* Opportunity Rows / Cards */}
       <div className="divide-y divide-border-subtle">
-        {filtered.length === 0 ? (
-          <div className="p-10 text-center space-y-2">
-            <div className="text-body font-medium text-foreground">No accounts match this intent filter</div>
+        {opportunities.length === 0 ? (
+          <div className="p-10 text-center space-y-3">
+            <div className="text-body font-semibold text-foreground">No accounts match this filter</div>
             <p className="text-caption text-foreground-tertiary max-w-sm mx-auto">
-              No opportunities meet your filter threshold. Select 'All Leads' to view the entire priority queue.
+              No opportunities meet the criteria for this filter. Switch back to 'All Leads' to view the entire priority queue.
             </p>
+            {onFilterChange && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onFilterChange('all')}
+              >
+                Show All Opportunities
+              </Button>
+            )}
           </div>
         ) : (
-          filtered.map((opp) => (
+          opportunities.map((opp) => (
             <PriorityOpportunity
               key={opp.id}
               opportunity={opp}
               onCall={onCallOpportunity}
+              activeFilter={activeFilter}
               isExpanded={expandedId === opp.id}
               onToggleExpand={() => handleToggleExpand(opp.id)}
             />
@@ -125,7 +185,7 @@ export const PriorityOpportunities: React.FC<PriorityOpportunitiesProps> = ({
       {/* Footer Navigation Bar */}
       <div className="p-3 sm:px-5 bg-surface-1/30 border-t border-border-subtle flex items-center justify-between text-xs">
         <span className="text-foreground-tertiary">
-          Showing <span className="font-semibold text-foreground">{filtered.length}</span> high-priority accounts
+          Showing <span className="font-semibold text-foreground">{opportunities.length}</span> high-priority accounts
         </span>
         <Link
           to="/leads"

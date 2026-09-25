@@ -104,28 +104,6 @@ export const ActionCenterHeader: React.FC<ActionCenterHeaderProps> = ({
             ))}
           </div>
 
-          {/* Demo State Switcher Toggle */}
-          <div className="hidden xl:flex items-center space-x-1 bg-surface-1 border border-border-subtle rounded-lg p-1 text-xs">
-            <span className="px-2 text-foreground-tertiary text-[11px] font-semibold uppercase tracking-wider">
-              State:
-            </span>
-            {(['normal', 'loading', 'empty', 'error'] as const).map((st) => (
-              <button
-                key={st}
-                type="button"
-                onClick={() => onViewStateChange(st)}
-                aria-pressed={viewState === st}
-                className={`px-2.5 py-1 rounded capitalize ${
-                  viewState === st
-                    ? 'bg-surface-hover text-foreground font-semibold'
-                    : 'text-foreground-tertiary hover:text-foreground-secondary'
-                }`}
-              >
-                {st}
-              </button>
-            ))}
-          </div>
-
           {/* Refresh Button */}
           {onRefresh && (
             <button

@@ -94,11 +94,11 @@ export const OpportunityHeader: React.FC<OpportunityHeaderProps> = ({
             onClick={() => onTabChange('urgent')}
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
               activeTab === 'urgent'
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
+                ? 'bg-surface-elevated text-foreground shadow-xs border border-border-default'
                 : 'text-foreground-tertiary hover:text-foreground'
             }`}
           >
-            <Flame className="w-3.5 h-3.5 text-amber-400" />
+            <Flame className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
             <span>{t.opportunities?.actionRequired || 'Action Required'} ({urgentCount})</span>
           </button>
 

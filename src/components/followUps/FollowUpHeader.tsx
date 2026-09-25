@@ -38,7 +38,7 @@ export const FollowUpHeader: React.FC<FollowUpHeaderProps> = ({
               {t.followUps?.title || 'Follow-ups Queue & Sequence Intelligence'}
             </h1>
             <span className="px-2.5 py-0.5 text-caption font-semibold rounded-full bg-signal-high/10 text-signal-high border border-signal-high/30 flex items-center space-x-1">
-              <AlertCircle className="w-3 h-3" />
+              <AlertCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
               <span>{urgentCount} {t.followUps?.urgentCountLabel || 'Urgent Actionable'}</span>
             </span>
           </div>
@@ -51,7 +51,7 @@ export const FollowUpHeader: React.FC<FollowUpHeaderProps> = ({
         <div className="flex flex-wrap items-center gap-3">
           {/* Due Today Count */}
           <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-surface-1 border border-border-subtle text-caption font-mono">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
+            <Clock className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
             <span className="text-foreground-tertiary">{t.followUps?.dueTodayLabel || 'Due Today:'}</span>
             <span className="text-foreground font-bold">{dueTodayCount} {t.followUps?.itemsCount || 'Items'}</span>
           </div>
@@ -61,28 +61,6 @@ export const FollowUpHeader: React.FC<FollowUpHeaderProps> = ({
             <ShieldCheck className="w-3.5 h-3.5 text-signal-qualified" />
             <span className="text-foreground-tertiary">{t.followUps?.activeValueLabel || 'Active Value:'}</span>
             <span className="text-foreground font-bold">{totalPipelineAtRisk}</span>
-          </div>
-
-          {/* Demo State Switcher Toggle */}
-          <div className="hidden xl:flex items-center space-x-1 bg-surface-1 border border-border-subtle rounded-lg p-1 text-caption">
-            <span className="px-2 text-foreground-tertiary text-[11px] font-semibold uppercase tracking-wider">
-              State:
-            </span>
-            {(['normal', 'loading', 'empty', 'error'] as const).map((st) => (
-              <button
-                key={st}
-                type="button"
-                onClick={() => onViewStateChange(st)}
-                aria-pressed={viewState === st}
-                className={`px-2.5 py-1 rounded capitalize transition-colors ${
-                  viewState === st
-                    ? 'bg-surface-elevated text-foreground font-semibold border border-border-subtle'
-                    : 'text-foreground-tertiary hover:text-foreground-secondary'
-                }`}
-              >
-                {st}
-              </button>
-            ))}
           </div>
 
           {/* Refresh Button */}

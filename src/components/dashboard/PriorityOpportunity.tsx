@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ChevronDown, ChevronUp, PhoneCall, Target, ExternalLink, Building2 } from 'lucide-react';
+import { ArrowRight, ChevronDown, ChevronUp, PhoneCall, Target, ExternalLink, Building2, Clock, CalendarCheck } from 'lucide-react';
 import { Opportunity } from '../../types/sales';
 import { SalesStatus } from '../sales/SalesStatus';
 import { WhyNow } from './WhyNow';
@@ -12,6 +12,7 @@ export interface PriorityOpportunityProps {
   onCadence?: (id: string) => void;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  activeFilter?: string;
 }
 
 export const PriorityOpportunity: React.FC<PriorityOpportunityProps> = ({
@@ -20,6 +21,7 @@ export const PriorityOpportunity: React.FC<PriorityOpportunityProps> = ({
   onCadence,
   isExpanded = false,
   onToggleExpand,
+  activeFilter = 'all',
 }) => {
   const navigate = useNavigate();
 
@@ -80,11 +82,28 @@ export const PriorityOpportunity: React.FC<PriorityOpportunityProps> = ({
               {opportunity.companyName}
             </span>
             <SalesStatus status={opportunity.salesStatus} />
+            {activeFilter === 'call-ready' && (
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/25 shrink-0 flex items-center gap-1">
+                <PhoneCall className="w-2.5 h-2.5 animate-pulse" />
+                Call Ready
+              </span>
+            )}
           </div>
           <div className="text-caption text-foreground-secondary truncate flex items-center gap-1.5">
             <span>{opportunity.contactName} · {opportunity.contactRole}</span>
             <span className="text-foreground-tertiary">({opportunity.industry})</span>
           </div>
+          {activeFilter === 'needs-followup' && (opportunity.followUpDue || opportunity.followUpTask) && (
+            <div className="pt-0.5 flex items-center gap-1.5 text-[11px] text-info font-medium">
+              <span className="inline-flex items-center gap-1 bg-info/10 text-info px-1.5 py-0.5 rounded border border-info/25 font-mono text-[10px]">
+                <Clock className="w-2.5 h-2.5" />
+                {opportunity.followUpDue || 'Touchpoint Due'}
+              </span>
+              <span className="truncate text-foreground-secondary text-[11px]">
+                {opportunity.followUpTask || 'Scheduled touchpoint required'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Col 3: Why Now / Primary Buying Signal (4 cols) */}
@@ -94,19 +113,34 @@ export const PriorityOpportunity: React.FC<PriorityOpportunityProps> = ({
 
         {/* Col 4: Action & Expand Toggle (2 cols) */}
         <div className="col-span-2 flex items-center justify-end gap-2 shrink-0">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="text-[11px] px-2.5 py-1"
-            leftIcon={<PhoneCall className="w-3 h-3 text-primary" />}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onCall) onCall(opportunity.id);
-              else navigate('/calls');
-            }}
-          >
-            AI Call
-          </Button>
+          {activeFilter === 'needs-followup' ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="text-[11px] px-2.5 py-1 text-info hover:text-info-hover border-info/30"
+              leftIcon={<Clock className="w-3 h-3 text-info" />}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/leads/${opportunity.id}`);
+              }}
+            >
+              Follow Up
+            </Button>
+          ) : (
+            <Button
+              variant={activeFilter === 'call-ready' ? 'primary' : 'secondary'}
+              size="sm"
+              className={`text-[11px] px-2.5 py-1 ${activeFilter === 'call-ready' ? 'shadow-xs' : ''}`}
+              leftIcon={<PhoneCall className={`w-3 h-3 ${activeFilter === 'call-ready' ? 'text-primary-foreground' : 'text-primary'}`} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onCall) onCall(opportunity.id);
+                else navigate('/calls');
+              }}
+            >
+              {activeFilter === 'call-ready' ? 'Call Now' : 'AI Call'}
+            </Button>
+          )}
 
           {onToggleExpand && (
             <button
@@ -139,12 +173,23 @@ export const PriorityOpportunity: React.FC<PriorityOpportunityProps> = ({
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="font-semibold text-foreground text-body truncate">
-              {opportunity.companyName}
+            <div className="font-semibold text-foreground text-body truncate flex items-center gap-1.5">
+              <span>{opportunity.companyName}</span>
+              {activeFilter === 'call-ready' && (
+                <span className="px-1 py-0.2 rounded text-[9px] font-semibold bg-primary/10 text-primary border border-primary/25">
+                  Call Ready
+                </span>
+              )}
             </div>
             <div className="text-caption text-foreground-secondary truncate">
               {opportunity.contactName} · {opportunity.contactRole}
             </div>
+            {activeFilter === 'needs-followup' && (opportunity.followUpDue || opportunity.followUpTask) && (
+              <div className="text-[10px] text-info font-medium flex items-center gap-1 mt-0.5">
+                <Clock className="w-2.5 h-2.5" />
+                <span>{opportunity.followUpDue} · {opportunity.followUpTask}</span>
+              </div>
+            )}
           </div>
           <span
             className={`px-2 py-0.5 rounded-md font-mono font-bold text-xs border shrink-0 ${getScoreBadgeClass(
@@ -162,17 +207,31 @@ export const PriorityOpportunity: React.FC<PriorityOpportunityProps> = ({
         <div className="flex items-center justify-between gap-2 pt-1">
           <SalesStatus status={opportunity.salesStatus} />
           <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<PhoneCall className="w-3 h-3 text-primary" />}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate('/calls');
-              }}
-            >
-              AI Call
-            </Button>
+            {activeFilter === 'needs-followup' ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Clock className="w-3 h-3 text-info" />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/leads/${opportunity.id}`);
+                }}
+              >
+                Follow Up
+              </Button>
+            ) : (
+              <Button
+                variant={activeFilter === 'call-ready' ? 'primary' : 'secondary'}
+                size="sm"
+                leftIcon={<PhoneCall className={`w-3 h-3 ${activeFilter === 'call-ready' ? 'text-primary-foreground' : 'text-primary'}`} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/calls');
+                }}
+              >
+                {activeFilter === 'call-ready' ? 'Call Now' : 'AI Call'}
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"

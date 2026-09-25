@@ -52,13 +52,21 @@ export const PipelineSnapshot: React.FC<PipelineSnapshotProps> = ({ metrics, cla
         // Assign pastel colors to each metric
         const colors = ['thistle', 'skyBlue', 'babyPink', 'icyBlue'];
         const colorClass = colors[idx % colors.length];
+        
+        const stripeClasses: Record<string, string> = {
+          thistle: 'bg-thistle',
+          skyBlue: 'bg-skyBlue',
+          babyPink: 'bg-babyPink',
+          icyBlue: 'bg-icyBlue',
+        };
+        const currentStripe = stripeClasses[colorClass] || 'bg-thistle';
 
         return (
           <div
             key={metric.id}
             className={`p-4 rounded-xl border border-${colorClass}/20 bg-surface hover:border-${colorClass}/40 transition-all duration-200 relative overflow-hidden group shadow-sm`}
           >
-            <div className="absolute top-0 left-0 bottom-0 w-1 bg-${colorClass} opacity-60 rounded-l-xl" />
+            <div className={`absolute top-0 left-0 bottom-0 w-1 ${currentStripe} opacity-60`} />
 
             <div className="flex items-center justify-between gap-2 mb-2.5 pl-2">
               <span className="text-xs font-medium text-foreground-secondary">

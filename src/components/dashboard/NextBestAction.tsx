@@ -40,18 +40,18 @@ export const NextBestAction: React.FC<NextBestActionHeroProps> = ({
 
   return (
     <SpotlightCard
-      spotlightColor="rgba(255, 175, 204, 0.12)"
-      className={`border-babyPink/30 p-4 sm:p-5 shadow-sm relative overflow-hidden transition-all ${className}`}
+      spotlightColor="rgba(205, 180, 219, 0.12)"
+      className={`border-thistle/30 p-4 sm:p-5 shadow-sm relative overflow-hidden transition-all ${className}`}
     >
       {/* Left accent priority stripe */}
-      <div className="absolute top-0 left-0 bottom-0 w-1 bg-babyPink" />
+      <div className="absolute top-0 left-0 bottom-0 w-1 bg-thistle" />
 
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 pl-3">
         {/* Left Information Stack - Cleaner hierarchy */}
         <div className="space-y-3 max-w-3xl flex-1">
           {/* Priority Meta Tag - Simplified */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-babyPink/10 text-babyPink border border-babyPink/30">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-thistle/10 text-primary dark:text-thistle border border-thistle/30">
               <Zap className="w-3.5 h-3.5" />
               PRIORITY 1
             </span>
@@ -73,7 +73,7 @@ export const NextBestAction: React.FC<NextBestActionHeroProps> = ({
             
             <div className="flex flex-wrap items-center gap-2">
               <AnimatedTooltip score={data.intentScore}>
-                <span className="px-2.5 py-1 rounded-lg font-mono font-bold text-xs bg-babyPink/15 text-babyPink border border-babyPink/40 shrink-0 cursor-pointer">
+                <span className="px-2.5 py-1 rounded-lg font-mono font-bold text-xs bg-thistle/15 text-primary dark:text-thistle border border-thistle/40 shrink-0 cursor-pointer">
                   {data.intentScore} Intent
                 </span>
               </AnimatedTooltip>

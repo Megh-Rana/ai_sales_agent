@@ -8,8 +8,11 @@ import { useI18n } from '../../i18n/i18nContext';
 interface AnalyticsHeaderProps {
   dateRange: DateRangePreset;
   onDateRangeChange: (range: DateRangePreset) => void;
-  viewState: 'normal' | 'loading' | 'empty' | 'error';
-  onViewStateChange: (state: 'normal' | 'loading' | 'empty' | 'error') => void;
+  customStartDate?: string;
+  customEndDate?: string;
+  onCustomDateChange?: (start: string, end: string) => void;
+  viewState?: 'normal' | 'loading' | 'empty' | 'error';
+  onViewStateChange?: (state: 'normal' | 'loading' | 'empty' | 'error') => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }
@@ -17,6 +20,9 @@ interface AnalyticsHeaderProps {
 export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   dateRange,
   onDateRangeChange,
+  customStartDate,
+  customEndDate,
+  onCustomDateChange,
   viewState,
   onViewStateChange,
   onRefresh,
@@ -27,6 +33,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   const dateOptions: { id: DateRangePreset; label: string }[] = [
     { id: 'today', label: t.analytics?.today || 'Today' },
     { id: '7d', label: t.analytics?.days7 || '7 days' },
+    { id: '15d', label: '15 days' },
     { id: '30d', label: t.analytics?.days30 || '30 days' },
     { id: '90d', label: t.analytics?.days90 || '90 days' },
     { id: 'custom', label: t.analytics?.custom || 'Custom' },
@@ -84,27 +91,42 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
             })}
           </nav>
 
-          {/* Demo State Switcher Toggle */}
-          <div className="hidden xl:flex items-center space-x-1 bg-background border border-border-strong rounded-lg p-1 text-xs">
-            <span className="px-2 text-foreground-tertiary text-[11px] font-semibold uppercase tracking-wider">
-              {t.analytics?.state || 'State'}:
-            </span>
-            {(['normal', 'loading', 'empty', 'error'] as const).map((st) => (
-              <button
-                key={st}
-                type="button"
-                onClick={() => onViewStateChange(st)}
-                aria-pressed={viewState === st}
-                className={`px-2.5 py-1 rounded capitalize ${
-                  viewState === st
-                    ? 'bg-surface-hover text-foreground font-semibold'
-                    : 'text-foreground-tertiary hover:text-foreground-secondary'
-                }`}
-              >
-                {st}
-              </button>
-            ))}
-          </div>
+          {/* Custom Date Range Inputs (Shown when Custom is selected) */}
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-2 p-1 rounded-lg bg-background border border-border-strong text-xs">
+              <input
+                type="date"
+                value={customStartDate || ''}
+                onChange={(e) => onCustomDateChange?.(e.target.value, customEndDate || '')}
+                className="bg-surface-elevated text-foreground border border-border-subtle rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                aria-label="Custom Start Date"
+              />
+              <span className="text-foreground-tertiary font-mono">to</span>
+              <input
+                type="date"
+                value={customEndDate || ''}
+                onChange={(e) => onCustomDateChange?.(customStartDate || '', e.target.value)}
+                className="bg-surface-elevated text-foreground border border-border-subtle rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                aria-label="Custom End Date"
+              />
+            </div>
+          )}
+
+          {/* Refresh Button */}
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              aria-label="Refresh Analytics"
+              className="p-2 rounded-lg bg-surface-elevated hover:bg-surface-hover text-foreground-secondary hover:text-foreground border border-border-subtle transition-all disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-400' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
+          )}
 
           {/* Export PDF Button - High Contrast Visible Emerald Button */}
           <button

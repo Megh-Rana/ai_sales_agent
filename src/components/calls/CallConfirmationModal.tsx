@@ -158,15 +158,15 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
         {/* Restricted Window Compliance Warning */}
         {isRestricted && (
           <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 space-y-2 text-xs animate-fade-in">
-            <div className="flex items-start gap-2 text-red-400 font-semibold">
+            <div className="flex items-start gap-2 text-red-600 dark:text-red-400 font-semibold">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>Quiet Hours Notice: Calling Outside Standard Hours</span>
             </div>
-            <p className="text-slate-300 text-[11px] leading-relaxed">
+            <p className="text-slate-800 dark:text-slate-200 text-[11px] leading-relaxed font-medium">
               {callingWindow.reason} Calling now risks low answer rate or non-compliance with outreach quiet hours.
             </p>
             <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-red-500/20">
-              <label className="flex items-center gap-2 cursor-pointer text-slate-200 text-[11px] select-none">
+              <label className="flex items-center gap-2 cursor-pointer text-slate-900 dark:text-slate-100 text-[11px] select-none">
                 <input
                   type="checkbox"
                   checked={overrideRestricted}

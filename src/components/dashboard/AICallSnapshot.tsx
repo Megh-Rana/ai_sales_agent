@@ -3,6 +3,7 @@ import { PhoneCall, CheckCircle2, Clock, ArrowRight, ShieldCheck, FileText, Aler
 import { useNavigate } from 'react-router-dom';
 import { AICallSnapshotData } from '../../data/dashboard';
 import { Button } from '../ui/Button';
+import { formatExecutiveTakeaway } from '../../utils/summaryUtils';
 
 export interface AICallSnapshotProps {
   call: AICallSnapshotData;
@@ -59,7 +60,7 @@ export const AICallSnapshot: React.FC<AICallSnapshotProps> = ({ call, className 
       <div className="flex items-center gap-2 p-2.5 bg-surface-1 rounded-lg border border-border-subtle text-xs">
         <CheckCircle2 className="w-4 h-4 text-signal-qualified shrink-0" />
         <span className="font-semibold text-foreground">Qualification Status:</span>
-        <span className="text-signal-qualified font-bold">Fully Qualified</span>
+        <span className="text-signal-qualified font-bold">{call.qualificationStatus === 'QUALIFIED' ? 'Fully Qualified' : (call.qualificationStatus || 'Fully Qualified')}</span>
         <span className="text-foreground-tertiary ml-auto">Budget • Authority • Need • Timeline confirmed</span>
       </div>
 
@@ -68,7 +69,7 @@ export const AICallSnapshot: React.FC<AICallSnapshotProps> = ({ call, className 
         <div className="p-2.5 rounded-lg bg-surface-1/60 border border-border-subtle space-y-1">
           <div className="font-semibold text-foreground">Executive Takeaway:</div>
           <p className="text-caption text-foreground-secondary leading-relaxed">
-            {call.keyTakeaway}
+            {formatExecutiveTakeaway(call.keyTakeaway)}
           </p>
         </div>
 
@@ -85,7 +86,10 @@ export const AICallSnapshot: React.FC<AICallSnapshotProps> = ({ call, className 
         className="w-full justify-center"
         leftIcon={<FileText className="w-3.5 h-3.5" />}
         rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
-        onClick={() => navigate('/calls/call-101/results')}
+        onClick={() => {
+          const targetId = call.id || call.opportunityId || 'call-snap-razorpay';
+          navigate(`/calls/${targetId}/results`);
+        }}
       >
         Review Audio Transcript & Call Brief
       </Button>

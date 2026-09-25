@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.core.security import AuthenticatedUser, get_current_user
@@ -14,7 +15,9 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
     summary="Get dynamic analytics and sales funnel metrics",
 )
 def get_analytics_metrics(
-    date_range: str = Query("30d", description="Preset date range: today, 7d, 30d, 90d"),
+    date_range: str = Query("30d", description="Preset date range: today, 7d, 15d, 30d, 90d, custom"),
+    start_date: Optional[str] = Query(None, description="Custom start date YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="Custom end date YYYY-MM-DD"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -23,7 +26,13 @@ def get_analytics_metrics(
     computed dynamically from live database state (leads, calls, campaigns).
     Never hardcoded.
     """
-    return AnalyticsService.get_metrics(db, owner_id=current_user.id, date_range=date_range)
+    return AnalyticsService.get_metrics(
+        db,
+        owner_id=current_user.id,
+        date_range=date_range,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 
 @router.get(
@@ -32,11 +41,19 @@ def get_analytics_metrics(
 )
 def get_funnel_summary(
     date_range: str = Query("30d"),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     current_user: AuthenticatedUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Convenience endpoint returning specifically the funnel stages and counts."""
-    metrics = AnalyticsService.get_metrics(db, owner_id=current_user.id, date_range=date_range)
+    metrics = AnalyticsService.get_metrics(
+        db,
+        owner_id=current_user.id,
+        date_range=date_range,
+        start_date=start_date,
+        end_date=end_date,
+    )
     return {
         "discovered": metrics.discoveredCount,
         "contacted": metrics.contactedCount,

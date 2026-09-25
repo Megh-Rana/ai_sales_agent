@@ -209,13 +209,13 @@ export const Opportunities: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-border-subtle pb-2">
                   <div className="flex items-center gap-2">
-                    <div className="p-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                    <div className="p-1 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                       <Flame className="w-4 h-4" />
                     </div>
                     <h2 className="text-h4 font-bold text-foreground tracking-tight">
                       {t.opportunities?.actionRequiredNow || 'Action Required Now'}
                     </h2>
-                    <span className="text-xs font-mono font-medium text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                    <span className="text-xs font-mono font-semibold text-amber-950 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded border border-amber-500/30">
                       {urgentOpportunities.length} {t.dashboard?.urgentActionable || 'Urgent'}
                     </span>
                   </div>
@@ -245,13 +245,13 @@ export const Opportunities: React.FC = () => {
               <div className="space-y-4 pt-2">
                 <div className="flex items-center justify-between border-b border-border-subtle pb-2">
                   <div className="flex items-center gap-2">
-                    <div className="p-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/30">
+                    <div className="p-1 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30">
                       <Sparkles className="w-4 h-4" />
                     </div>
                     <h2 className="text-h4 font-bold text-foreground tracking-tight">
                       {t.opportunities?.emergingOpportunities || 'Emerging & Warming Opportunities'}
                     </h2>
-                    <span className="text-xs font-mono font-medium text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/30">
+                    <span className="text-xs font-mono font-semibold text-blue-950 dark:text-blue-300 bg-blue-500/15 px-2 py-0.5 rounded border border-blue-500/30">
                       {emergingOpportunities.length} {t.opportunities?.emergingWarming || 'Warming'}
                     </span>
                   </div>

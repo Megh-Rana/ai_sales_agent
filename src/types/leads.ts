@@ -132,6 +132,8 @@ export interface DiscoveredLead {
   signal_type?: 'direct_requirement' | 'inferred_hiring_signal';
   is_inferred_from_hiring?: boolean;
   inferred_need_basis?: string;
+  followUpDue?: string;
+  followUpTask?: string;
 }
 
 export type SortOption = 'intent' | 'freshness' | 'value';

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
 import { useI18n } from '../../i18n/i18nContext';
+import { getLeadDetails } from '../../data/leads';
 
 export const Breadcrumbs: React.FC = () => {
   const { t } = useI18n();
@@ -50,9 +51,8 @@ export const Breadcrumbs: React.FC = () => {
 
     // Param IDs handling
     if (segment.startsWith('opp-') || segment.startsWith('lead-')) {
-      if (segment === 'opp-101' || segment === 'lead-1') return 'Acme Technologies';
-      if (segment === 'opp-102') return 'CloudScale Systems';
-      if (segment === 'opp-103') return 'Nexus Health AI';
+      const resolved = getLeadDetails(segment);
+      if (resolved?.companyName) return resolved.companyName;
       return 'Account Intel Profile';
     }
 

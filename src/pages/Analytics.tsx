@@ -22,14 +22,16 @@ import { dataBackboneService } from '../services/dataBackboneService';
 
 export const Analytics: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRangePreset>('30d');
+  const [customStartDate, setCustomStartDate] = useState<string>('2026-09-01');
+  const [customEndDate, setCustomEndDate] = useState<string>('2026-09-25');
   const [viewState, setViewState] = useState<'normal' | 'loading' | 'empty' | 'error'>('normal');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [dataset, setDataset] = useState<SalesAnalyticsDataset>(() => {
     return mockAnalyticsDataByRange[dateRange] || mockAnalyticsDataByRange['30d'];
   });
 
-  const loadMetrics = useCallback((range: DateRangePreset) => {
-    dataBackboneService.getAnalyticsMetrics(range).then((data) => {
+  const loadMetrics = useCallback((range: DateRangePreset, start?: string, end?: string) => {
+    dataBackboneService.getAnalyticsMetrics(range, start, end).then((data) => {
       if (data) {
         setDataset(data);
       }
@@ -37,8 +39,12 @@ export const Analytics: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    loadMetrics(dateRange);
-  }, [dateRange, loadMetrics]);
+    if (dateRange === 'custom') {
+      loadMetrics(dateRange, customStartDate, customEndDate);
+    } else {
+      loadMetrics(dateRange);
+    }
+  }, [dateRange, customStartDate, customEndDate, loadMetrics]);
 
   const currentDataset = dataset;
 
@@ -46,15 +52,25 @@ export const Analytics: React.FC = () => {
     setDateRange(range);
   }, []);
 
+  const handleCustomDateChange = useCallback((start: string, end: string) => {
+    setCustomStartDate(start);
+    setCustomEndDate(end);
+  }, []);
+
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
-    dataBackboneService.getAnalyticsMetrics(dateRange).then((data) => {
-      if (data) setDataset(data);
-      setIsRefreshing(false);
-    }).catch(() => {
-      setIsRefreshing(false);
-    });
-  }, [dateRange]);
+    const start = dateRange === 'custom' ? customStartDate : undefined;
+    const end = dateRange === 'custom' ? customEndDate : undefined;
+    dataBackboneService
+      .getAnalyticsMetrics(dateRange, start, end)
+      .then((data) => {
+        if (data) setDataset(data);
+        setIsRefreshing(false);
+      })
+      .catch(() => {
+        setIsRefreshing(false);
+      });
+  }, [dateRange, customStartDate, customEndDate]);
 
   const handleResetFilter = useCallback(() => {
     setDateRange('30d');
@@ -62,8 +78,24 @@ export const Analytics: React.FC = () => {
 
   const handleRetry = useCallback(() => {
     setViewState('normal');
-    loadMetrics(dateRange);
-  }, [dateRange, loadMetrics]);
+    const start = dateRange === 'custom' ? customStartDate : undefined;
+    const end = dateRange === 'custom' ? customEndDate : undefined;
+    loadMetrics(dateRange, start, end);
+  }, [dateRange, customStartDate, customEndDate, loadMetrics]);
+
+  // Compute trend chart points from live data
+  const chartPoints = useMemo(() => {
+    if (currentDataset.trendChartData && currentDataset.trendChartData.length > 0) {
+      return currentDataset.trendChartData;
+    }
+    if (currentDataset.callPerformance.totalCalls === 0) {
+      return [{ label: dateRange === 'today' ? 'Today' : 'Period', value: 0 }];
+    }
+    return [
+      { label: 'Start', value: 0 },
+      { label: 'Current', value: currentDataset.callPerformance.totalCalls, highlight: true },
+    ];
+  }, [currentDataset.trendChartData, currentDataset.callPerformance.totalCalls, dateRange]);
 
   return (
     <div className="space-y-8 select-none pb-16">
@@ -74,8 +106,9 @@ export const Analytics: React.FC = () => {
       <AnalyticsHeader
         dateRange={dateRange}
         onDateRangeChange={handleDateRangeChange}
-        viewState={viewState}
-        onViewStateChange={setViewState}
+        customStartDate={customStartDate}
+        customEndDate={customEndDate}
+        onCustomDateChange={handleCustomDateChange}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
       />
@@ -120,22 +153,14 @@ export const Analytics: React.FC = () => {
               </h2>
             </div>
 
-            {/* 21st.dev Animated Card Chart */}
+            {/* 21st.dev Animated Card Chart - Uses live connected calls data */}
             <AnimatedCardChart
               title="Autonomous Voice Qualification Trend"
               subtitle="Daily volume of connected AI calls and qualified prospect conversions"
               type="area"
               color="#3B82F6"
               height={160}
-              data={[
-                { label: 'Mon', value: 34 },
-                { label: 'Tue', value: 48 },
-                { label: 'Wed', value: 62, highlight: true },
-                { label: 'Thu', value: 55 },
-                { label: 'Fri', value: 78, highlight: true },
-                { label: 'Sat', value: 40 },
-                { label: 'Sun', value: 68 },
-              ]}
+              data={chartPoints}
               valuePrefix=""
               valueSuffix=" Calls"
             />

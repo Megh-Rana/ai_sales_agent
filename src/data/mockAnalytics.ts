@@ -1,6 +1,7 @@
 import { SalesAnalyticsDataset, DateRangePreset } from '../types/analytics';
 
-export const mockAnalyticsDataByRange: Record<DateRangePreset, SalesAnalyticsDataset> = {
+export const mockAnalyticsDataByRange: Record<DateRangePreset, SalesAnalyticsDataset> = (() => {
+  const data: Record<string, SalesAnalyticsDataset> = {
   '30d': {
     dateRange: '30d',
     executiveMetrics: [
@@ -585,3 +586,11 @@ export const mockAnalyticsDataByRange: Record<DateRangePreset, SalesAnalyticsDat
     ],
   },
 };
+
+data['15d'] = {
+  ...data['30d'],
+  dateRange: '15d',
+};
+
+return data as Record<DateRangePreset, SalesAnalyticsDataset>;
+})();

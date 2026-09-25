@@ -143,7 +143,7 @@ export const CallCompletedView: React.FC<CallCompletedViewProps> = ({
             Next Best Action
           </span>
           <p className="text-foreground font-medium">
-            Review technical architecture brief and confirm demo invite with Elena Vance (VP IT).
+            Review technical architecture brief and confirm demo invite with {session.contactName} ({session.contactRole}).
           </p>
         </div>
         <ArrowRight className="w-4 h-4 text-primary shrink-0" />

@@ -58,6 +58,55 @@ class CallOutcomeItem(BaseModel):
     badgeStyle: str = "bg-primary-muted text-primary border-primary/30"
 
 
+class StageConversionMetric(BaseModel):
+    id: str
+    title: str
+    fromStage: str
+    toStage: str
+    rate: float
+    trendPercentage: float = 0.0
+    benchmark: float = 30.0
+    status: str = "on_track"
+
+
+class SourcePerformanceItem(BaseModel):
+    sourceKey: str
+    sourceLabel: str
+    platformIconName: Optional[str] = None
+    discoveredLeads: int
+    highIntentLeads: int
+    qualifiedLeads: int
+    qualificationRate: float
+    avgIntentScore: float
+
+
+class IndustryPerformanceItem(BaseModel):
+    industry: str
+    discoveredLeads: int
+    highIntentCount: int
+    qualifiedCount: int
+    qualificationRate: float
+    totalEstimatedValue: str
+
+
+class AnalyticsInsight(BaseModel):
+    id: str
+    category: str
+    categoryLabel: str
+    title: str
+    evidence: str
+    whyItMatters: str
+    recommendedAction: str
+    ctaLabel: Optional[str] = None
+    ctaTarget: Optional[str] = None
+
+
+class TrendChartPoint(BaseModel):
+    label: str
+    value: int
+    highlight: bool = False
+
+
 class AnalyticsMetricsResponse(BaseModel):
     dateRange: str = "30d"
     discoveredCount: int
@@ -71,3 +120,8 @@ class AnalyticsMetricsResponse(BaseModel):
     intentDistribution: IntentLevelDistribution
     callPerformance: CallPerformanceData
     callOutcomes: List[CallOutcomeItem]
+    conversions: List[StageConversionMetric] = Field(default_factory=list)
+    sourcePerformance: List[SourcePerformanceItem] = Field(default_factory=list)
+    industryPerformance: List[IndustryPerformanceItem] = Field(default_factory=list)
+    insights: List[AnalyticsInsight] = Field(default_factory=list)
+    trendChartData: List[TrendChartPoint] = Field(default_factory=list)

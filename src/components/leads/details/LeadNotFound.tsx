@@ -40,12 +40,21 @@ export const LeadNotFound: React.FC<LeadNotFoundProps> = ({ leadId, onRetry }) =
 
       <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
         <Button
+          variant="primary"
+          size="md"
+          leftIcon={<Compass className="w-4 h-4" />}
+          onClick={() => navigate('/leads/opp-101')}
+        >
+          View Flagship Dossier (Razorpay)
+        </Button>
+
+        <Button
           variant="secondary"
           size="md"
           leftIcon={<ArrowLeft className="w-4 h-4" />}
-          onClick={() => navigate('/leads/discover')}
+          onClick={() => navigate('/dashboard')}
         >
-          Return to Lead Discovery
+          Return to Dashboard
         </Button>
 
         {onRetry && (
@@ -58,15 +67,6 @@ export const LeadNotFound: React.FC<LeadNotFoundProps> = ({ leadId, onRetry }) =
             Retry Telemetry Fetch
           </Button>
         )}
-
-        <Button
-          variant="primary"
-          size="md"
-          leftIcon={<Compass className="w-4 h-4" />}
-          onClick={() => navigate('/dashboard')}
-        >
-          Go to Dashboard
-        </Button>
       </div>
     </div>
   );

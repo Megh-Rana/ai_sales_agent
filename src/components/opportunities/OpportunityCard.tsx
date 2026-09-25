@@ -25,21 +25,21 @@ interface OpportunityCardProps {
 const getCategoryBadge = (type: OpportunityCategoryType) => {
   switch (type) {
     case 'BUYING_SIGNAL':
-      return { label: 'Buying Signal', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' };
+      return { label: 'Buying Signal', color: 'bg-emerald-500/10 text-emerald-950 dark:text-emerald-300 border-emerald-500/30' };
     case 'HOT_OPPORTUNITY':
-      return { label: 'Hot Opportunity', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' };
+      return { label: 'Hot Opportunity', color: 'bg-amber-500/10 text-amber-950 dark:text-amber-300 border-amber-500/30' };
     case 'POSITIVE_RESPONSE':
-      return { label: 'Positive Response', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' };
+      return { label: 'Positive Response', color: 'bg-emerald-500/10 text-emerald-950 dark:text-emerald-300 border-emerald-500/30' };
     case 'FOLLOW_UP_DUE':
-      return { label: 'Follow-Up Due', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' };
+      return { label: 'Follow-Up Due', color: 'bg-amber-500/10 text-amber-950 dark:text-amber-300 border-amber-500/30' };
     case 'ENGAGEMENT_SPIKE':
-      return { label: 'Engagement Spike', color: 'bg-blue-500/10 text-blue-400 border-blue-500/30' };
+      return { label: 'Engagement Spike', color: 'bg-blue-500/10 text-blue-950 dark:text-blue-300 border-blue-500/30' };
     case 'MEETING_OPPORTUNITY':
-      return { label: 'Meeting Opportunity', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30' };
+      return { label: 'Meeting Opportunity', color: 'bg-indigo-500/10 text-indigo-950 dark:text-indigo-300 border-indigo-500/30' };
     case 'HIGH_INTENT':
-      return { label: 'High Intent', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' };
+      return { label: 'High Intent', color: 'bg-amber-500/10 text-amber-950 dark:text-amber-300 border-amber-500/30' };
     case 'RE_ENGAGEMENT':
-      return { label: 'Re-engagement', color: 'bg-purple-500/10 text-purple-400 border-purple-500/30' };
+      return { label: 'Re-engagement', color: 'bg-purple-500/10 text-purple-950 dark:text-purple-300 border-purple-500/30' };
     default:
       return { label: 'Opportunity', color: 'bg-surface-1 text-foreground-secondary border-border-subtle' };
   }
@@ -72,13 +72,13 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className={`text-[11px] font-mono font-medium px-2 py-0.5 rounded border ${categoryBadge.color}`}>
+              <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded border ${categoryBadge.color}`}>
                 {categoryBadge.label}
               </span>
 
               {isHighPriority && (
-                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-amber-400" />
+                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 flex items-center gap-1">
+                  <Flame className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   HIGH PRIORITY
                 </span>
               )}

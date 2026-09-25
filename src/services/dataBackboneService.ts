@@ -130,6 +130,11 @@ export interface BackendAnalyticsMetrics {
     colorClass: string;
     badgeStyle: string;
   }>;
+  conversions?: any[];
+  sourcePerformance?: any[];
+  industryPerformance?: any[];
+  insights?: any[];
+  trendChartData?: any[];
 }
 
 // Convert BackendLead to frontend DiscoveredLead
@@ -346,16 +351,24 @@ export const dataBackboneService = {
   },
 
   // ─── ANALYTICS ───────────────────────────────────────────────────
-  async getAnalyticsMetrics(dateRange: DateRangePreset = '30d'): Promise<SalesAnalyticsDataset> {
+  async getAnalyticsMetrics(
+    dateRange: DateRangePreset = '30d',
+    startDate?: string,
+    endDate?: string
+  ): Promise<SalesAnalyticsDataset> {
     const fallback = mockAnalyticsDataByRange[dateRange] || mockAnalyticsDataByRange['30d'];
     try {
-      const res = await fetch(`${API_BASE}/api/analytics/metrics?date_range=${dateRange}`, {
+      let url = `${API_BASE}/api/analytics/metrics?date_range=${dateRange}`;
+      if (startDate) url += `&start_date=${encodeURIComponent(startDate)}`;
+      if (endDate) url += `&end_date=${encodeURIComponent(endDate)}`;
+
+      const res = await fetch(url, {
         headers: getAuthHeader(),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const live: BackendAnalyticsMetrics = await res.json();
 
-      // Merge live database metrics with visual presentation assets
+      // Return fully live metrics from the database
       return {
         ...fallback,
         dateRange,
@@ -368,9 +381,20 @@ export const dataBackboneService = {
         funnelInsightText: live.funnelInsightText || fallback.funnelInsightText,
         intentDistribution: live.intentDistribution || fallback.intentDistribution,
         callPerformance: live.callPerformance || fallback.callPerformance,
-        callOutcomes: (live.callOutcomes && live.callOutcomes.length > 0
-          ? live.callOutcomes
-          : fallback.callOutcomes) as any,
+        callOutcomes: live.callOutcomes ? (live.callOutcomes as any) : [],
+        conversions: live.conversions && live.conversions.length > 0
+          ? (live.conversions as any)
+          : fallback.conversions,
+        sourcePerformance: live.sourcePerformance !== undefined
+          ? (live.sourcePerformance as any)
+          : fallback.sourcePerformance,
+        industryPerformance: live.industryPerformance !== undefined
+          ? (live.industryPerformance as any)
+          : fallback.industryPerformance,
+        insights: live.insights && live.insights.length > 0
+          ? (live.insights as any)
+          : fallback.insights,
+        trendChartData: live.trendChartData || [],
       };
     } catch (err) {
       console.warn('Backend /api/analytics/metrics failed; using default analytics dataset:', err);

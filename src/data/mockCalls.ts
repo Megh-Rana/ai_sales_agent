@@ -664,9 +664,12 @@ export function createMockCallSession(
   };
   const callId = customCallId || `call-${lead.id.replace('lead-', '')}`;
 
-  const decisionMaker = lead.decisionMakerContact?.name || (lead as any).decisionMaker?.name || 'Leadership Contact';
-  const role = lead.decisionMakerContact?.role || (lead as any).decisionMaker?.role || 'Executive';
-  const phone = (lead as any).decisionMaker?.phone || '+918320441189';
+  const isPriyaTest = lead.companyName?.toLowerCase().includes('razorpay') || lead.id === 'opp-101' || lead.id === 'lead-101';
+  const decisionMaker = lead.decisionMakerContact?.name || (lead as any).decisionMaker?.name || (lead as any).contactName || (isPriyaTest ? 'Priya Sharma' : 'Leadership Contact');
+  const role = lead.decisionMakerContact?.role || (lead as any).decisionMaker?.role || (lead as any).contactRole || (isPriyaTest ? 'VP Sales Operations' : 'Executive');
+  const phone = (lead as any).decisionMaker?.phone || (lead.decisionMakerContact?.phoneAvailable ? '+91 98201 54890' : '+918320441189');
+  const email = (lead as any).decisionMakerContact?.email || (lead as any).contactEmail || (lead as any).decisionMaker?.email || `${decisionMaker.toLowerCase().replace(/[^a-z0-9]/g, '.')}@${(lead.companyDomain || lead.companyName).toLowerCase().replace(/[^a-z0-9.]/g, '')}`;
+  const leadStatus = lead.status === 'high-intent' ? 'High Intent Discovery' : typeof lead.status === 'string' ? lead.status : 'Open Discovery';
 
   return {
     callId,
@@ -676,13 +679,17 @@ export function createMockCallSession(
     contactName: decisionMaker,
     contactRole: role,
     contactPhone: phone,
+    contactEmail: email,
+    leadStatus: leadStatus,
+    agentName: 'Alex',
+    agentCompany: 'Bilur AI',
     language,
     status: 'PRE_CALL',
     audioStatus: 'idle',
     duration: 0,
     isMuted: false,
     isHumanTakeover: false,
-    primaryOutcome: 'Discovery Architecture Demo Scheduled (Thursday 2:00 PM Central)',
+    primaryOutcome: 'Discovery Architecture Demo Scheduled (Thursday 2:00 PM IST)',
     currentObjective: {
       goal: `Verify ${lead.companyName}'s active requirement and confirm dispatch bottleneck.`,
       suggestedQuestion: `How is your team currently handling ${lead.industry.toLowerCase()} touchpoints and qualification?`,

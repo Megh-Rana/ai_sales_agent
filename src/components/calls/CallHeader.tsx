@@ -9,7 +9,7 @@ import {
   Building2,
   ExternalLink
 } from 'lucide-react';
-import { CallSession } from '../../types/calls';
+import { CallSession, CallLanguage } from '../../types/calls';
 import { AIStatus } from '../ai/AIStatus';
 import { AIState } from '../../types/sales';
 import { AnimatedTextCycle } from '../ui/21st';
@@ -18,11 +18,13 @@ export interface CallHeaderProps {
   session: CallSession;
   formatDuration: (seconds: number) => string;
   onOpenTakeoverModal?: () => void;
+  onLanguageChange?: (lang: CallLanguage) => void;
 }
 
 export const CallHeader: React.FC<CallHeaderProps> = ({
   session,
   formatDuration,
+  onLanguageChange,
 }) => {
   // Map CallState & AudioStatus to standard AIStatus AIState
   const getAIStateMapping = (): { state: AIState; customText: string } => {
@@ -99,8 +101,22 @@ export const CallHeader: React.FC<CallHeaderProps> = ({
               <span className="font-medium text-foreground">{session.contactName}</span>
               <span className="text-foreground-tertiary">·</span>
               <span>{session.contactRole}</span>
+              {session.contactEmail && (
+                <>
+                  <span className="text-foreground-tertiary">·</span>
+                  <span className="text-foreground-secondary">{session.contactEmail}</span>
+                </>
+              )}
               <span className="text-foreground-tertiary">·</span>
               <span className="font-mono text-foreground-tertiary">{session.contactPhone}</span>
+              {session.agentName && (
+                <>
+                  <span className="text-foreground-tertiary">·</span>
+                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium text-[11px]">
+                    Agent: {session.agentName} ({session.agentCompany || 'Bilur AI'})
+                  </span>
+                </>
+              )}
             </div>
 
             {/* 21st.dev Animated Status Cycle */}
@@ -143,13 +159,25 @@ export const CallHeader: React.FC<CallHeaderProps> = ({
             </div>
           )}
 
-          {/* Language Indicator */}
+          {/* Language Selector */}
           <div
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-elevated border border-border-subtle text-xs text-foreground-secondary font-medium"
-            title={`Conversation Language: ${session.language}`}
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface-elevated border border-border-subtle hover:border-primary/50 text-xs text-foreground font-medium transition-colors"
+            title="Change active response language"
           >
-            <Languages className="w-3.5 h-3.5 text-foreground-tertiary" />
-            <span>{session.language}</span>
+            <Languages className="w-3.5 h-3.5 text-primary shrink-0" />
+            <select
+              value={session.language}
+              onChange={(e) => onLanguageChange?.(e.target.value as CallLanguage)}
+              disabled={session.status === 'COMPLETED' || session.status === 'FAILED'}
+              className="bg-transparent text-xs text-foreground font-medium outline-hidden cursor-pointer disabled:cursor-not-allowed"
+              title="Change active response language"
+              aria-label="Select AI Response Language"
+            >
+              <option value="English" className="bg-surface-elevated text-foreground">English</option>
+              <option value="Hindi" className="bg-surface-elevated text-foreground">Hindi (हिंदी)</option>
+              <option value="Gujarati" className="bg-surface-elevated text-foreground">Gujarati (ગુજરાતી)</option>
+              <option value="Marathi" className="bg-surface-elevated text-foreground">Marathi (मराठी)</option>
+            </select>
           </div>
 
           {/* Call Duration Counter */}

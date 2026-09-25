@@ -1,6 +1,6 @@
 import React from 'react';
 import { Zap, Briefcase, Cpu, DollarSign, Search, ArrowRight, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export interface BuyingSignalItem {
   id: string;
@@ -19,40 +19,42 @@ export interface BuyingSignalsProps {
 }
 
 export const BuyingSignals: React.FC<BuyingSignalsProps> = ({ signals, className = '' }) => {
+  const navigate = useNavigate();
+
   const defaultSignals: BuyingSignalItem[] = [
     {
-      id: 'bs-1',
+      id: 'bs-101',
       opportunityId: 'opp-101',
-      companyName: 'Acme Technologies',
+      companyName: 'Razorpay',
       type: 'Hiring Surge',
-      description: '5 Outbound SDR positions opened in past 48h; Sales Ops lead recruited.',
+      description: 'Hiring 5 Outbound SDRs & Head of Sales Ops; legacy dialer contract renewal in 45 days.',
       timestamp: '42m ago',
       impactScore: 95,
     },
     {
-      id: 'bs-2',
+      id: 'bs-102',
       opportunityId: 'opp-102',
-      companyName: 'CloudScale Systems',
+      companyName: 'Freshworks',
       type: 'Tech Migration',
-      description: 'Legacy telephony provider decommissioned; evaluating AI dialers.',
+      description: 'Legacy telephony provider decommissioned; evaluating sub-50ms AI voice calling API.',
       timestamp: '1h ago',
       impactScore: 92,
     },
     {
-      id: 'bs-3',
+      id: 'bs-103',
       opportunityId: 'opp-103',
-      companyName: 'Nexus Health AI',
+      companyName: 'PharmEasy',
       type: 'Growth Capital',
-      description: 'Series-B funding round (₹24M) announced with commercial GTM focus.',
+      description: 'Series-D ₹200 Cr round closed; evaluating compliance-grade outbound AI voice qualification.',
       timestamp: '3h ago',
       impactScore: 91,
     },
     {
-      id: 'bs-4',
+      id: 'bs-104',
       opportunityId: 'opp-104',
-      companyName: 'Apex Dynamics',
-      type: 'G2 Intent Surge',
-      description: 'Category comparison surge logged on Voice AI Cadences matrix.',
+      companyName: 'Delhivery',
+      type: 'Intent Surge',
+      description: 'Category comparison surge logged on G2 matrix; multi-touch distribution hub evaluation.',
       timestamp: '5h ago',
       impactScore: 86,
     },
@@ -90,35 +92,48 @@ export const BuyingSignals: React.FC<BuyingSignalsProps> = ({ signals, className
       </div>
 
       <div className="space-y-2.5">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="p-2.5 rounded-lg bg-surface-1/60 hover:bg-surface-1 border border-border-subtle hover:border-border-default transition-colors text-xs space-y-1 group"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="p-1 rounded bg-surface-elevated shrink-0">
-                  {getSignalIcon(item.type)}
-                </span>
-                <Link
-                  to={item.opportunityId ? `/leads/${item.opportunityId}` : '/leads'}
-                  className="font-semibold text-foreground group-hover:text-primary transition-colors truncate"
-                >
-                  {item.companyName}
-                </Link>
+        {items.map((item) => {
+          const targetUrl = item.opportunityId ? `/leads/${item.opportunityId}` : '/leads';
+          return (
+            <div
+              key={item.id}
+              onClick={() => navigate(targetUrl)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate(targetUrl);
+                }
+              }}
+              className="p-2.5 rounded-lg bg-surface-1/60 hover:bg-surface-1 border border-border-subtle hover:border-border-default transition-all cursor-pointer text-xs space-y-1 group"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="p-1 rounded bg-surface-elevated shrink-0">
+                    {getSignalIcon(item.type)}
+                  </span>
+                  <Link
+                    to={targetUrl}
+                    onClick={(e) => e.stopPropagation()}
+                    className="font-semibold text-foreground group-hover:text-primary transition-colors truncate"
+                  >
+                    {item.companyName}
+                  </Link>
+                  <span className="text-[10px] font-mono text-foreground-tertiary shrink-0">
+                    · {item.type}
+                  </span>
+                </div>
                 <span className="text-[10px] font-mono text-foreground-tertiary shrink-0">
-                  · {item.type}
+                  {item.timestamp}
                 </span>
               </div>
-              <span className="text-[10px] font-mono text-foreground-tertiary shrink-0">
-                {item.timestamp}
-              </span>
+              <p className="text-caption text-foreground-secondary leading-relaxed pl-6">
+                {item.description}
+              </p>
             </div>
-            <p className="text-caption text-foreground-secondary leading-relaxed pl-6">
-              {item.description}
-            </p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

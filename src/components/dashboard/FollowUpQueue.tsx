@@ -8,12 +8,14 @@ export interface FollowUpQueueProps {
   items: FollowUpItem[];
   onComplete?: (id: string) => void;
   className?: string;
+  isHighlighted?: boolean;
 }
 
 export const FollowUpQueue: React.FC<FollowUpQueueProps> = ({
   items,
   onComplete,
   className = '',
+  isHighlighted = false,
 }) => {
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -40,7 +42,14 @@ export const FollowUpQueue: React.FC<FollowUpQueueProps> = ({
   };
 
   return (
-    <div className={`bg-surface-0 border border-border-default rounded-xl p-4 sm:p-5 space-y-3.5 shadow-xs ${className}`}>
+    <div
+      id="dashboard-followup-queue"
+      className={`bg-surface-0 border rounded-xl p-4 sm:p-5 space-y-3.5 shadow-xs transition-all ${
+        isHighlighted
+          ? 'border-primary ring-2 ring-primary/40 shadow-md'
+          : 'border-border-default'
+      } ${className}`}
+    >
       {/* Card Header */}
       <div className="flex items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
         <div className="flex items-center gap-2">

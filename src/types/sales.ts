@@ -56,6 +56,9 @@ export interface Opportunity {
   contactName?: string;
   contactRole?: string;
   lastTouchpoint?: string;
+  followUpDue?: string;
+  followUpTask?: string;
+  callReady?: boolean;
 }
 
 export interface ActivityItemData {

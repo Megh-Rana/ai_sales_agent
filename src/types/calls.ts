@@ -75,6 +75,10 @@ export interface CallSession {
   contactName: string;
   contactRole: string;
   contactPhone: string;
+  contactEmail?: string;
+  leadStatus?: string;
+  agentName?: string;
+  agentCompany?: string;
   language: CallLanguage;
   status: CallState;
   audioStatus: AudioStatus;

@@ -19,20 +19,20 @@ export const ProspectStatementsCard: React.FC<ProspectStatementsCardProps> = ({
     switch (impact) {
       case 'positive':
         return {
-          bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
+          bg: 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/25',
           label: 'Positive Catalyst',
           icon: ArrowUpRight,
         };
       case 'concern':
         return {
-          bg: 'bg-amber-500/10 text-amber-400 border-amber-500/25',
+          bg: 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/25',
           label: 'Friction / Question',
           icon: AlertCircle,
         };
       case 'neutral':
       default:
         return {
-          bg: 'bg-slate-700/20 text-slate-300 border-slate-700/40',
+          bg: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-700/20 dark:text-slate-300 dark:border-slate-700/40',
           label: 'Context',
           icon: HelpCircle,
         };
@@ -40,15 +40,15 @@ export const ProspectStatementsCard: React.FC<ProspectStatementsCardProps> = ({
   };
 
   return (
-    <div className="bg-[#12161F] border border-[#232B3B] rounded-xl p-5 sm:p-6 shadow-sm">
+    <div className="bg-surface border border-border rounded-xl p-5 sm:p-6 shadow-xs dark:bg-[#12161F] dark:border-[#232B3B]">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-indigo-400" />
-          <h3 className="text-base font-bold text-white tracking-tight">
+          <MessageSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <h3 className="text-base font-bold text-foreground dark:text-white tracking-tight">
             Key Prospect Statements
           </h3>
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
+          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/30">
             {statements.length} Highlights
           </span>
         </div>
@@ -63,14 +63,14 @@ export const ProspectStatementsCard: React.FC<ProspectStatementsCardProps> = ({
           return (
             <div
               key={stmt.id}
-              className="bg-[#151A25] border border-[#232B3B] hover:border-slate-600 rounded-lg p-3.5 transition-all"
+              className="bg-surface-elevated border border-border hover:border-primary/40 rounded-lg p-3.5 transition-all shadow-xs dark:bg-[#151A25] dark:border-[#232B3B] dark:hover:border-slate-600"
             >
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-white">
+                  <span className="text-xs font-semibold text-foreground dark:text-white">
                     {stmt.speaker}
                   </span>
-                  <span className="text-[11px] font-mono text-slate-500">
+                  <span className="text-[11px] font-mono text-foreground-muted dark:text-slate-500">
                     {stmt.timestamp}
                   </span>
                 </div>
@@ -82,23 +82,23 @@ export const ProspectStatementsCard: React.FC<ProspectStatementsCardProps> = ({
               </div>
 
               {/* Exact Quote */}
-              <div className="bg-[#0C0F16] border border-[#1E2536] rounded p-2.5 mb-2">
-                <p className="text-xs text-slate-200 italic leading-relaxed">
+              <div className="bg-surface border border-border rounded p-2.5 mb-2 dark:bg-[#0C0F16] dark:border-[#1E2536]">
+                <p className="text-xs text-foreground-secondary dark:text-slate-200 italic leading-relaxed">
                   "{stmt.statement}"
                 </p>
               </div>
 
               {/* Sales Meaning */}
               <div className="flex items-center justify-between gap-2 text-xs">
-                <div className="text-slate-300">
-                  <span className="font-semibold text-slate-400 mr-1">Sales Meaning:</span>
+                <div className="text-foreground-secondary dark:text-slate-300">
+                  <span className="font-semibold text-foreground-muted dark:text-slate-400 mr-1">Sales Meaning:</span>
                   <span>{stmt.salesMeaning}</span>
                 </div>
 
                 {stmt.turnId && onJumpToTurn && (
                   <button
                     onClick={() => onJumpToTurn(stmt.turnId)}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-400 hover:text-blue-300 transition-colors shrink-0"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary dark:text-blue-400 hover:text-primary-hover dark:hover:text-blue-300 transition-colors shrink-0"
                     title="Jump to turn in transcript"
                   >
                     <span>View Turn</span>

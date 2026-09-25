@@ -545,6 +545,68 @@ export const mockCallResultsMap: Record<string, CallResultData> = {
     },
     status: 'ready',
     failureReason: 'Carrier SIP Trunk Gateway Timeout (SIP 504). Route released.'
+  },
+
+  // 6. RAW JSON TEST SCENARIO
+  'call-test-json': {
+    callId: 'call-test-json',
+    leadId: 'lead-test-json',
+    companyName: 'Apex Enterprise Payments',
+    companyDomain: 'apexpayments.com',
+    contactName: 'Not provided',
+    contactRole: 'Sales Operations',
+    contactPhone: '+91 99000 00000',
+    industry: 'Payments & Financial Services',
+    location: 'Mumbai, India',
+    outcome: 'QUALIFIED',
+    outcomeExplanation: 'Raw JSON response test scenario matching user prompt structure.',
+    supportingIndicators: ['Need identified', 'BANT score: 1/4'],
+    nextBestAction: {
+      action: 'Follow up with Account Executive',
+      whyNow: 'Evaluation initiated',
+      confidence: 80,
+      evidence: ['Raw JSON parsed successfully'],
+      targetTimeframe: 'Today'
+    },
+    summary: JSON.stringify({
+      duration_seconds: 218.3,
+      total_turns: 14,
+      language: 'hi',
+      lead_info: {
+        name: null,
+        company: null,
+        interest_level: 'unknown',
+        objections: [],
+        callback_requested: false,
+        meeting_scheduled: false,
+        bant_score: {
+          budget: false,
+          authority: false,
+          need: true,
+          timeline: false,
+          score: 1,
+          max_score: 4
+        },
+        transcript: 'Prospect facing challenges with payment infrastructure. Demo offered.'
+      }
+    }),
+    qualification: [],
+    buyingSignals: [],
+    objections: [],
+    keyStatements: [],
+    intelligenceChanges: [],
+    transcript: [],
+    metadata: {
+      callId: 'call-test-json',
+      duration: '3m 38s',
+      callTime: 'Today',
+      agent: 'Vidur AI',
+      direction: 'Outbound',
+      phone: '+91 99000 00000',
+      attemptNumber: 1,
+      recordingStatus: 'Available'
+    },
+    status: 'ready'
   }
 };
 

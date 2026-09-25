@@ -36,7 +36,7 @@ export const TodayPriorityFeed: React.FC<TodayPriorityFeedProps> = ({ items }) =
               {/* Header Badge Row */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40">
                     🔥 HIGH PRIORITY
                   </span>
                   <span className="text-caption font-mono text-foreground-tertiary">

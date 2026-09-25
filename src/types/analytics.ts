@@ -1,4 +1,4 @@
-export type DateRangePreset = 'today' | '7d' | '30d' | '90d' | 'custom';
+export type DateRangePreset = 'today' | '7d' | '15d' | '30d' | '90d' | 'custom';
 
 export interface ExecutiveMetric {
   id: string;
@@ -104,4 +104,5 @@ export interface SalesAnalyticsDataset {
   sourcePerformance: SourcePerformanceItem[];
   industryPerformance: IndustryPerformanceItem[];
   insights: AnalyticsInsight[];
+  trendChartData?: { label: string; value: number; highlight?: boolean }[];
 }
