@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Building2, Users, CreditCard, ShieldCheck, ShieldAlert, Keyboard, LogOut, ChevronDown, Sun, Moon } from 'lucide-react';
+import { User, Building2, Users, CreditCard, ShieldCheck, ShieldAlert, Keyboard, LogOut, ChevronDown, Sun, Moon, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { mockUser } from '../../services/mockShellData';
 import { Avatar } from '../ui/Avatar';
@@ -149,6 +149,17 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenShortcuts }) => {
               >
                 <ShieldCheck className="w-4 h-4 text-foreground-tertiary shrink-0" />
                 <span>Security & SSO</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
+                }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-foreground-secondary hover:text-foreground hover:bg-surface-hover transition-colors text-left"
+              >
+                <Smartphone className="w-4 h-4 text-primary shrink-0" />
+                <span>Install Mobile App (PWA)</span>
               </button>
 
               {onOpenShortcuts && (

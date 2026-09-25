@@ -24,7 +24,6 @@ Below are the key differentiating features and Unique Selling Propositions (USPs
 │ 5. Dual Calling Modality: Real-Time WebRTC In-Browser Sandbox & Live Twilio PSTN Telephony            │
 │ 6. Seamless Mid-Call Language Switching Without Context Loss                                          │
 │ 7. Native Multilingual Support for English, Hindi, Gujarati, and Marathi (Voice + UI)                  │
-│ 8. In-Call Closed-Loop Calendly Meeting Hand-Off with 24-Hour PSTN Auto-Recall                        │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -40,7 +39,7 @@ Below are the key differentiating features and Unique Selling Propositions (USPs
 ### What Makes It a USP:
 - **Dynamic AI Pitch Generation**: Instead of generic static email templates, the system dynamically analyzes the prospect’s extracted requirement, technology stack, and buying signals to synthesize a bespoke value proposition.
 - **Production SMTP Engine**: Supports live enterprise relays (Gmail, SendGrid, Amazon SES, Brevo, or internal relays) with both STARTTLS (port 587) and SSL (port 465).
-- **Executive HTML Template with Calendly CTA Button**: Emails are formatted as executive multipart MIME with clean typography, highlighted key commercial value props, auto-hyperlinked text, and a dedicated, mobile-friendly **"📅 Pick a Time on Calendly →"** button.
+- **Executive HTML Pitch Template with Actionable CTA**: Emails are formatted as executive multipart MIME with clean typography, highlighted key commercial value props, auto-hyperlinked text, and dedicated, mobile-friendly call-to-action buttons.
 - **Full Database Activity Auditing**: Every email dispatch is logged to `ActivityLog` with a unique delivery ID, timestamp, recipient metadata, and transmission status.
 
 ---
@@ -83,13 +82,12 @@ Below are the key differentiating features and Unique Selling Propositions (USPs
 
 - **Files in Codebase**:
   - Database Architecture: [`database.py`](file:///home/megh/working/ai_sales_agent/backend/app/db/database.py)
-  - Free-Tier Calendly Engine: [`calendly_service.py`](file:///home/megh/working/ai_sales_agent/backend/app/services/calendly_service.py)
   - Carrier Tunnel & Telephony Routing: [`twilio_service.py`](file:///home/megh/working/ai_sales_agent/backend/app/services/twilio_service.py), [`telephony_service.py`](file:///home/megh/working/ai_sales_agent/backend/app/services/telephony_service.py)
 
 ### What Makes It a USP:
 - **Zero Paid Subscriptions Required**:
-  - The meeting booking engine works seamlessly with **free-tier Calendly accounts** by leveraging pre-filled URL parameters (`?name=...&email=...&a1=...`) and native webhook receivers.
-  - Free-tier Cloudflare Tunnel (`trycloudflare.com`) integration enables public webhooks without requiring expensive static IP hosting or enterprise reverse proxies.
+  - The entire core platform is built around zero-cost self-hosted open-source software (FastAPI, SQLite/PostgreSQL, local Ollama LLMs).
+  - Free-tier Cloudflare Tunnel (`trycloudflare.com`) integration enables public webhook reception and mobile device access without requiring expensive static IP hosting or enterprise reverse proxies.
 - **Dual-Database Portability**: Built with SQLAlchemy supporting **PostgreSQL** in production with an automated, zero-configuration fallback to **SQLite** for development and local edge instances.
 - **Carrier Agnostic Multi-Provider Routing**: Telephony layer supports Twilio, Exotel, and simulated carrier endpoints, allowing enterprises to switch between telecom providers to negotiate optimal per-minute rates.
 - **Low Compute Footprint**: Asynchronous FastAPI backend coupled with efficient React + Vite client bundle (built in ~6 seconds) ensures high throughput on modest cloud compute.
@@ -152,23 +150,6 @@ Below are the key differentiating features and Unique Selling Propositions (USPs
 
 ---
 
-## 8. In-Call Closed-Loop Calendly Hand-Off with 24-Hour PSTN Auto-Recall
-
-- **Files in Codebase**:
-  - Booking & Recall Engine: [`calendly_service.py`](file:///home/megh/working/ai_sales_agent/backend/app/services/calendly_service.py)
-  - Tracking Data Model: [`calendly_tracking.py`](file:///home/megh/working/ai_sales_agent/backend/app/db/models/calendly_tracking.py)
-  - Calendly API Routes: [`calendly.py`](file:///home/megh/working/ai_sales_agent/backend/app/api/routes/calendly.py)
-  - Follow-Ups Dashboard: [`CalendlyFollowUpsSection.tsx`](file:///home/megh/working/ai_sales_agent/src/components/followUps/CalendlyFollowUpsSection.tsx)
-
-### What Makes It a USP:
-- **Flexible Natural Language Intent Recognition**: Recognizes intent to speak with a human or book a meeting across dozens of phrasing variations (e.g. *"Can I speak to someone?"*, *"Connect me to your manager"*, *"Representative please"*, *"Send me a Calendly link"*, *"मुझे किसी से बात कराओ"*).
-- **Simultaneous Dual-Channel Dispatch**: Sends SMS to the prospect’s verified mobile number and an executive HTML email with the booking link to their inbox while the call is still wrapping up.
-- **Smart Link Telemetry**: Intermediate tracking redirect logs the exact timestamp when the link is tapped.
-- **24-Hour Auto-Recall Engine**: If the prospect does not book within 24 hours, a background daemon automatically dials the lead back via PSTN with a customized follow-up pitch (up to 3 retries).
-- **Auto-Cessation on Webhook**: As soon as the prospect selects a slot on Calendly, the webhook receiver marks the session as `booked` and **permanently halts all future recalls**.
-
----
-
 ## Competitive Value Summary
 
 | Feature / USP | Traditional Market Solutions | Vidur AI Sales Platform |
@@ -176,8 +157,8 @@ Below are the key differentiating features and Unique Selling Propositions (USPs
 | **Outreach Follow-up** | Manual rep emails or static CRM templates | **Autonomous AI pitch synthesis + production SMTP delivery with responsive CTA buttons** |
 | **LLM Privacy & Cost** | Expensive cloud API calls with customer data exposure | **Local Ollama (Gemma 3) integration with business document context & zero token cost** |
 | **Sales Rep Interface** | Dense spreadsheets & disconnected tools | **Executive 60/40 Revenue Command Center + Real-Time Sales Copilot with battle cards** |
-| **Infrastructure Viability** | Thousands/mo in paid SaaS subscriptions (Calendly Pro, paid webhooks) | **Zero-subscription architecture using free-tier Calendly, Cloudflare tunnels & open SMTP** |
+| **Infrastructure Viability** | Thousands/mo in paid SaaS subscriptions & proprietary token fees | **Zero-subscription architecture using local Ollama Gemma 3, Cloudflare tunnels & open SMTP** |
 | **Voice Agent Testing** | Must dial real phone numbers consuming carrier minutes | **Dual modality: In-browser WebRTC testing console + Live Twilio PSTN telephony** |
 | **Language Dynamics** | Locked to a single language chosen before the call | **Real-time mid-call language switching (EN, HI, GU, MR) with preserved conversation memory** |
 | **Regional Language Voice** | Robotic US/UK accented translation voices | **Native Sarvam AI Indian accents + localized conversational filler audio ("Haan ji", "Ek second...")** |
-| **Meeting Conversion** | Vague "someone will call back" (80%+ drop-off) | **Instant dual-channel Calendly dispatch + 24h PSTN auto-recall engine until booked** |
+| **Discovery Automation** | Fragmented outreach tools requiring manual rep data entry | **Unified pipeline with autonomous voice discovery, instant pitch generation, and live lead tracking** |

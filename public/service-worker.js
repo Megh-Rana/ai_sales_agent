@@ -1,18 +1,27 @@
-const CACHE_NAME = 'vidur-cache-v1';
+const CACHE_NAME = 'vidur-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/favicon.svg',
   '/pwa-icon-192.png',
+  '/pwa-maskable-192.png',
   '/pwa-icon-512.png',
+  '/pwa-maskable-512.png',
   '/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Resilient pre-caching: do not fail entire install if one asset is missing/slow
+      for (const asset of STATIC_ASSETS) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          console.warn('[PWA SW] Pre-cache skip for:', asset, err);
+        }
+      }
     })
   );
   self.skipWaiting();
@@ -41,17 +50,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Never intercept non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   // Never intercept local development, Vite internal requests, non-GET, API, or WebSocket requests
   if (
     url.hostname === 'localhost' ||
     url.hostname === '127.0.0.1' ||
     url.port === '3000' ||
     url.port === '5173' ||
-    event.request.method !== 'GET' ||
     url.pathname.startsWith('/api') ||
     url.pathname.startsWith('/ws') ||
     url.pathname.startsWith('/@') ||
     url.pathname.startsWith('/src') ||
+    url.pathname.startsWith('/node_modules') ||
+    url.searchParams.has('t') ||
     url.protocol.startsWith('chrome-extension')
   ) {
     return;

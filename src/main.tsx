@@ -12,34 +12,17 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 
-// Register service worker for PWA in production; unregister in development to avoid dev server interference
+// Register service worker for PWA support across all environments (production and local testing)
 if ('serviceWorker' in navigator) {
-  if (import.meta.env.PROD) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker
-        .register('/service-worker.js')
-        .then((registration) => {
-          console.log('[PWA] ServiceWorker registered with scope:', registration.scope);
-        })
-        .catch((error) => {
-          console.log('[PWA] ServiceWorker registration failed:', error);
-        });
-    });
-  } else {
-    // In dev mode, unregister any active service worker and clear caches to avoid stale intercepts
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      for (const registration of registrations) {
-        registration.unregister();
-        console.log('[PWA] Dev mode: Unregistered existing ServiceWorker');
-      }
-    });
-    if ('caches' in window) {
-      caches.keys().then((keys) => {
-        for (const key of keys) {
-          caches.delete(key);
-        }
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js', { scope: '/' })
+      .then((registration) => {
+        console.log('[PWA] ServiceWorker successfully registered with scope:', registration.scope);
+      })
+      .catch((error) => {
+        console.warn('[PWA] ServiceWorker registration notice:', error);
       });
-    }
-  }
+  });
 }
 
