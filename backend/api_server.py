@@ -24,7 +24,80 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import config
 from pipeline.orchestrator import PipelineOrchestrator
 
-app = FastAPI(title="AI Sales Voice Agent API", version="1.0.0")
+from contextlib import asynccontextmanager
+
+# Active call sessions with their pipelines and threads
+active_sessions: Dict[str, Dict] = {}
+active_connections: Dict[str, List[WebSocket]] = {}
+main_loop: Optional[asyncio.AbstractEventLoop] = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global main_loop
+    main_loop = asyncio.get_running_loop()
+    try:
+        from app.db.database import init_db
+        import app.db.database as db_mod
+        init_db()
+        engine_type = "SQLite" if db_mod.is_sqlite else "PostgreSQL"
+        print(f"Database initialized successfully ({engine_type}).")
+        try:
+            from seed_users import SEED_USERS
+            from app.db.database import SessionLocal
+            from app.services.auth_service import register_user
+            db = SessionLocal()
+            for user in SEED_USERS:
+                try:
+                    register_user(
+                        db=db,
+                        email=user["email"],
+                        password=user["password"],
+                        full_name=user["full_name"],
+                        role=user["role"],
+                    )
+                except Exception:
+                    pass
+            db.close()
+        except Exception as seed_u_err:
+            print(f"User seed notice: {seed_u_err}")
+        try:
+            from seed_discovery_leads import parse_and_seed_discovery_leads
+            parse_and_seed_discovery_leads()
+        except Exception as seed_err:
+            print(f"Discovery lead seed notice: {seed_err}")
+    except Exception as e:
+        print(f"Database initialization warning: {e}")
+
+    # Automated 24-hour Calendly follow-up re-call background worker
+    async def _calendly_recall_background_worker():
+        while True:
+            try:
+                await asyncio.sleep(60)  # Check every 60 seconds
+                from app.db.database import SessionLocal
+                from app.services.calendly_service import CalendlyService
+                db_worker = SessionLocal()
+                try:
+                    CalendlyService.check_and_process_due_recalls(db_worker)
+                finally:
+                    db_worker.close()
+            except asyncio.CancelledError:
+                break
+            except Exception as worker_err:
+                print(f"[Calendly Worker Notice] {worker_err}")
+
+    worker_task = asyncio.create_task(_calendly_recall_background_worker())
+
+    yield
+
+    worker_task.cancel()
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        pass
+
+
+app = FastAPI(title="AI Sales Voice Agent API", version="1.0.0", lifespan=lifespan)
 
 # Trust X-Forwarded-* headers from cloudflared / localhost.run / nginx proxies.
 # This makes request.base_url and request.url reflect the real public HTTPS URL
@@ -67,73 +140,12 @@ app.add_middleware(
     allow_private_network=True,
 )
 
-# Active call sessions with their pipelines and threads
-active_sessions: Dict[str, Dict] = {}
-active_connections: Dict[str, List[WebSocket]] = {}
-main_loop: Optional[asyncio.AbstractEventLoop] = None
-
 # Mount CRM and Database API router from backend.zip
 try:
     from app.api.api import api_router
     app.include_router(api_router)
 except Exception as e:
     print(f"[Warning] Failed to mount app.api.api_router: {e}")
-
-@app.on_event("startup")
-async def on_startup():
-    global main_loop
-    main_loop = asyncio.get_running_loop()
-    try:
-        from app.db.database import init_db, is_sqlite
-        init_db()
-        engine_type = "SQLite" if is_sqlite else "PostgreSQL"
-        print(f"Database initialized successfully ({engine_type}).")
-        try:
-            from seed_users import SEED_USERS
-            from app.db.database import SessionLocal
-            from app.services.auth_service import register_user
-            db = SessionLocal()
-            for user in SEED_USERS:
-                try:
-                    register_user(
-                        db=db,
-                        email=user["email"],
-                        password=user["password"],
-                        full_name=user["full_name"],
-                        role=user["role"],
-                    )
-                except Exception:
-                    pass
-            db.close()
-        except Exception as seed_u_err:
-            print(f"User seed notice: {seed_u_err}")
-        try:
-            from seed_discovery_leads import parse_and_seed_discovery_leads
-            parse_and_seed_discovery_leads()
-        except Exception as seed_err:
-            print(f"Discovery lead seed notice: {seed_err}")
-    except Exception as e:
-        print(f"Database initialization warning: {e}")
-
-
-    # Automated 24-hour Calendly follow-up re-call background worker
-    async def _calendly_recall_background_worker():
-        while True:
-            try:
-                await asyncio.sleep(60)  # Check every 60 seconds
-                from app.db.database import SessionLocal
-                from app.services.calendly_service import CalendlyService
-                db_worker = SessionLocal()
-                try:
-                    CalendlyService.check_and_process_due_recalls(db_worker)
-                finally:
-                    db_worker.close()
-            except asyncio.CancelledError:
-                break
-            except Exception as worker_err:
-                print(f"[Calendly Worker Notice] {worker_err}")
-
-    asyncio.ensure_future(_calendly_recall_background_worker())
 
 # Request/Response Models
 class CallStartRequest(BaseModel):

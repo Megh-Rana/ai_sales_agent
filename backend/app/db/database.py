@@ -1,7 +1,7 @@
 from typing import Generator
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
-from app.core.config import get_settings
+from app.core.config import DEFAULT_DATABASE_URL, get_settings
 from app.core.logging import logger
 
 settings = get_settings()
@@ -12,21 +12,26 @@ if database_url.startswith("postgres://"):
 
 is_sqlite = database_url.startswith("sqlite")
 
-if is_sqlite:
-    engine = create_engine(
-        database_url,
-        connect_args={"check_same_thread": False},
-        echo=False,
-    )
-else:
-    engine = create_engine(
-        database_url,
-        pool_size=5,
-        max_overflow=10,
-        pool_pre_ping=True,
-        pool_recycle=300,
-        echo=False,
-    )
+
+def _build_engine(url: str, sqlite: bool):
+    if sqlite:
+        return create_engine(
+            url,
+            connect_args={"check_same_thread": False},
+            echo=False,
+        )
+    else:
+        return create_engine(
+            url,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
+            pool_recycle=300,
+            echo=False,
+        )
+
+
+engine = _build_engine(database_url, is_sqlite)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -35,7 +40,29 @@ Base = declarative_base()
 
 def init_db():
     """Create all tables if they do not exist."""
+    global engine, database_url, is_sqlite
     import app.db.models  # load models
+
+    if not is_sqlite:
+        # Check if PostgreSQL server is reachable
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+        except Exception as pg_err:
+            from app.core.config import DEFAULT_SQLITE_PATH
+            logger.warning(
+                f"[Database] PostgreSQL connection failed ({pg_err}). "
+                f"Falling back to local SQLite database at {DEFAULT_SQLITE_PATH}."
+            )
+            print(
+                f"\n[Database Warning] PostgreSQL connection to localhost:5432 failed.\n"
+                f"[Database Notice] Gracefully falling back to local SQLite: {DEFAULT_SQLITE_PATH}\n"
+            )
+            database_url = DEFAULT_DATABASE_URL
+            is_sqlite = True
+            engine = _build_engine(database_url, is_sqlite)
+            SessionLocal.configure(bind=engine)
+
     Base.metadata.create_all(bind=engine)
 
     # Safe migration for newly added lead enrichment columns on both Postgres and SQLite

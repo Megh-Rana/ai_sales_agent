@@ -41,10 +41,12 @@ class Settings(BaseSettings):
     @classmethod
     def validate_database_url(cls, v: str) -> str:
         if not v or not isinstance(v, str):
-            return "sqlite:///./sales_platform.db"
+            return DEFAULT_DATABASE_URL
         
         v_lower = v.lower()
         if v_lower.startswith("sqlite"):
+            if "sales_platform.db" in v:
+                return DEFAULT_DATABASE_URL
             return v
         
         # Normalize legacy postgres:// prefix
