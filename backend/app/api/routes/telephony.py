@@ -322,6 +322,12 @@ async def twilio_voice_webhook(
                 requirement=requirement,
                 language=lang,
             )
+        else:
+            brain = get_or_create_brain(call, language=lang)
+
+        if not any(t.role == "agent" for t in brain.memory.turns):
+            brain.memory.add_turn("agent", opening_pitch, lang)
+        brain._prev_language = lang
 
         audio_id, _ = synthesize_speech_to_wav(opening_pitch, language=lang)
 
@@ -407,6 +413,11 @@ async def twilio_gather_webhook(
 
     # 1. Feed user speech into YOUR internal LLM (AIBrain)
     brain = get_or_create_brain(call, language=lang)
+    meta = call.carrier_metadata or {} if call else {}
+    pitch = meta.get("opening_pitch")
+    if pitch and not any(t.role == "agent" for t in brain.memory.turns):
+        brain.memory.add_turn("agent", pitch, lang)
+        brain._prev_language = lang
     logger.info(f"[Twilio Gather] Prospect: '{speech_result}'. Generating LLM response with internal brain...")
 
     try:

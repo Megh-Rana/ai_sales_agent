@@ -386,6 +386,13 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
             "message_queue": message_queue,
             "call_thread": None,
         }
+
+        # Pre-seed the pipeline's conversation memory with the opening pitch
+        # so subsequent turns know the agent already introduced itself and delivered its pitch!
+        if not any(turn.role == "agent" for turn in pipeline.ai.memory.turns):
+            pipeline.ai.memory.add_turn("agent", opening_pitch, request.language)
+        pipeline.ai._prev_language = request.language
+        pipeline.language = request.language
         
         return CallStartResponse(
             sessionId=session_id,
@@ -469,6 +476,12 @@ async def launch_voice_call(session_id: str):
                 session_lang = session.get("language", "en")
                 opening = session.get("opening_pitch") or pipeline.ai.get_opening(prospect_name=contact_name, language=session_lang)
                 print(f"🤖 Agent [{session_lang}]: {opening}\n")
+
+                # Ensure AI memory has the opening pitch recorded so it never re-introduces itself on turn 1
+                if not any(turn.role == "agent" for turn in pipeline.ai.memory.turns):
+                    pipeline.ai.memory.add_turn("agent", opening, session_lang)
+                pipeline.ai._prev_language = session_lang
+                pipeline.language = session_lang
                 
                 # Add opening to transcript
                 opening_item = {

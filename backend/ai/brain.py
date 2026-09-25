@@ -167,8 +167,9 @@ class AIBrain:
         new_name = lang_names.get(new_lang, new_lang.upper())
         prev_name = lang_names.get(prev_lang, prev_lang.upper())
         return (
-            f"The prospect just switched from {prev_name} to {new_name}. "
-            f"Seamlessly continue in {new_name} without commenting on the switch."
+            f"The prospect switched from {prev_name} to {new_name}. "
+            f"You MUST seamlessly switch and reply in {new_name}. "
+            f"Never refuse to speak {new_name}. Respond fluently, warmly, and naturally in {new_name}."
         )
 
     def warm_up(self):
@@ -227,18 +228,19 @@ class AIBrain:
     def _fallback_pitch(self, contact: str, company: str, language: str) -> str:
         """Personalized multilingual fallback pitch if LLM is offline or times out."""
         c = contact.strip() if contact and contact.strip() != "there" else ""
+        caller = self.company_name if (self.company_name and self.company_name.lower() != company.lower()) else "Vidur AI"
         if language == "hi":
             greeting = f"नमस्ते {c} जी, " if c else "नमस्ते, "
-            return f"{greeting}मैं {self.agent_name}, Vidur AI से बोल रहा हूँ। {company} के संबंध में बात करने के लिए क्या आपके पास एक मिनट है?"
+            return f"{greeting}मैं {self.agent_name}, {caller} से बोल रहा हूँ। {company} के संबंध में बात करने के लिए क्या आपके पास एक मिनट है?"
         elif language == "gu":
             greeting = f"નમસ્તે {c}ભાઈ, " if c else "નમસ્તે, "
-            return f"{greeting}હું {self.agent_name}, Vidur AI તરફથી. {company} માટે એક મિનિટ સમય મળી શકે છે?"
+            return f"{greeting}હું {self.agent_name}, {caller} તરફથી. {company} માટે એક મિનિટ સમય મળી શકે છે?"
         elif language == "mr":
             greeting = f"नमस्कार {c}, " if c else "नमस्कार, "
-            return f"{greeting}मी {self.agent_name}, Vidur AI कडून. {company} च्या संदर्भात बोलायला एक मिनिट आहे का?"
+            return f"{greeting}मी {self.agent_name}, {caller} कडून. {company} च्या संदर्भात बोलायला एक मिनिट आहे का?"
         else:
             greeting = f"Hi {c}, " if c else "Hello, "
-            return f"{greeting}this is {self.agent_name} from Vidur AI following up regarding {company}. Do you have a quick minute?"
+            return f"{greeting}this is {self.agent_name} from {caller} following up regarding {company}. Do you have a quick minute?"
 
     def generate_dynamic_opening_pitch(
         self,
@@ -255,6 +257,7 @@ class AIBrain:
         company details, specific requirements, and the selected language.
         """
         company = company_name or self.company_name or "your company"
+        caller = self.company_name if (self.company_name and self.company_name.lower() != company.lower()) else "Vidur AI"
         contact = prospect_name.strip() if prospect_name else ""
         info = company_info or self.company_info or f"{company} operations"
         req = requirement or self.campaign_goal or "business automation and process efficiency"
@@ -271,7 +274,7 @@ class AIBrain:
         contact_ref = f"{contact} at {company}" if contact else f"the operations lead at {company}"
 
         prompt = (
-            f"You are {self.agent_name}, a friendly, professional AI sales representative from Vidur AI calling {contact_ref}.\n"
+            f"You are {self.agent_name}, a friendly, professional AI sales representative from {caller} calling {contact_ref}.\n"
             f"Target Prospect Context:\n"
             f"- Company: {company}\n"
             f"- Industry / Context: {info}\n"
@@ -280,7 +283,7 @@ class AIBrain:
             f"- Our Solution: {services}\n\n"
             f"Task: Generate a natural, engaging 1-2 sentence spoken opening pitch greeting in {target_lang}.\n"
             f"Guidelines:\n"
-            f"1. Greet {contact or 'the prospect'} professionally and introduce yourself as {self.agent_name} from Vidur AI.\n"
+            f"1. Greet {contact or 'the prospect'} professionally and introduce yourself as {self.agent_name} from {caller}.\n"
             f"2. Concretely reference {company}'s specific requirement or recent initiative to show direct relevance.\n"
             f"3. End with a polite, natural conversational question asking if they have a brief minute to connect.\n"
             f"4. Keep it strictly to 1 or 2 spoken sentences (under 35 words).\n"
@@ -316,24 +319,31 @@ class AIBrain:
         language: str = "en",
         requirement: str = "",
         buying_signals: str = "",
+        custom_pitch: str = "",
     ) -> str:
         """Get the opening line for the call (dynamically generated via Ollama with fallback)."""
-        return self.generate_dynamic_opening_pitch(
-            prospect_name=prospect_name,
-            company_name=self.company_name,
-            company_info=self.company_info,
-            products_services=self.products_services,
-            language=language,
-            requirement=requirement or self.campaign_goal,
-            buying_signals=buying_signals,
-        )
+        if custom_pitch and custom_pitch.strip():
+            opening = custom_pitch.strip()
+        else:
+            opening = self.generate_dynamic_opening_pitch(
+                prospect_name=prospect_name,
+                company_name=self.company_name,
+                company_info=self.company_info,
+                products_services=self.products_services,
+                language=language,
+                requirement=requirement or self.campaign_goal,
+                buying_signals=buying_signals,
+            )
+        self.memory.add_turn("agent", opening, language)
+        self._prev_language = language
+        return opening
 
     def think(self, user_text: str, detected_language: str = "en") -> Generator[str, None, None]:
         """
         Process user speech, update conversation history, and yield response sentences.
         """
         # Record user turn
-        self.memory.add_turn("user", user_text, language=detected_language)
+        self.memory.add_turn("prospect", user_text, language=detected_language)
 
         # Detect language switch
         switch_hint = self._language_switch_hint(detected_language, self._prev_language)
@@ -349,8 +359,9 @@ class AIBrain:
         # Add recent conversation history (last N turns)
         history = self.memory.get_recent_history(n=6)
         for turn in history:
+            role = turn.get("role", "user")
             content = turn.get("content") if "content" in turn else turn.get("text", "")
-            messages.append({"role": turn["role"], "content": content})
+            messages.append({"role": role, "content": content})
 
         # Sentence buffer for streaming TTS
         sentence_buffer = ""
@@ -372,9 +383,9 @@ class AIBrain:
         if remaining:
             yield remaining
 
-        # Clean and save the assistant's turn in memory
+        # Clean and save the agent's turn in memory
         cleaned = self._clean_llm_response(full_response)
-        self.memory.add_turn("assistant", cleaned, language=detected_language)
+        self.memory.add_turn("agent", cleaned, language=detected_language)
 
     def _extract_sentence(self, text: str) -> str | None:
         """Extract the first complete sentence from buffered text, if any."""
@@ -520,7 +531,7 @@ class AIBrain:
         # Inject language-switch hint when prospect changes language
         switch_hint = self._language_switch_hint(language, self._prev_language)
         if switch_hint:
-            system_prompt += f"\n\n**Language switch note:** {switch_hint}"
+            system_prompt += f"\n\n**CRITICAL LANGUAGE SWITCH DIRECTIVE:** {switch_hint}"
 
         # Inject conversation state hints
         state_hint = self._get_state_hint()

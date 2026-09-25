@@ -16,6 +16,7 @@ import time
 import json
 import sys
 import os
+import re
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
@@ -120,9 +121,9 @@ class PipelineOrchestrator:
 
         # Generate and speak the opening
         print("\n--- Call Starting ---\n")
-        opening = self.ai.get_opening(prospect_name="there")
+        opening = self.ai.get_opening(prospect_name="there", language=self.language)
         print(f"🤖 Agent: {opening}\n")
-        self._speak_text(opening, "en")
+        self._speak_text(opening, self.language)
 
         # Start listening
         self.audio.start_recording()
@@ -169,19 +170,22 @@ class PipelineOrchestrator:
 
         # ─── STT ──────────────────────────────────────────────────────
         t0 = time.time()
-        # Pass session language as a hint so Sarvam STT / Whisper bias transcription
-        # to the correct language instead of auto-detecting as English
-        stt_result = self.stt.transcribe(speech_audio, language=self.language)
+        # Allow STT to auto-detect language across speech turns for seamless multilingual switching
+        stt_result = self.stt.transcribe(speech_audio)
         stt_time = time.time() - t0
 
         transcript = stt_result["text"]
-        language = stt_result["language"]
+        detected_lang = stt_result.get("language") or "en"
 
         if not transcript or transcript.strip() == "":
             print("   (no speech detected)")
             self.audio.resume_recording()
             self.vad.reset()
             return
+
+        # Dynamically resolve turn language (supports speech auto-detection + explicit switch requests)
+        language = self._resolve_turn_language(transcript, detected_lang, fallback_language=self.language)
+        self.language = language
 
         print(f"👤 Prospect [{language}]: {transcript}")
         print(f"   ⏱️  STT: {stt_time:.2f}s")
@@ -473,3 +477,45 @@ class PipelineOrchestrator:
             # this in voice mode; in text mode we default to Hindi for Devanagari.
             return "hi"
         return "en"
+
+    @staticmethod
+    def _resolve_turn_language(transcript: str, stt_language: str, fallback_language: str = "en") -> str:
+        """
+        Determine the effective conversation language for the turn.
+        Checks for:
+        1. Explicit user request to switch language (e.g. 'Can we speak in Hindi?', 'हिंदी में बात करो')
+        2. Script detection from transcript (Devanagari -> Hindi/Marathi, Gujarati script -> Gujarati)
+        3. STT detected language (if recognized)
+        4. Current session language fallback
+        """
+        lower = transcript.lower().strip()
+
+        # 1. Explicit switch request patterns
+        switch_patterns = [
+            (r"\b(in hindi|to hindi|speak hindi|talk in hindi|switch to hindi|hindi please|hindi mein|हिंदी)\b", "hi"),
+            (r"\b(in gujarati|to gujarati|speak gujarati|talk in gujarati|switch to gujarati|gujarati please|gujarati ma|ગુજરાતી)\b", "gu"),
+            (r"\b(in marathi|to marathi|speak marathi|talk in marathi|switch to marathi|marathi please|marathi madhe|मराठी)\b", "mr"),
+            (r"\b(in english|to english|speak english|talk in english|switch to english|english please|अंग्रेजी)\b", "en"),
+        ]
+        for pattern, lang_code in switch_patterns:
+            if re.search(pattern, lower):
+                print(f"[Language Switch] User requested switch to {lang_code.upper()} in speech: '{transcript}'")
+                return lang_code
+
+        # 2. Script heuristics from transcript characters
+        gujarati = sum(1 for c in transcript if "\u0A80" <= c <= "\u0AFF")
+        devanagari = sum(1 for c in transcript if "\u0900" <= c <= "\u097F")
+        total = max(len(transcript), 1)
+
+        if gujarati / total > 0.15:
+            return "gu"
+        if devanagari / total > 0.15:
+            if stt_language in ("mr", "mr-IN") or fallback_language == "mr":
+                return "mr"
+            return "hi"
+
+        # 3. STT detected language if recognized
+        if stt_language in config.SUPPORTED_LANGUAGES:
+            return stt_language
+
+        return fallback_language or "en"

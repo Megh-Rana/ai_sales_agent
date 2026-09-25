@@ -77,7 +77,7 @@ class TTSEngine:
             import tempfile
             import soundfile as sf
             
-            lang_code = self._lang_code(language)
+            lang_code = self._lang_code(language, text=text)
             # Map to Edge TTS voices
             voice_map = {
                 "en-IN": "en-IN-NeerjaNeural",  # Female
@@ -128,7 +128,7 @@ class TTSEngine:
         if not text or not text.strip():
             return np.array([], dtype=np.float32)
 
-        lang_code = self._lang_code(language)
+        lang_code = self._lang_code(language, text=text)
         t0 = time.time()
 
         # Try Sarvam API if key is available
@@ -291,7 +291,19 @@ class TTSEngine:
 
     # ─── Helpers ─────────────────────────────────────────────────────
 
-    def _lang_code(self, language: str | None) -> str:
+    def _lang_code(self, language: str | None, text: str = "") -> str:
+        # Detect script directly from text to prevent using the wrong TTS voice/language
+        if text:
+            gujarati = sum(1 for c in text if "\u0A80" <= c <= "\u0AFF")
+            devanagari = sum(1 for c in text if "\u0900" <= c <= "\u097F")
+            total = max(len(text), 1)
+            if gujarati / total > 0.15:
+                return "gu-IN"
+            if devanagari / total > 0.15:
+                if language in ("mr", "mr-IN"):
+                    return "mr-IN"
+                return "hi-IN"
+
         _name_to_code = {
             "english":  "en",
             "hindi":    "hi",
