@@ -71,6 +71,7 @@ class PipelineOrchestrator:
         self._turn_count = 0
         self.on_transcript = None   # Optional callback(speaker: str, text: str, language: str)
         self.on_human_transfer = None  # Optional callback(language: str)
+        self.on_call_ended = None  # Optional callback(reason: str)
 
     def load_all(self):
         """Load all models into GPU (concurrent mode)."""
@@ -216,10 +217,10 @@ class PipelineOrchestrator:
             self._running = False
             return
 
-        # Check for exit keywords
+        # Check for exit keywords before invoking AI Brain
         if self._is_exit_phrase(transcript):
             farewell = self._get_farewell(language)
-            print(f"\n🤖 Agent: {farewell}")
+            print(f"\n🤖 Agent (Cut call farewell): {farewell}")
             if self.on_transcript:
                 try:
                     self.on_transcript("agent", farewell, language)
@@ -227,6 +228,13 @@ class PipelineOrchestrator:
                     print(f"[Callback Error] {ex}")
             self._speak_text(farewell, language)
             self._running = False
+            self.audio.stop_recording()
+            print("🛑 [Pipeline] Call explicitly ended by prospect exit instruction. Call cut cleanly.")
+            if self.on_call_ended and callable(self.on_call_ended):
+                try:
+                    self.on_call_ended("user_cut_call")
+                except Exception as ex:
+                    print(f"[Call Ended Callback Error] {ex}")
             return
 
         # Check turn limit
@@ -241,6 +249,12 @@ class PipelineOrchestrator:
                     print(f"[Callback Error] {ex}")
             self._speak_text(wrap_up, language)
             self._running = False
+            self.audio.stop_recording()
+            if self.on_call_ended and callable(self.on_call_ended):
+                try:
+                    self.on_call_ended("turn_limit_reached")
+                except Exception as ex:
+                    print(f"[Call Ended Callback Error] {ex}")
             return
 
         # ─── AI + TTS streaming with gapless playback ─────────────────
@@ -317,6 +331,18 @@ class PipelineOrchestrator:
                 playback_thread.join(timeout=30.0)
                 print()  # newline after streamed response
 
+                # Check if generated turn concluded with a farewell / exit
+                if self._is_exit_phrase(transcript) or self._is_farewell_response(full_agent_text):
+                    print(f"\n🛑 [Pipeline] Farewell concluded ('{full_agent_text[:40]}...'). Cutting call now.")
+                    self._running = False
+                    self.audio.stop_recording()
+                    if self.on_call_ended and callable(self.on_call_ended):
+                        try:
+                            self.on_call_ended("farewell_concluded")
+                        except Exception as ex:
+                            print(f"[Call Ended Callback Error] {ex}")
+                    return
+
             else:
                 # Non-streaming fallback
                 response = self.ai.generate_response(transcript, language)
@@ -328,6 +354,17 @@ class PipelineOrchestrator:
                         print(f"[Callback Error] {ex}")
                 self._speak_text(response, language)
 
+                if self._is_exit_phrase(transcript) or self._is_farewell_response(response):
+                    print(f"\n🛑 [Pipeline] Farewell concluded ('{response[:40]}...'). Cutting call now.")
+                    self._running = False
+                    self.audio.stop_recording()
+                    if self.on_call_ended and callable(self.on_call_ended):
+                        try:
+                            self.on_call_ended("farewell_concluded")
+                        except Exception as ex:
+                            print(f"[Call Ended Callback Error] {ex}")
+                    return
+
         except Exception as e:
             print(f"\n[Pipeline] Error during AI+TTS turn: {e}")
             self._is_speaking = False
@@ -337,9 +374,10 @@ class PipelineOrchestrator:
         print(f"   ⏱️  AI+TTS total: {ai_time:.2f}s | Round-trip: {total_time:.2f}s")
         print()
 
-        # Resume mic for next turn
-        self.audio.resume_recording()
-        self.vad.reset()
+        # Resume mic for next turn only if call is still actively running
+        if self._running:
+            self.audio.resume_recording()
+            self.vad.reset()
 
     def _speak_text(self, text: str, language: str = "en"):
         """Synthesize and play a single text block (non-streaming)."""
@@ -352,20 +390,71 @@ class PipelineOrchestrator:
         finally:
             self._is_speaking = False
 
+    def set_language(self, language: str):
+        """Dynamically update active conversation language for the pipeline."""
+        clean_lang = (language or "en").lower().strip()
+        self.language = clean_lang
+        if hasattr(self, "ai") and self.ai:
+            self.ai._prev_language = clean_lang
+            if hasattr(self.ai, "default_language"):
+                self.ai.default_language = clean_lang
+        print(f"[Pipeline] Active language dynamically updated to: {clean_lang}")
+
     def _is_exit_phrase(self, transcript: str) -> bool:
-        """Check if the prospect said a goodbye phrase."""
-        lower = transcript.lower()
+        """Check if the prospect said a goodbye or cut-call phrase in EN, HI, GU, or MR."""
+        if not transcript:
+            return False
+        import re
+        lower = transcript.lower().strip()
+
+        # 1. Regex pattern matching (flexible word orders and phrasing)
+        patterns = [
+            r"\b(cut|hang\s*up|disconnect|end|close|stop)\b.*\b(call|phone|line)\b",
+            r"\b(call|phone)\b.*\b(cut|kaat|kato|kaato|rakh|rakho|muko|muki|kaapo|end|band|disconnect|stop)\b",
+            r"\b(cut\s*the\s*call|cut\s*call|cut\s*it|hang\s*up|disconnect)\b",
+            r"\b(please|can you|just)\b.*\b(cut|hang up|disconnect|end)\b",
+            r"\b(bye|goodbye|byebye|alvida|aavjo)\b",
+        ]
+        for pat in patterns:
+            if re.search(pat, lower):
+                return True
+
+        # 2. Comprehensive keyword matching
         exit_words = [
-            # English
-            "goodbye", "bye", "end call", "disconnect", "hang up", "stop",
-            # Hindi
-            "अलविदा", "बाय", "रखो", "फोन रखो", "बंद करो",
+            # English / Standard Cut Call
+            "cut the call", "cut call", "cut this call", "cut it", "cut phone", "cut the phone",
+            "hang up", "hangup", "hang the call", "disconnect", "disconnect the call",
+            "end the call", "end call", "stop the call", "stop call", "stop calling",
+            "i have to go", "got to go", "gotta go", "talk to you later",
+            "goodbye", "good bye", "bye", "byebye", "see you", "not interested", "dont call", "don't call",
+            "leave me alone", "wrong number",
+            # Hindi / Hinglish
+            "call kaat do", "call kato", "call kaato", "call kaat", "phone kaat do", "phone kato", "phone kaato",
+            "phone rakho", "phone rakh do", "phone rakh", "call cut", "phone cut", "call cut karo", "phone cut karo",
+            "band karo", "call band karo", "alvida", "chalo bye", "baad mein baat", "namaskar",
+            "अलविदा", "बाय", "बाय बाय", "फोन रखो", "कॉल काटो", "कॉल काट दो", "काट दो", "फोन काट दो", "बंद करो", "नहीं चाहिए",
             # Marathi
-            "निरोप", "बाय", "फोन ठेव",
+            "निरोप", "बाय", "फोन ठेव", "कॉल थांबवा", "फोन ठेवा", "कॉल कट करा", "कॉल बंद करा",
+            "call thambva", "phone theva", "call cut kara",
             # Gujarati
-            "આવજો", "બાય", "ફોન મૂકો",
+            "આવજો", "ચલો આવજો", "બાય", "ફોન મૂકો", "ફોન મૂકી દો", "કૉલ કાપો", "કૉલ કટ કરો", "કટ કરો", "કાપો", "બંધ કરો", "નથી જોઈતું",
+            "phone muko", "phone muki dyo", "call kato", "call kaapo", "call cut", "call cut karo", "bandh karo", "aavjo",
         ]
         return any(w in lower for w in exit_words)
+
+    def _is_farewell_response(self, text: str) -> bool:
+        """Check if an agent response is a concluding farewell."""
+        if not text:
+            return False
+        import re
+        lower = text.lower().strip()
+        farewell_phrases = [
+            "have a great day", "have a wonderful day", "have a good day", "goodbye", "good bye", "take care",
+            "thank you so much for your time", "thank you for your time", "enjoy the rest of your day", "talk to you soon",
+            "alvida", "aapka din shubh ho", "shubh din", "aavjo", "dhanyavaad", "namaste",
+            "आपका दिन शुभ हो", "अलविदा", "धन्यवाद", "आभार", "તમારો દિવસ સારો રહો", "આવજો", "દિવસ સારો જાઓ", "काळजी घ्या"
+        ]
+        return any(p in lower or p in text for p in farewell_phrases)
 
     def _is_human_transfer_requested(self, transcript: str) -> bool:
         """Check if prospect requested to speak with a human agent, team member, or Calendly booking link."""

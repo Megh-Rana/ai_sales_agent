@@ -16,6 +16,7 @@ import { getLeadDetails, getDiscoveredLeads } from '../data/leads';
 import {
   createMockCallSession,
   buildDynamicScriptForLead,
+  buildCustomQualificationForLead,
   INITIAL_QUALIFICATION_DIMENSIONS
 } from '../data/mockCalls';
 import { callService } from '../services/callService';
@@ -279,9 +280,38 @@ export const AICalling: React.FC = () => {
     fetchDynamicPitch(session.language);
   }, [session.companyName, session.contactName]);
 
-  const handleLanguageChange = (lang: CallLanguage) => {
+  const handleLanguageChange = async (lang: CallLanguage) => {
     setSession((prev) => ({ ...prev, language: lang }));
     fetchDynamicPitch(lang);
+
+    const LANG_CODE_MAP: Record<CallLanguage, string> = {
+      English: 'en',
+      Hindi: 'hi',
+      Gujarati: 'gu',
+      Marathi: 'mr',
+    };
+    const code = LANG_CODE_MAP[lang] || 'en';
+
+    const activeCallId = backendSessionId || session.providerCallSid || session.callId;
+    if (activeCallId) {
+      try {
+        await callService.setCallLanguage(activeCallId, code);
+        toast.success(`Voice agent language switched to ${lang}`, {
+          description: `Next response will be spoken dynamically in ${lang}.`,
+          duration: 3000,
+        });
+      } catch (err: any) {
+        console.warn('[CallService] setCallLanguage notice:', err);
+      }
+    }
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      try {
+        wsRef.current.send(JSON.stringify({ action: 'set_language', language: code }));
+      } catch (e) {
+        console.warn('[WebSocket] set_language notice:', e);
+      }
+    }
   };
 
   const scriptSteps = React.useMemo(() => {
@@ -294,6 +324,7 @@ export const AICalling: React.FC = () => {
   const statusPollingRef = useRef<NodeJS.Timeout | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const lastAnalyzedCountRef = useRef<number>(0);
+  const handleEndCallRef = useRef<(() => void) | null>(null);
 
   const pollCallStatus = useCallback(async (sessionId: string) => {
     // Stop any existing polling and socket
@@ -336,6 +367,16 @@ export const AICalling: React.FC = () => {
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+
+          // 1. Direct call termination / cut-call notification from backend
+          if (data.type === 'call_ended' || data.action === 'cut_call' || data.status === 'completed') {
+            console.log('[WebSocket] Call termination event received from backend:', data);
+            if (handleEndCallRef.current) {
+              handleEndCallRef.current();
+            }
+            return;
+          }
+
           if (data.type === 'transcript') {
             const rawSpeaker = data.speaker || data.item?.speaker || 'agent';
             const speakerRole: 'ai_agent' | 'prospect' = rawSpeaker === 'agent' ? 'ai_agent' : 'prospect';
@@ -367,6 +408,23 @@ export const AICalling: React.FC = () => {
                 transcript: [...prev.transcript, newItem]
               };
             });
+
+            // 2. Transcript-level auto cut call:
+            // When agent delivers concluding farewell or prospect gives exit instruction, automatically cut call
+            const lowerText = textStr.toLowerCase();
+            const isCutCallPrompt = /\b(cut the call|cut call|cut this call|cut it|hang up|disconnect|end the call|call cut|phone cut|phone kaat|call kaat|phone muko|call kato|alvida|aavjo)\b/i.test(lowerText);
+            const isAgentFarewell = speakerRole === 'ai_agent' && (
+              /have a (great|wonderful|good) day|goodbye|thank you.*for your time|take care|अलविदा|આવજો|તમારો દિવસ સારો રહો|દિવસ સારો જાઓ|दिवस चांगला जाओ|काळजी घ्या/i.test(lowerText)
+            );
+
+            if (isAgentFarewell || (speakerRole === 'prospect' && isCutCallPrompt)) {
+              console.log('[AICalling] Farewell / cut-call detected in live transcript. Auto-cutting call...');
+              setTimeout(() => {
+                if (handleEndCallRef.current) {
+                  handleEndCallRef.current();
+                }
+              }, isAgentFarewell ? 2200 : 4000);
+            }
           }
         } catch (e) {
           console.error('[WebSocket] Failed to parse message:', e);
@@ -615,7 +673,7 @@ export const AICalling: React.FC = () => {
       intelligenceEvents: [],
       contactPhone: effectivePhone || prev.contactPhone,
       carrier: callMode === 'twilio_pstn' ? 'Twilio Elastic SIP Trunk' : 'Internal Web Audio',
-      qualification: JSON.parse(JSON.stringify(INITIAL_QUALIFICATION_DIMENSIONS))
+      qualification: buildCustomQualificationForLead(lead)
     }));
 
     // Twilio Real Outbound PSTN Dialing
@@ -848,6 +906,10 @@ export const AICalling: React.FC = () => {
       }, 750);
     }
   }, [isRealVoiceCall, backendSessionId, clearAllTimeouts, safeTimeout, formatDuration, resolvedLeadId, lead]);
+
+  useEffect(() => {
+    handleEndCallRef.current = handleEndCall;
+  }, [handleEndCall]);
 
   const handleCancelConnecting = async () => {
     clearAllTimeouts();

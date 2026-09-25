@@ -42,8 +42,8 @@ export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({
     <div className={`w-full space-y-1.5 ${className}`}>
       {(label || showPercentage) && (
         <div className="flex items-center justify-between text-xs">
-          {label && <span className="font-medium text-foreground-secondary">{label}</span>}
-          {showPercentage && <span className="font-mono font-semibold text-foreground">{percentage}%</span>}
+          {label && <span className="font-semibold text-slate-900 dark:text-foreground-secondary">{label}</span>}
+          {showPercentage && <span className="font-mono font-bold text-slate-900 dark:text-foreground">{percentage}%</span>}
         </div>
       )}
       <div

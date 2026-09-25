@@ -277,21 +277,37 @@ button,
   -webkit-font-smoothing: antialiased;
 }
 
-/* Any button with a blue, sky, indigo, or dark elevated background */
-button[class*="bg-[#1A202C]"],
-button[class*="bg-[#1E293B]"],
-button[class*="bg-blue-600"],
-button[class*="bg-blue-700"],
-button[class*="bg-blue-500"],
-a[class*="bg-[#1A202C]"],
-a[class*="bg-blue-600"] {
+/* Any button with a blue, sky, indigo, or dark elevated background in dark mode */
+.dark button[class*="bg-[#1A202C]"],
+.dark button[class*="bg-[#1E293B]"],
+.dark button[class*="dark:bg-[#1A202C]"],
+.dark button[class*="dark:bg-[#1E293B]"],
+button.bg-blue-600,
+button.bg-blue-700,
+button.bg-blue-500,
+.dark a[class*="bg-[#1A202C]"],
+a.bg-blue-600 {
   color: #FFFFFF !important;
 }
 
-button[class*="bg-[#1A202C]"] svg,
-button[class*="bg-[#1E293B]"] svg,
-button[class*="bg-blue-600"] svg {
+.dark button[class*="bg-[#1A202C]"] svg,
+.dark button[class*="bg-[#1E293B]"] svg,
+button.bg-blue-600 svg {
   color: inherit !important;
+}
+
+/* Light / Day Mode Contrast: ensure content in white / elevated boxes has clear black text */
+.light button.bg-surface-elevated,
+.light a.bg-surface-elevated,
+[data-theme='light'] button.bg-surface-elevated,
+[data-theme='light'] a.bg-surface-elevated,
+.light button[class*="bg-surface-elevated"],
+[data-theme='light'] button[class*="bg-surface-elevated"] {
+  color: #0F172A !important;
+}
+.light button[class*="bg-surface-elevated"] svg,
+[data-theme='light'] button[class*="bg-surface-elevated"] svg {
+  color: #0F172A !important;
 }
 
 /* Violet / Primary / Thistle buttons and solid blocks must ALWAYS have crisp pure white content */

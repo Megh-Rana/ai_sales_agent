@@ -191,24 +191,24 @@ export const CallResults: React.FC = () => {
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/30">
       {/* Reviewer Scenario Switcher Bar */}
       <div className="bg-surface border-b border-border-strong px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2 z-10 sticky top-0">
-        <div className="flex items-center gap-2 text-foreground-secondary">
+        <div className="flex items-center gap-2 text-slate-800 dark:text-foreground-secondary">
           <Layers className="w-3.5 h-3.5 text-primary" />
-          <span className="font-semibold text-foreground">Call Session Dossier:</span>
+          <span className="font-bold text-slate-900 dark:text-foreground">Call Session Dossier:</span>
         </div>
 
         <nav aria-label="Reviewer scenario switcher" className="flex flex-wrap items-center gap-1.5">
           {activeCallId !== 'call-101' && activeCallId !== 'call-102' && (
-            <span className="px-2.5 py-1 rounded text-xs font-semibold bg-primary/10 text-primary border border-primary/30 flex items-center gap-1.5 shadow-xs">
+            <span className="px-2.5 py-1 rounded text-xs font-bold bg-primary/10 text-primary border border-primary/30 flex items-center gap-1.5 shadow-xs">
               <CheckCircle2 className="w-3 h-3 text-primary" />
-              <span>{data.companyName} ({data.outcome})</span>
+              <span className="text-slate-900 dark:text-primary">{data.companyName} ({data.outcome})</span>
             </span>
           )}
           <button
             onClick={() => handleScenarioChange('call-101')}
-            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+            className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors flex items-center gap-1.5 ${
               activeCallId === 'call-101'
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/40 font-semibold'
-                : 'bg-surface-elevated text-foreground-secondary border-border hover:bg-surface-hover'
+                ? 'bg-emerald-50 text-emerald-900 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/40 font-bold'
+                : 'bg-surface-elevated text-slate-800 dark:text-foreground-secondary border-border hover:bg-surface-hover'
             }`}
           >
             <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
@@ -216,10 +216,10 @@ export const CallResults: React.FC = () => {
           </button>
           <button
             onClick={() => handleScenarioChange('call-102')}
-            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+            className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors flex items-center gap-1.5 ${
               activeCallId === 'call-102'
-                ? 'bg-primary/10 text-primary border-primary/30 font-semibold'
-                : 'bg-surface-elevated text-foreground-secondary border-border hover:bg-surface-hover'
+                ? 'bg-primary/15 text-slate-900 dark:text-primary border-primary/40 font-bold'
+                : 'bg-surface-elevated text-slate-800 dark:text-foreground-secondary border-border hover:bg-surface-hover'
             }`}
           >
             <TrendingUp className="w-3 h-3 text-primary" />

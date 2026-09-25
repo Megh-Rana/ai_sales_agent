@@ -49,10 +49,10 @@ export const NextBestActionCard: React.FC<NextBestActionCardProps> = ({
             <span>Next Best Action</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-elevated border border-border text-xs font-medium text-foreground-secondary dark:bg-[#1B2232] dark:border-[#2D3748] dark:text-slate-300">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-elevated border border-border-strong text-xs font-semibold text-slate-800 dark:bg-[#1B2232] dark:border-[#2D3748] dark:text-slate-300">
             <Clock className="w-3 h-3 text-amber-500 dark:text-amber-400" />
-            <span className="text-foreground-muted dark:text-slate-400">Timeframe:</span>
-            <span className="text-foreground dark:text-white font-semibold">{nba.targetTimeframe}</span>
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Timeframe:</span>
+            <span className="text-slate-900 dark:text-white font-bold">{nba.targetTimeframe}</span>
           </div>
         </div>
 
@@ -80,12 +80,12 @@ export const NextBestActionCard: React.FC<NextBestActionCardProps> = ({
           )}
 
           {status === 'RECOMMENDED' && (
-            <div className="flex items-center gap-2.5 bg-surface-elevated px-3 py-1.5 rounded-lg border border-border dark:bg-[#0D111A] dark:border-[#232B3B] shadow-xs">
+            <div className="flex items-center gap-2.5 bg-surface-elevated px-3 py-1.5 rounded-lg border border-border-strong dark:bg-[#0D111A] dark:border-[#232B3B] shadow-xs">
               <TrendingUp className="w-3.5 h-3.5 text-primary dark:text-blue-400" />
-              <span className="text-xs text-foreground-secondary dark:text-slate-400">Commercial Alignment:</span>
+              <span className="text-xs text-slate-800 dark:text-slate-400 font-semibold">Commercial Alignment:</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">High ({nba.confidence}%)</span>
-                <div className="w-14 h-1.5 bg-border dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="w-14 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-emerald-500 dark:bg-emerald-400 rounded-full" 
                     style={{ width: `${nba.confidence}%` }}
@@ -99,7 +99,7 @@ export const NextBestActionCard: React.FC<NextBestActionCardProps> = ({
 
       {/* Primary Action Title */}
       <div className="mb-4">
-        <h3 className="text-xl sm:text-2xl font-bold text-foreground dark:text-white tracking-tight leading-tight">
+        <h3 className="text-xl sm:text-2xl font-bold text-slate-950 dark:text-white tracking-tight leading-tight">
           {nba.action}
         </h3>
       </div>
@@ -114,20 +114,20 @@ export const NextBestActionCard: React.FC<NextBestActionCardProps> = ({
             </span>
             <span className="font-mono text-emerald-700 dark:text-emerald-400">{scheduled.date} at {scheduled.time}</span>
           </div>
-          <p className="text-xs text-foreground-secondary dark:text-slate-200 leading-relaxed">
-            Assigned owner: <strong className="text-foreground dark:text-white">{scheduled.owner}</strong>. Sales note: <span className="italic font-normal">"{scheduled.note || 'No custom note.'}"</span>
+          <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+            Assigned owner: <strong className="text-slate-950 dark:text-white">{scheduled.owner}</strong>. Sales note: <span className="italic font-normal">"{scheduled.note || 'No custom note.'}"</span>
           </p>
         </div>
       ) : status === 'DELAYED' ? (
         <div className="mb-5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/30 rounded-xl p-4 flex items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200 animate-fade-in">
           <div>
-            <span className="font-bold block text-foreground dark:text-white">Action postponed until {recommendationState?.delayedUntil}</span>
-            <span className="text-foreground-secondary dark:text-slate-400">This recommendation has been moved out of immediate sales priority.</span>
+            <span className="font-bold block text-slate-950 dark:text-white">Action postponed until {recommendationState?.delayedUntil}</span>
+            <span className="text-slate-700 dark:text-slate-400 font-medium">This recommendation has been moved out of immediate sales priority.</span>
           </div>
           {onResetRecommendation && (
             <button
               onClick={onResetRecommendation}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 dark:border-amber-500/40 dark:text-amber-300 font-medium shrink-0"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 dark:border-amber-500/40 dark:text-amber-300 font-semibold shrink-0"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Re-activate</span>
@@ -137,13 +137,13 @@ export const NextBestActionCard: React.FC<NextBestActionCardProps> = ({
       ) : status === 'DISMISSED' ? (
         <div className="mb-5 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-500/30 rounded-xl p-4 flex items-center justify-between gap-3 text-xs text-rose-900 dark:text-rose-200 animate-fade-in">
           <div>
-            <span className="font-bold block text-foreground dark:text-white">Recommendation Dismissed</span>
-            <span className="text-foreground-secondary dark:text-slate-400">Feedback recorded for account executive lead queue.</span>
+            <span className="font-bold block text-slate-950 dark:text-white">Recommendation Dismissed</span>
+            <span className="text-slate-700 dark:text-slate-400 font-medium">Feedback recorded for account executive lead queue.</span>
           </div>
           {onResetRecommendation && (
             <button
               onClick={onResetRecommendation}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 border border-rose-300 text-rose-900 dark:bg-rose-500/20 dark:hover:bg-rose-500/30 dark:border-rose-500/40 dark:text-rose-300 font-medium shrink-0"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 border border-rose-300 text-rose-900 dark:bg-rose-500/20 dark:hover:bg-rose-500/30 dark:border-rose-500/40 dark:text-rose-300 font-semibold shrink-0"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Undo Dismissal</span>
@@ -158,21 +158,21 @@ export const NextBestActionCard: React.FC<NextBestActionCardProps> = ({
               <Zap className="w-3 h-3 text-primary dark:text-blue-400" />
               <span>Commercial Catalyst (Why Now)</span>
             </div>
-            <p className="text-sm font-medium text-foreground-secondary dark:text-slate-200 leading-relaxed">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-200 leading-relaxed">
               {nba.whyNow}
             </p>
           </div>
 
           {/* Supporting Evidence Checklist */}
           <div className="mb-6">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-foreground-muted dark:text-slate-400 mb-2.5">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-900 dark:text-slate-400 mb-2.5">
               Supporting Signals & Evidence
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
               {nba.evidence.map((item, idx) => (
                 <div 
                   key={idx} 
-                  className="flex items-start gap-2 bg-surface-elevated border border-border p-2.5 rounded-lg text-xs text-foreground-secondary dark:bg-[#121620] dark:border-[#232B3B] dark:text-slate-300 shadow-xs"
+                  className="flex items-start gap-2 bg-surface-elevated border border-border p-2.5 rounded-lg text-xs font-medium text-slate-900 dark:bg-[#121620] dark:border-[#232B3B] dark:text-slate-300 shadow-xs"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <span className="leading-snug">{item}</span>
@@ -197,7 +197,7 @@ export const NextBestActionCard: React.FC<NextBestActionCardProps> = ({
 
           <button
             onClick={onOpenFollowUp}
-            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-border text-foreground hover:text-foreground dark:bg-[#1A2233] dark:hover:bg-[#222C42] dark:border-[#2F3E5E] dark:text-slate-200 dark:hover:text-white text-xs sm:text-sm font-medium transition-all shadow-xs"
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-border-strong text-slate-900 font-semibold hover:text-black dark:bg-[#1A2233] dark:hover:bg-[#222C42] dark:border-[#2F3E5E] dark:text-slate-200 dark:hover:text-white text-xs sm:text-sm transition-all shadow-xs"
           >
             <Mail className="w-4 h-4 text-primary dark:text-cyan-400" />
             <span>Draft Email</span>

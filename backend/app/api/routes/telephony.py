@@ -88,9 +88,9 @@ def get_or_create_brain(call: Optional[Call], language: str = "en") -> AIBrain:
     return brain
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 # REQUEST MODELS
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 
 class DialRequest(BaseModel):
     lead_id: Union[UUID, str] = Field(..., description="ID of the lead to dial (UUID or string)")
@@ -132,9 +132,9 @@ class SendSmsRequest(BaseModel):
     message: str = Field(..., max_length=1600, description="SMS message body")
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 # CONFIG & VERIFICATION
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 
 @router.get("/config", summary="Get carrier trunking configuration & Twilio readiness")
 def get_carrier_config(current_user: AuthenticatedUser = Depends(get_current_user)):
@@ -146,9 +146,9 @@ def verify_twilio_credentials(current_user: AuthenticatedUser = Depends(get_curr
     return TwilioService.verify_credentials()
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 # SERVE INTERNAL TTS AUDIO TO TWILIO VIA <PLAY>
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 
 @router.get("/audio/{audio_id}.wav", summary="Serve synthesized TTS audio for Twilio carrier playback", operation_id="get_telephony_audio_file")
 @router.head("/audio/{audio_id}.wav", include_in_schema=False)
@@ -172,9 +172,9 @@ def get_telephony_audio(audio_id: str, request: Request):
     return Response(content=wav_bytes, media_type="audio/wav", headers=headers)
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 # PSTN OUTBOUND DIALING
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 
 @router.post("/dial", response_model=CallResponse, status_code=status.HTTP_201_CREATED, summary="Place outbound PSTN carrier call")
 def dial_outbound(
@@ -201,6 +201,45 @@ def dial_outbound(
         return call
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+class SendSmsRequest(BaseModel):
+    call_id: Optional[str] = None
+    message: str
+
+
+class CallLanguageUpdateRequest(BaseModel):
+    language: str
+
+
+@router.post("/calls/{call_id}/language", summary="Update active call language")
+def update_call_language(
+    call_id: str,
+    request: CallLanguageUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Dynamically switches the active spoken language for an ongoing Twilio PSTN call.
+    Subsequent conversation turns and STT speech gather will instantly adapt to this language.
+    """
+    call = None
+    try:
+        call_uuid = uuid.UUID(str(call_id))
+        call = db.scalars(select(Call).where(Call.id == call_uuid)).first()
+    except Exception:
+        call = db.scalars(select(Call).where(Call.provider_call_id == str(call_id))).first()
+
+    clean_lang = request.language.lower()
+    if call:
+        call.language = clean_lang
+        meta = dict(call.carrier_metadata or {})
+        meta["language"] = clean_lang
+        call.carrier_metadata = meta
+        db.commit()
+        logger.info(f"[Telephony] Switched active call {call.id} language to {clean_lang}")
+        return {"status": "success", "call_id": str(call.id), "language": clean_lang}
+
+    return {"status": "success", "call_id": str(call_id), "language": clean_lang}
 
 
 @router.post("/calls/{call_id}/hangup", response_model=CallResponse, summary="Terminate active call session")
@@ -232,9 +271,9 @@ def send_twilio_sms(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# TWILIO VOICE WEBHOOK (TWIML) — POWERED BY YOUR INTERNAL AI & TTS
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+# TWILIO VOICE WEBHOOK (TWIML) 窶� POWERED BY YOUR INTERNAL AI & TTS
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 
 @router.post("/twilio/voice", summary="Twilio Voice connect webhook", operation_id="twilio_voice_connect")
 @router.get("/twilio/voice", include_in_schema=False)
@@ -303,7 +342,7 @@ async def twilio_voice_webhook(
         twiml = TwilioService.generate_audio_voicemail_twiml(audio_url=audio_url)
         return Response(content=twiml, media_type="application/xml")
 
-    # 2. Human Pickup — Check for pre-synthesized opening pitch
+    # 2. Human Pickup 窶� Check for pre-synthesized opening pitch
     meta = dict(call.metadata_json or {}) if call else {}
     cached_audio_id = meta.get("opening_audio_id")
     opening_pitch = meta.get("opening_pitch")
@@ -357,79 +396,142 @@ async def twilio_voice_webhook(
     return Response(content=twiml, media_type="application/xml")
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# TWILIO SPEECH GATHER (CONVERSATION LOOP) — POWERED BY YOUR INTERNAL LLM & TTS
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+# TWILIO SPEECH GATHER (CONVERSATION LOOP) 窶� POWERED BY YOUR INTERNAL LLM & TTS
+# 笏笏笏笏笏笏笏�    # 1. Determine active call language: check call.language, then query param, default 'en'
+    current_lang = "en"
+    if call and call.language:
+        current_lang = call.language.lower()
+    elif lang:
+        current_lang = lang.lower()
 
-@router.post("/twilio/gather", summary="Twilio Speech Gather conversation turn webhook", operation_id="twilio_gather_turn")
-@router.get("/twilio/gather", include_in_schema=False)
-async def twilio_gather_webhook(
-    request: Request,
-    call_id: Optional[str] = Query(None),
-    lang: str = Query("en"),
-    db: Session = Depends(get_db),
-):
-    """
-    Invoked by Twilio when prospect speaks on their phone.
-    Passes prospect utterance to YOUR internal AIBrain (Ollama / Sarvam LLM),
-    synthesizes response audio with YOUR internal TTSEngine,
-    and returns TwiML <Play> to stream back into the call.
-    """
-    form_data = {}
-    try:
-        form_data = await request.form()
-    except Exception:
-        pass
+    # 2. Check if prospect text indicates a dynamic language switch (Unicode script or explicit request)
+    lower_speech = speech_result.lower()
+    gujarati_chars = sum(1 for c in speech_result if "\u0A80" <= c <= "\u0AFF")
+    devanagari_chars = sum(1 for c in speech_result if "\u0900" <= c <= "\u097F")
+    total_chars = max(len(speech_result), 1)
 
-    speech_result = (form_data.get("SpeechResult") or "").strip()
-    call_sid = form_data.get("CallSid")
+    if gujarati_chars / total_chars > 0.15 or any(w in lower_speech for w in ["in gujarati", "gujarati ma", "gujarati please", "爼伶ｫ≒ｪ憫ｪｰ爼ｾ爼､爿"]):
+        current_lang = "gu"
+    elif devanagari_chars / total_chars > 0.15:
+        current_lang = "mr" if current_lang == "mr" else "hi"
+    elif any(w in lower_speech for w in ["in hindi", "hindi mein", "hindi please", "爨ｹ爨ｿ爨も､ｦ爭"]):
+        current_lang = "hi"
+    elif any(w in lower_speech for w in ["in marathi", "marathi madhe", "marathi please", "爨ｮ爨ｰ爨ｾ爨�爭"]):
+        current_lang = "mr"
+    elif any(w in lower_speech for w in ["in english", "english please", "speak english"]):
+        current_lang = "en"
 
-    # Resolve base_url: prioritize the incoming host header that Twilio reached us on
-    host_header = request.headers.get("host", "").strip()
-    if host_header and "localhost" not in host_header and "127.0.0.1" not in host_header:
-        base_url = f"https://{host_header}"
-    else:
-        base_url = TwilioService.get_public_base_url(fallback_url=str(request.base_url))
+    if call and call.language != current_lang:
+        call.language = current_lang
+        db.commit()
 
-    call = None
-    if call_id:
-        try:
-            call_uuid = uuid.UUID(str(call_id))
-            call = db.scalars(select(Call).where(Call.id == call_uuid)).first()
-        except Exception:
-            call = db.scalars(select(Call).where(Call.provider_call_id == str(call_id))).first()
-    if not call and call_sid:
-        call = db.scalars(select(Call).where(Call.provider_call_id == call_sid)).first()
+    next_gather_url = f"{base_url}/api/telephony/twilio/gather?call_id={call.id if call else ''}&lang={current_lang}"
 
-    next_gather_url = f"{base_url}/api/telephony/twilio/gather?call_id={call.id if call else ''}&lang={lang}"
+    # Helper to detect concluding farewell from the AI agent
+    def is_agent_farewell(text: str) -> bool:
+        if not text:
+            return False
+        import re
+        t_low = text.lower().strip()
+        farewell_phrases = [
+            "have a great day", "have a wonderful day", "have a good day", "goodbye", "good bye", "take care",
+            "thank you so much for your time", "thank you for your time", "enjoy the rest of your day", "talk to you soon",
+            "alvida", "aapka din shubh ho", "shubh din", "aavjo", "dhanyavaad", "namaste",
+            "\u0906\u092a\u0915\u093e \u0926\u093f\u0928 \u0936\u0941\u092d \u0939\u094b",
+            "\u0905\u0932\u0935\u093f\u0926\u093e",
+            "\u0927\u0928\u094d\u092f\u0935\u093e\u0926",
+            "\u0a86\u0ab5\u0a9c\u0acb",
+            "\u0aa4\u0aae\u0abe\u0ab0\u0acb \u0aa6\u0abf\u0ab5\u0ab8 \u0ab8\u0abe\u0ab0\u0acb \u0ab0\u0ab9\u0acb",
+            "\u0926\u093f\u0935\u0938 \u091a\u093e\u0902\u0917\u0932\u093e \u091c\u093e\u0913",
+            "\u0915\u093e\u0933\u091c\u0940 \u0918\u094d\u092f\u093e"
+        ]
+        return any(p in t_low or p in text for p in farewell_phrases)
 
     # Handle silence / no speech captured
     if not speech_result:
-        fallback_prompt = "I didn't quite hear that. Would you like me to send you our solution brief and schedule a demo?"
-        if lang.lower() == "hi":
-            fallback_prompt = "मुझे आपकी आवाज़ स्पष्ट नहीं आई। क्या मैं आपको ईमेल पर जानकारी भेजकर डेमो शेड्यूल कर दूँ?"
+        fallback_prompts = {
+            "en": "I didn't quite hear that. Would you like me to send you our solution brief and schedule a demo?",
+            "hi": "\u092e\u0941\u091d\u0947 \u0906\u092a\u0915\u0940 \u0906\u0935\u093e\u091c\u093c \u0938\u094d\u092a\u0937\u094d\u091f \u0928\u0939\u0940\u0902 \u0906\u0908\u0964 \u0915\u094d\u092f\u093e \u092e\u0948\u0902 \u0906\u092a\u0915\u094b \u0908\u092e\u0947\u0932 \u092a\u0930 \u091c\u093e\u0928\u0915\u093e\u0930\u0940 \u092d\u0947\u091c \u0938\u0915त\u093e \u0939\u0942\u0901?",
+            "gu": "\u0aae\u0aa8\u0ac7 \u0aa4\u0aae\u0abe\u0ab0\u0acb \u0a85\u0ab5\u0abe\u0a9c \u0aac\u0ab0\u0abe\u0aac\u0ab0 \u0ab8\u0a82\u0aad\u0ab3\u0abe\u0aaf\u0acb \u0aa8\u0aa5\u0ac0. \u0ab6\u0ac1\u0a82 \u0ab9\u0ac1\u0a82 \u0aa4\u0aae\u0aa8\u0ac7 \u0a88\u0aae\u0ac7\u0a87\u0ab2 \u0aae\u0acb\u0a95\u0ab2\u0ac0 \u0a86\u0aaa\u0ac1\u0a82?",
+            "mr": "\u092e\u0932\u093e \u0924\u0941\u092eचा \u0906\u0935\u093e\u091c \u0938\u094d\u092a\u0937\u094d\u091f \u0906ला \u0928ाही. \u092e\u0940 \u0908\u092e\u0947लवर \u092eाहिती \u092aाठवू \u0915ा?",
+        }
+        fallback_prompt = fallback_prompts.get(current_lang, fallback_prompts["en"])
 
-        audio_id, _ = synthesize_speech_to_wav(fallback_prompt, language=lang)
+        audio_id, _ = synthesize_speech_to_wav(fallback_prompt, language=current_lang)
         audio_url = f"{base_url}/api/telephony/audio/{audio_id}.wav"
         twiml = TwilioService.generate_audio_response_twiml(
             audio_url=audio_url,
             next_gather_url=next_gather_url,
             hangup=False,
+            language=current_lang,
         )
         return Response(content=twiml, media_type="application/xml")
 
-    # 1. Check for human agent request (Calendly Link Dispatch)
-    if is_human_transfer_requested(speech_result):
+    # 3. Check if user requested to cut/end/hangup the call
+    cut_call_keywords = [
+        # English
+        "cut the call", "cut call", "cut this call", "cut it", "cut phone", "cut the phone", "cut",
+        "hang up", "hangup", "hang the call", "disconnect", "disconnect the call",
+        "end the call", "end call", "stop the call", "stop call", "stop calling", "i have to go",
+        "bye", "goodbye", "good bye", "byebye", "see you", "not interested", "dont call", "don't call",
+        "leave me alone", "wrong number", "remove my number",
+        # Hindi / Hinglish
+        "call kaat do", "call kato", "call kaato", "call kaat", "phone kaat do", "phone kato", "phone kaato",
+        "phone rakho", "phone rakh do", "phone rakh", "call cut", "phone cut", "call cut karo", "phone cut karo",
+        "band karo", "call band karo", "alvida", "chalo bye", "baad mein baat",
+        "\u0905\u0932\u0935\u093f\u0926\u093e", "\u092c\u093e\u092f", "\u092b\u094b\u0928 \u0930\u0916\u094b", "\u092b\u094b\u0928 \u0930\u0916 \u0926\u094b",
+        "\u0915\u0949\u0932 \u0915\u093e\u091f\u094b", "\u0915\u0949\u0932 \u0915\u093e\u091f \u0926\u094b", "\u0915\u093e\u091f \u0926\u094b",
+        "\u092b\u094b\u0928 \u0915\u093e\u091f \u0926\u094b", "\u092c\u0902\u0926 \u0915\u0930\u094b", "\u0928\u0939\u0940\u0902 \u091a\u093e\u0939\u093f\u090f",
+        # Gujarati / Gujlish
+        "phone muko", "phone muki dyo", "phone muki do", "call kato", "call kaapo", "call cut", "call cut karo",
+        "bandh karo", "aavjo", "chalo aavjo", "nathi joitu",
+        "\u0aab\u0acb\u0aa8 \u0aae\u0ac2\u0a95\u0acb", "\u0aab\u0acb\u0aa8 \u0aae\u0ac2\u0a95\u0ac0 \u0aa6\u0acb", "\u0a95\u0acd\u0a95\u0ac9\u0ab2 \u0a95\u0abe\u0aaa\u0acb",
+        "\u0a95\u0acd\u0a95\u0ac9\u0ab2 \u0a95\u0a9f \u0a95\u0ab0\u0acb", "\u0a95\u0a9f \u0a95\u0ab0\u0acb", "\u0a95\u0abe\u0aaa\u0acb",
+        "\u0aac\u0a82\u0aa7 \u0a95\u0ab0\u0acb", "\u0a86\u0ab5\u0a9c\u0acb", "\u0aac\u0abe\u0aaf", "\u0aa8\u0aa5\u0ac0 \u0a9c\u0acb\u0a88\u0aa4\u0ac1\u0a82",
+        # Marathi / Marathlish
+        "phone theva", "phone thev", "call thambva", "call cut kara", "call band kara", "nirop",
+        "\u092b\u094b\u0928 \u0920\u0947\u0935\u093e", "\u0915\u0949\u0932 \u0925\u093e\u0902\u092c\u0935\u093e", "\u0915\u0949\u0932 \u0915\u091f \u0915\u0930\u093e",
+        "\u0915\u0949\u0932 \u092c\u0902\u0926 \u0915\u0930\u093e", "\u0928\u093f\u0930\u094b\u092a", "\u092c\u093e\u092f",
+    ]
+    is_cut_call = any(k in lower_speech for k in cut_call_keywords)
+    if not is_cut_call:
+        import re
+        patterns = [
+            r"\b(cut|hang\s*up|disconnect|end|close|stop)\b.*\b(call|phone|line)\b",
+            r"\b(call|phone)\b.*\b(cut|kaat|kato|kaato|rakh|rakho|muko|muki|kaapo|end|band|disconnect|stop)\b",
+            r"\b(cut\s*the\s*call|cut\s*call|cut\s*it|hang\s*up|disconnect)\b",
+            r"\b(please|can you|just)\b.*\b(cut|hang up|disconnect|end)\b",
+            r"\b(bye|goodbye|byebye|alvida|aavjo)\b",
+        ]
+        is_cut_call = any(re.search(pat, lower_speech) for pat in patterns)
+
+    if is_cut_call:
+        logger.info(f"[Twilio Gather] User requested to cut call: '{speech_result}'. Disconnecting gracefully.")
+        should_hangup = True
+        outcome = "call_ended_by_user"
+
+        if current_lang == "hi":
+            ai_reply = "\u091c\u0940 \u092c\u093f\u0932\u094d\u0915\u0941\u0932, \u0906\u092a\u0915\u0947 \u0938\u092e\u092f \u0915\u0947 \u0932\u093f\u090f \u0927\u0928\u094d\u092f\u0935\u093e\u0926, \u0928\u092e\u0938\u094d\u0915\u093e\u0930!"
+        elif current_lang == "gu":
+            ai_reply = "\u0a9a\u0acb\u0a95\u0acd\u0a95\u0ab8, \u0aa4\u0aae\u0abe\u0ab0\u0abe \u0ab8\u0aae\u0aaf \u0aac\u0aa6\u0ab2 \u0a96\u0ac2\u0aac \u0a86\u0aad\u0abe\u0ab0. \u0a86\u0ab5\u0a9c\u0acb!"
+        elif current_lang == "mr":
+            ai_reply = "\u0928\u0915\u094d\u0915\u0940\u091a, \u0906\u092a\u0932\u094d\u092f\u093e \u0935\u0947\u0933\u093e\u092c\u0926\u094d\u0926\u0932 \u0927\u0928\u094d\u092f\u0935\u093e\u0926. \u0928\u092e\u0938\u094d\u0915\u093e\u0930!"
+        else:
+            ai_reply = "Understood. Thank you for your time, have a great day. Goodbye!"
+
+    # 4. Check for human agent request (Calendly Link Dispatch)
+    elif is_human_transfer_requested(speech_result):
         logger.info(f"[Twilio Gather] Human transfer requested by prospect: '{speech_result}'. Dispatching Calendly link SMS.")
         should_hangup = True
         outcome = "human_transfer_requested"
 
-        if lang.lower() == "hi":
-            ai_reply = "मैं बिल्कुल समझता हूँ! मैंने अभी आपके फ़ोन पर एसएमएस और ईमेल द्वारा हमारी टीम का सीधा कैलेंडर लिंक भेज दिया है, ताकि आप अपनी पसंद का समय चुन सकें। धन्यवाद!"
-        elif lang.lower() == "gu":
-            ai_reply = "હું બિલકુલ સમજું છું! મેં તમારા ફોન પર SMS અને ઇમેઇલ દ્વારા અમારી ટીમની કેલેન્ડર લિંક મોકલી આપી છે, જેથી તમે તમારી અનુકૂળતા મુજબ સમય પસંદ કરી શકો. આભાર!"
-        elif lang.lower() == "mr":
-            ai_reply = "मला पूर्णपणे समजते! मी तुमच्या फोनवर एसएमएस आणि ईमेलद्वारे आमच्या टीमची थेट कॅलेंडर लिंक पाठवली आहे, जेणेकरून आपण सोयीनुसार वेळ निवडू शकाल. धन्यवाद!"
+        if current_lang == "hi":
+            ai_reply = "\u092e\u0948\u0902 \u092c\u093f\u0932\u094d\u0915\u0941\u0932 \u0938\u092e\u091d\u0924\u093e \u0939\u0942\u0901! \u092e\u0948\u0902\u0928\u0947 \u0905\u092d\u0940 \u0906\u092a\u0915\u0947 \u092b\u093c\u094b\u0928 \u092a\u0930 \u090f\u0938\u090f\u092e\u090f\u0938 \u0914\u0930 \u0908\u092e\u0947\u0932 \u0926\u094d\u0935\u093e\u0930\u093e \u0939\u092e\u093e\u0930\u0940 \u091f\u0940\u092e \u0915\u093e \u0938\u0940\u0927\u093e \u0915\u0948\u0932\u0947\u0902\u0921\u0930 \u0932\u093f\u0902\u0915 \u092d\u0947\u091c \u0926\u093f\u092f\u093e \u0939\u0948\u0964 \u0927\u0928\u094d\u092f\u0935\u093e\u0926!"
+        elif current_lang == "gu":
+            ai_reply = "\u0ab9\u0ac1\u0a82 \u0aac\u0abf\u0ab2\u0a95\u0ac1\u0ab2 \u0ab8\u0aae\u0a9c\u0ac1\u0a82 \u0a9b\u0ac1\u0a82! \u0aae\u0ac7\u0a82 \u0aa4\u0aae\u0abe\u0ab0\u0abe \u0aab\u0acb\u0aa8 \u0aaa\u0ab0 SMS \u0a85\u0aa8\u0ac7 \u0a87\u0aae\u0ac7\u0a87\u0ab2 \u0aa6\u0acd\u0ab5\u0abe\u0ab0\u0abe \u0a85\u0aae\u0abe\u0ab0\u0ac0 \u0a9f\u0ac0\u0aae\u0aa8\u0ac0 \u0a95\u0ac7\u0ab2\u0ac7\u0aa8\u0acd\u0aa1\u0ab0 \u0ab2\u0abf\u0a82\u0a95 \u0aae\u0acb\u0a95\u0ab2\u0ac0 \u0a86\u0aaa\u0ac0 \u0a9b\u0ac7. \u0a86\u0aad\u0abe\u0ab0!"
+        elif current_lang == "mr":
+            ai_reply = "\u092e\u0932\u093e \u092a\u0942\u0930\u094d\u0923\u092a\u0923े \u0938म\u091cत\u0947! \u092e\u0940 \u0924ुमच्या \u092bोनवर \u090fसएमएस \u0906णि \u0908मेलद्वारे \u0925ेट \u0915ॅलेंडर \u0932िंक \u092aाठवली \u0906हे. \u0927न्यवाद!"
         else:
             ai_reply = "I completely understand! I've just sent a text message to your phone and an email with our team's direct calendar booking link so you can pick whatever time works best for you. Talk soon!"
 
@@ -439,7 +541,7 @@ async def twilio_gather_webhook(
                     db=db,
                     lead_id=call.lead_id,
                     call_id=call.id,
-                    language=lang,
+                    language=current_lang,
                     server_base_url=base_url,
                     followup_hours=24.0,
                 )
@@ -447,40 +549,46 @@ async def twilio_gather_webhook(
                 logger.error(f"[Twilio Gather] Error dispatching Calendly SMS: {ex}")
     else:
         # Feed user speech into YOUR internal LLM (AIBrain)
-        brain = get_or_create_brain(call, language=lang)
+        brain = get_or_create_brain(call, language=current_lang)
         meta = call.carrier_metadata or {} if call else {}
         pitch = meta.get("opening_pitch")
         if pitch and not any(t.role == "agent" for t in brain.memory.turns):
-            brain.memory.add_turn("agent", pitch, lang)
-            brain._prev_language = lang
-        logger.info(f"[Twilio Gather] Prospect: '{speech_result}'. Generating LLM response with internal brain...")
+            brain.memory.add_turn("agent", pitch, current_lang)
+        brain._prev_language = current_lang
+        logger.info(f"[Twilio Gather] Prospect [{current_lang}]: '{speech_result}'. Generating LLM response with internal brain...")
 
         try:
-            sentences = list(brain.think(speech_result, detected_language=lang))
+            sentences = list(brain.think(speech_result, detected_language=current_lang))
             ai_reply = " ".join(sentences).strip()
+            if not ai_reply:
+                ai_reply = brain._get_fallback_response(current_lang)
         except Exception as e:
             logger.error(f"[Twilio Gather] Brain thinking error ({e}). Using conversational fallback.")
-            ai_reply = "Thank you for sharing. Our autonomous AI voice agent integrates with your CRM in under 5 minutes. Would you have 15 minutes for a technical demo this Thursday?"
+            ai_reply = brain._get_fallback_response(current_lang)
 
-        # 2. Detect call outcome / completion signals
+        # 5. Detect call outcome / completion signals
         text_lower = speech_result.lower()
         should_hangup = False
         outcome = None
 
-        if any(k in text_lower for k in ["not interested", "dont call", "don't call", "stop", "remove"]):
+        if (
+            is_cut_call
+            or any(k in text_lower for k in ["not interested", "dont call", "don't call", "stop", "remove", "cut the call", "cut call", "bye", "hang up", "disconnect"])
+            or is_agent_farewell(ai_reply)
+        ):
             should_hangup = True
-            outcome = "not_interested"
+            outcome = "call_ended_by_user"
         elif any(k in text_lower for k in ["busy", "call back", "later", "driving", "meeting"]):
             should_hangup = True
             outcome = "callback_requested"
         elif any(k in text_lower for k in ["demo", "yes", "sure", "book", "schedule", "pricing", "interested"]):
             outcome = "meeting_booked"
 
-    # 3. Synthesize response using YOUR internal TTSEngine (Sarvam Bulbul v3 / Edge-TTS)
-    audio_id, _ = synthesize_speech_to_wav(ai_reply, language=lang)
+    # 6. Synthesize response using YOUR internal TTSEngine (Sarvam Bulbul v3 / Edge-TTS)
+    audio_id, _ = synthesize_speech_to_wav(ai_reply, language=current_lang)
     audio_url = f"{base_url}/api/telephony/audio/{audio_id}.wav"
 
-    # 4. Record Transcript & State in DB
+    # 7. Record Transcript & State in DB
     if call:
         prev = call.transcript or ""
         call.transcript = f"{prev}\n[Prospect]: {speech_result}\n[Agent]: {ai_reply}".strip()
@@ -491,18 +599,19 @@ async def twilio_gather_webhook(
             call.completed_at = datetime.now(timezone.utc)
         db.commit()
 
-    # 5. Return TwiML with <Play> pointing to your synthesized audio
+    # 8. Return TwiML with <Play> pointing to your synthesized audio and dynamic language
     twiml = TwilioService.generate_audio_response_twiml(
         audio_url=audio_url,
         next_gather_url=next_gather_url if not should_hangup else None,
         hangup=should_hangup,
+        language=current_lang,
     )
     return Response(content=twiml, media_type="application/xml")
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 # TWILIO REAL-TIME MEDIA STREAM WEBSOCKET (DIRECT BIDIRECTIONAL AUDIO BRIDGE)
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 
 @router.websocket("/twilio/stream/{call_id}")
 async def twilio_media_stream_websocket(websocket: WebSocket, call_id: str):
@@ -541,9 +650,9 @@ async def twilio_media_stream_websocket(websocket: WebSocket, call_id: str):
         logger.error(f"[Twilio Stream] WebSocket stream error: {e}")
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 # TWILIO STATUS & AMD CALLBACKS
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 
 @router.post("/twilio/status-callback", summary="Twilio Call Status Lifecycle webhook")
 async def twilio_status_callback(
@@ -653,9 +762,9 @@ async def twilio_amd_callback(
     return {"status": "ok", "answered_by": answered_by}
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 # AMD, VOICEMAIL & RETRY UTILITIES
-# ──────────────────────────────────────────────────────────────────────────────
+# 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 
 @router.post("/amd-detect", summary="Analyze Answering Machine Detection (AMD) signal")
 def check_amd(request: AMDCheckRequest):

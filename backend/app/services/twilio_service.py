@@ -441,6 +441,7 @@ class TwilioService:
         TTS Engine (Sarvam Bulbul v3 / Edge-TTS) rather than third-party cloud voices.
         Plays opening greeting audio completely, followed immediately by <Gather> for speech.
         """
+        tw_lang = {"hi": "hi-IN", "gu": "gu-IN", "mr": "mr-IN"}.get(language.lower(), "en-IN")
         if TWILIO_AVAILABLE:
             resp = VoiceResponse()
             if gather_action_url:
@@ -448,7 +449,7 @@ class TwilioService:
                     input="speech",
                     action=gather_action_url,
                     method="POST",
-                    language="en-IN",
+                    language=tw_lang,
                     speech_timeout="3",
                     timeout=15,
                 )
@@ -458,7 +459,7 @@ class TwilioService:
             resp.hangup()
             return str(resp)
 
-        gather_tag = f'\n    <Gather input="speech" action="{gather_action_url}" method="POST" language="en-IN" speechTimeout="3" timeout="15"><Play>{audio_url}</Play></Gather>\n    <Hangup/>' if gather_action_url else f'\n    <Play>{audio_url}</Play>\n    <Hangup/>'
+        gather_tag = f'\n    <Gather input="speech" action="{gather_action_url}" method="POST" language="{tw_lang}" speechTimeout="3" timeout="15"><Play>{audio_url}</Play></Gather>\n    <Hangup/>' if gather_action_url else f'\n    <Play>{audio_url}</Play>\n    <Hangup/>'
         return f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>{gather_tag}
 </Response>"""
@@ -469,10 +470,12 @@ class TwilioService:
         audio_url: str,
         next_gather_url: Optional[str] = None,
         hangup: bool = False,
+        language: str = "en",
     ) -> str:
         """
         Generates TwiML XML using <Play> with audio synthesized by YOUR internal TTS.
         """
+        tw_lang = {"hi": "hi-IN", "gu": "gu-IN", "mr": "mr-IN"}.get(language.lower(), "en-IN")
         if TWILIO_AVAILABLE:
             resp = VoiceResponse()
             if hangup:
@@ -483,7 +486,7 @@ class TwilioService:
                     input="speech",
                     action=next_gather_url,
                     method="POST",
-                    language="en-IN",
+                    language=tw_lang,
                     speech_timeout="3",
                     timeout=15,
                 )
@@ -496,7 +499,7 @@ class TwilioService:
         if hangup:
             body = f'\n    <Play>{audio_url}</Play>\n    <Hangup/>'
         elif next_gather_url:
-            body = f'\n    <Gather input="speech" action="{next_gather_url}" method="POST" language="en-IN" speechTimeout="3" timeout="15"><Play>{audio_url}</Play></Gather>\n    <Hangup/>'
+            body = f'\n    <Gather input="speech" action="{next_gather_url}" method="POST" language="{tw_lang}" speechTimeout="3" timeout="15"><Play>{audio_url}</Play></Gather>\n    <Hangup/>'
         else:
             body = f'\n    <Play>{audio_url}</Play>'
 

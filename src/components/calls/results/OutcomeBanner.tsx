@@ -100,22 +100,22 @@ export const OutcomeBanner: React.FC<OutcomeBannerProps> = ({
               <span className="text-xs font-bold tracking-wide uppercase opacity-85">
                 Qualification Assessment
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border bg-surface/70 dark:bg-white/5 border-border dark:border-white/10 text-foreground-secondary dark:text-slate-300 shadow-xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border bg-surface/70 dark:bg-white/5 border-border dark:border-white/10 text-slate-800 dark:text-slate-300 shadow-xs">
                 <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Qualification Verified</span>
               </span>
             </div>
 
-            <h2 className="text-base sm:text-lg font-bold text-foreground dark:text-white tracking-tight">
+            <h2 className="text-base sm:text-lg font-bold text-slate-950 dark:text-white tracking-tight">
               {config.title}
             </h2>
 
-            <p className="text-sm text-foreground-secondary dark:text-slate-200/90 mt-1 max-w-3xl leading-relaxed">
+            <p className="text-sm text-slate-800 dark:text-slate-200/90 mt-1 max-w-3xl leading-relaxed font-medium">
               {explanation}
             </p>
 
             {failureReason && (
-              <div className="mt-2 text-xs font-mono bg-rose-100 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800/40 px-3 py-1.5 rounded text-rose-800 dark:text-rose-300 inline-block">
+              <div className="mt-2 text-xs font-mono bg-rose-100 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800/40 px-3 py-1.5 rounded text-rose-800 dark:text-rose-300 inline-block font-semibold">
                 Carrier Diagnostics: {failureReason}
               </div>
             )}
@@ -125,10 +125,10 @@ export const OutcomeBanner: React.FC<OutcomeBannerProps> = ({
         {/* Right: 3 Supporting Indicators */}
         {supportingIndicators && supportingIndicators.length > 0 && (
           <div className="md:border-l md:border-border dark:md:border-white/10 md:pl-5 shrink-0 lg:max-w-xs">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-foreground-muted dark:text-slate-400 mb-2">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-900 dark:text-slate-400 mb-2">
               Key Indicators
             </div>
-            <ul className="space-y-1.5 text-xs text-foreground-secondary dark:text-slate-200">
+            <ul className="space-y-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium">
               {supportingIndicators.map((indicator, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <ArrowUpRight className={`w-3.5 h-3.5 ${config.indicatorBullet} shrink-0 mt-0.5`} />

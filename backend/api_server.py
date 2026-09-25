@@ -520,6 +520,34 @@ async def launch_voice_call(session_id: str):
 
                 pipeline.on_transcript = handle_live_transcript
 
+                # Define call termination callback to notify WebSocket clients instantly
+                def handle_call_ended(reason: str = "cut_call"):
+                    if session.get("status") == "completed":
+                        return
+                    session["status"] = "completed"
+                    session["end_time"] = time.time()
+                    session["duration"] = int(session["end_time"] - session.get("start_time", time.time()))
+                    print(f"\n[CALL ENDED NOTIFICATION] Session {session_id} marked COMPLETED (reason: {reason}).")
+                    if session_id in active_connections:
+                        for ws in list(active_connections[session_id]):
+                            try:
+                                if main_loop and main_loop.is_running():
+                                    asyncio.run_coroutine_threadsafe(
+                                        ws.send_json({
+                                            "type": "call_ended",
+                                            "action": "cut_call",
+                                            "status": "completed",
+                                            "sessionId": session_id,
+                                            "duration": session["duration"],
+                                            "reason": reason,
+                                        }),
+                                        main_loop
+                                    )
+                            except Exception:
+                                pass
+
+                pipeline.on_call_ended = handle_call_ended
+
                 # Get opening message in the selected session language (dynamically generated)
                 session_lang = session.get("language", "en")
                 opening = session.get("opening_pitch") or pipeline.ai.get_opening(prospect_name=contact_name, language=session_lang)
@@ -594,9 +622,7 @@ async def launch_voice_call(session_id: str):
                 
                 # Call ended
                 pipeline.audio.stop_recording()
-                session["status"] = "completed"
-                session["end_time"] = time.time()
-                session["duration"] = int(session["end_time"] - session["start_time"])
+                handle_call_ended("loop_concluded")
                 
                 # Get summary
                 summary = pipeline.ai.get_summary()
@@ -794,6 +820,83 @@ async def end_call(session_id: str):
         print(f"[ERROR] Failed to end call: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to end call: {str(e)}")
 
+
+class CallLanguageRequest(BaseModel):
+    language: str
+
+
+@app.post("/api/call/{session_id}/language")
+@app.post("/api/telephony/calls/{session_id}/language")
+async def update_call_session_language(session_id: str, req: CallLanguageRequest):
+    """
+    Dynamically update the active response language of an ongoing voice call session.
+    Supports both local browser voice sessions and Twilio PSTN carrier calls.
+    Updates the running pipeline, AI memory, DB record if present, and notifies WebSocket clients.
+    """
+    lang = req.language.strip().lower()
+    updated = False
+
+    # 1. Update active browser voice session
+    if session_id in active_sessions:
+        session = active_sessions[session_id]
+        session["language"] = lang
+        pipeline = session.get("pipeline")
+        if pipeline:
+            pipeline.language = lang
+            if hasattr(pipeline, "set_language"):
+                pipeline.set_language(lang)
+            if hasattr(pipeline, "ai") and pipeline.ai:
+                pipeline.ai._prev_language = lang
+        updated = True
+        print(f"[Language Switch] Live session {session_id} switched to language: {lang}")
+
+    # 2. Update database Call record (for Twilio PSTN calls)
+    try:
+        from app.db.database import SessionLocal
+        from app.db.models.call import Call
+        from sqlalchemy import select
+        import uuid as _uuid
+
+        db = SessionLocal()
+        try:
+            target_call = None
+            try:
+                c_uuid = _uuid.UUID(str(session_id))
+                target_call = db.scalars(select(Call).where(Call.id == c_uuid)).first()
+            except Exception:
+                pass
+            if not target_call:
+                target_call = db.scalars(select(Call).where(Call.provider_call_id == str(session_id))).first()
+
+            if target_call:
+                target_call.language = lang
+                db.commit()
+                updated = True
+                print(f"[Language Switch] DB Call {target_call.id} updated language to: {lang}")
+        finally:
+            db.close()
+    except Exception as db_err:
+        print(f"[Warn] Error updating DB for call language: {db_err}")
+
+    # 3. Broadcast language change to connected WebSocket clients
+    if session_id in active_connections:
+        for ws in list(active_connections[session_id]):
+            try:
+                if main_loop and main_loop.is_running():
+                    asyncio.run_coroutine_threadsafe(
+                        ws.send_json({
+                            "type": "language_changed",
+                            "sessionId": session_id,
+                            "language": lang
+                        }),
+                        main_loop
+                    )
+            except Exception:
+                pass
+
+    return {"status": "success", "language": lang, "sessionId": session_id, "updated": updated}
+
+
 @app.delete("/api/call/{session_id}")
 async def delete_session(session_id: str):
     """Delete a call session and cleanup"""
@@ -878,6 +981,40 @@ async def websocket_call_endpoint(websocket: WebSocket, session_id: str):
         while True:
             # Keepalive / handle optional incoming client commands
             data = await websocket.receive_text()
+            if not data:
+                continue
+            try:
+                msg = json.loads(data)
+                if isinstance(msg, dict):
+                    action = msg.get("action")
+                    if action == "set_language":
+                        new_lang = (msg.get("language") or "").strip().lower()
+                        if new_lang:
+                            if session_id in active_sessions:
+                                sess = active_sessions[session_id]
+                                sess["language"] = new_lang
+                                pipe = sess.get("pipeline")
+                                if pipe:
+                                    pipe.language = new_lang
+                                    if hasattr(pipe, "set_language"):
+                                        pipe.set_language(new_lang)
+                                    if hasattr(pipe, "ai") and pipe.ai:
+                                        pipe.ai._prev_language = new_lang
+                            await websocket.send_json({
+                                "type": "language_changed",
+                                "sessionId": session_id,
+                                "language": new_lang
+                            })
+                    elif action in ("hangup", "cut_call"):
+                        if session_id in active_sessions:
+                            sess = active_sessions[session_id]
+                            sess["status"] = "completed"
+                            if "pipeline" in sess and sess["pipeline"]:
+                                sess["pipeline"]._running = False
+                                if hasattr(sess["pipeline"], "audio"):
+                                    sess["pipeline"].audio.stop_recording()
+            except Exception:
+                pass
     except WebSocketDisconnect:
         if session_id in active_connections and websocket in active_connections[session_id]:
             active_connections[session_id].remove(websocket)

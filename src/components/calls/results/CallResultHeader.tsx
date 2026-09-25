@@ -91,16 +91,16 @@ export const CallResultHeader: React.FC<CallResultHeaderProps> = ({
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(`/leads/${data.leadId}`)}
-            className="inline-flex items-center gap-2 text-xs font-medium text-foreground-secondary hover:text-foreground dark:text-slate-100 dark:hover:text-white bg-surface-elevated hover:bg-surface-hover dark:bg-[#1A202C] dark:hover:bg-[#252D3D] px-3 py-1.5 rounded-lg border border-border dark:border-[#3B4861] transition-colors focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-900 hover:text-black dark:text-slate-100 dark:hover:text-white bg-surface-elevated hover:bg-surface-hover dark:bg-[#1A202C] dark:hover:bg-[#252D3D] px-3 py-1.5 rounded-lg border border-border-strong dark:border-[#3B4861] transition-colors focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
             title="Return to Lead Dossier"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-900 dark:text-slate-100" />
             <span>Back to Lead Dossier</span>
           </button>
 
-          <span className="text-foreground-muted dark:text-slate-500 hidden sm:inline">•</span>
-          <span className="text-xs text-foreground-secondary dark:text-slate-300 hidden sm:inline">
-            Call ID: <span className="font-mono text-foreground dark:text-slate-200 font-medium">{data.callId}</span>
+          <span className="text-slate-400 dark:text-slate-500 hidden sm:inline">•</span>
+          <span className="text-xs text-slate-700 dark:text-slate-300 hidden sm:inline">
+            Call ID: <span className="font-mono text-slate-900 dark:text-slate-200 font-semibold">{data.callId}</span>
           </span>
         </div>
 
@@ -108,17 +108,17 @@ export const CallResultHeader: React.FC<CallResultHeaderProps> = ({
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => navigate(`/leads/${data.leadId}`)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-foreground-secondary hover:text-foreground dark:text-slate-100 dark:hover:text-white bg-surface-elevated hover:bg-surface-hover dark:bg-[#1A202C] dark:hover:bg-[#252D3D] border border-border dark:border-[#3B4861] rounded-lg transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-900 hover:text-black dark:text-slate-100 dark:hover:text-white bg-surface-elevated hover:bg-surface-hover dark:bg-[#1A202C] dark:hover:bg-[#252D3D] border border-border-strong dark:border-[#3B4861] rounded-lg transition-colors shadow-xs"
           >
             <span>View Dossier</span>
-            <ExternalLink className="w-3 h-3 text-foreground-muted dark:text-slate-300" />
+            <ExternalLink className="w-3 h-3 text-slate-900 dark:text-slate-300" />
           </button>
 
           <button
             onClick={onOpenFollowUp}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-foreground-secondary hover:text-foreground dark:text-white bg-surface-elevated hover:bg-surface-hover dark:bg-[#1E293B] dark:hover:bg-[#2B3B52] border border-border dark:border-slate-600 rounded-lg transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-900 hover:text-black dark:text-white bg-surface-elevated hover:bg-surface-hover dark:bg-[#1E293B] dark:hover:bg-[#2B3B52] border border-border-strong dark:border-slate-600 rounded-lg transition-colors shadow-xs"
           >
-            <Mail className="w-3.5 h-3.5 text-primary dark:text-cyan-300" />
+            <Mail className="w-3.5 h-3.5 text-slate-900 dark:text-cyan-300" />
             <span>Send Follow-up</span>
           </button>
 
@@ -173,7 +173,7 @@ export const CallResultHeader: React.FC<CallResultHeaderProps> = ({
 
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-xl font-bold text-foreground dark:text-white tracking-tight">
+              <h1 className="text-xl font-bold text-slate-950 dark:text-white tracking-tight">
                 {data.companyName}
               </h1>
               
@@ -184,45 +184,45 @@ export const CallResultHeader: React.FC<CallResultHeaderProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-y-1 gap-x-4 mt-1 text-xs text-foreground-secondary dark:text-slate-300">
-              <div className="flex items-center gap-1.5 font-medium text-foreground dark:text-slate-200">
-                <Building2 className="w-3.5 h-3.5 text-foreground-muted dark:text-slate-400" />
+            <div className="flex flex-wrap items-center gap-y-1 gap-x-4 mt-1 text-xs text-slate-800 dark:text-slate-300">
+              <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-slate-200">
+                <Building2 className="w-3.5 h-3.5 text-slate-700 dark:text-slate-400" />
                 <span>{data.contactName}</span>
-                <span className="text-foreground-muted dark:text-slate-500">({data.contactRole})</span>
+                <span className="text-slate-600 dark:text-slate-500 font-normal">({data.contactRole})</span>
               </div>
               
-              <div className="flex items-center gap-1 text-foreground-muted dark:text-slate-400">
-                <Phone className="w-3 h-3 text-foreground-muted dark:text-slate-500" />
-                <span>{data.contactPhone}</span>
+              <div className="flex items-center gap-1 text-slate-700 dark:text-slate-400">
+                <Phone className="w-3 h-3 text-slate-600 dark:text-slate-500" />
+                <span className="text-slate-900 dark:text-slate-300 font-semibold">{data.contactPhone}</span>
               </div>
 
-              <span className="text-border dark:text-slate-600 hidden md:inline">•</span>
-              <span className="text-foreground-secondary dark:text-slate-400 hidden md:inline">{data.industry}</span>
+              <span className="text-slate-300 dark:text-slate-600 hidden md:inline">•</span>
+              <span className="text-slate-800 dark:text-slate-400 hidden md:inline font-medium">{data.industry}</span>
 
-              <span className="text-border dark:text-slate-600 hidden lg:inline">•</span>
-              <span className="text-foreground-secondary dark:text-slate-400 hidden lg:inline">{data.location}</span>
+              <span className="text-slate-300 dark:text-slate-600 hidden lg:inline">•</span>
+              <span className="text-slate-800 dark:text-slate-400 hidden lg:inline font-medium">{data.location}</span>
             </div>
           </div>
         </div>
 
         {/* Telephony Metadata Pills */}
         <div className="flex flex-wrap items-center gap-2 pt-2 lg:pt-0">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-elevated dark:bg-[#161B26] border border-border dark:border-[#232B3B] text-xs text-foreground-secondary dark:text-slate-300 shadow-xs">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-elevated dark:bg-[#161B26] border border-border-strong dark:border-[#232B3B] text-xs text-slate-800 dark:text-slate-300 shadow-xs">
             <Clock className="w-3 h-3 text-primary dark:text-blue-400" />
-            <span className="text-foreground-muted dark:text-slate-400">Duration:</span>
-            <span className="font-medium text-foreground dark:text-white">{data.metadata.duration}</span>
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Duration:</span>
+            <span className="font-bold text-slate-950 dark:text-white">{data.metadata.duration}</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-elevated dark:bg-[#161B26] border border-border dark:border-[#232B3B] text-xs text-foreground-secondary dark:text-slate-300 shadow-xs">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-elevated dark:bg-[#161B26] border border-border-strong dark:border-[#232B3B] text-xs text-slate-800 dark:text-slate-300 shadow-xs">
             <Calendar className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
-            <span className="text-foreground-muted dark:text-slate-400">Call Time:</span>
-            <span className="font-medium text-foreground dark:text-white">{data.metadata.callTime}</span>
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Call Time:</span>
+            <span className="font-bold text-slate-950 dark:text-white">{data.metadata.callTime}</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-elevated dark:bg-[#161B26] border border-border dark:border-[#232B3B] text-xs text-foreground-secondary dark:text-slate-300 shadow-xs">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-elevated dark:bg-[#161B26] border border-border-strong dark:border-[#232B3B] text-xs text-slate-800 dark:text-slate-300 shadow-xs">
             <Bot className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-foreground-muted dark:text-slate-400">Agent:</span>
-            <span className="font-medium text-foreground dark:text-white">{data.metadata.agent}</span>
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Agent:</span>
+            <span className="font-bold text-slate-950 dark:text-white">{data.metadata.agent}</span>
           </div>
         </div>
       </div>

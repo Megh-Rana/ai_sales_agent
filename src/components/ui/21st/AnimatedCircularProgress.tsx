@@ -81,19 +81,19 @@ export const AnimatedCircularProgress: React.FC<AnimatedCircularProgressProps> =
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-2xl font-bold font-mono text-foreground leading-none"
+            className="text-2xl font-bold font-mono text-slate-900 dark:text-foreground leading-none"
           >
             {normalizedValue}
           </motion.span>
           {label && (
-            <span className="text-[9px] font-mono uppercase tracking-wider text-foreground-tertiary mt-1">
+            <span className="text-[9px] font-mono uppercase tracking-wider font-bold text-slate-800 dark:text-foreground-tertiary mt-1">
               {label}
             </span>
           )}
         </div>
       </div>
       {sublabel && (
-        <span className="text-xs font-medium text-foreground-secondary mt-2">{sublabel}</span>
+        <span className="text-xs font-semibold text-slate-900 dark:text-foreground-secondary mt-2">{sublabel}</span>
       )}
     </div>
   );

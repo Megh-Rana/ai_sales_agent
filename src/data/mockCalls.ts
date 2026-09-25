@@ -26,50 +26,71 @@ export interface ScriptProgressionStep {
   objectiveUpdate?: CurrentObjective;
 }
 
-export const INITIAL_QUALIFICATION_DIMENSIONS: Record<string, QualificationDimension> = {
-  Need: {
-    dimension: 'Need',
-    label: 'Business Need',
-    status: 'discovering',
-    detail: 'Automated outbound dispatch & freight tracking'
-  },
-  'Pain Point': {
-    dimension: 'Pain Point',
-    label: 'Operational Pain',
-    status: 'discovering',
-    detail: 'Driver dwell times & terminal bottleneck'
-  },
-  Timeline: {
-    dimension: 'Timeline',
-    label: 'Decision Timeline',
-    status: 'unknown',
-    detail: 'Not discussed yet'
-  },
-  Budget: {
-    dimension: 'Budget',
-    label: 'Budget Authority',
-    status: 'unknown',
-    detail: 'Not discussed yet'
-  },
-  'Decision Maker': {
-    dimension: 'Decision Maker',
-    label: 'Stakeholders',
-    status: 'discovering',
-    detail: 'David Reynolds (VP Ops) identified'
-  },
-  'Current Solution': {
-    dimension: 'Current Solution',
-    label: 'Current Tech Stack',
-    status: 'unknown',
-    detail: 'Not discussed yet'
-  },
-  'Implementation Readiness': {
-    dimension: 'Implementation Readiness',
-    label: 'Integration Feasibility',
-    status: 'unknown',
-    detail: 'Not discussed yet'
-  }
-};
+export function buildCustomQualificationForLead(lead?: any): Record<string, QualificationDimension> {
+  const companyName = lead?.companyName || 'Target Enterprise';
+  const contactName =
+    lead?.decisionMakerContact?.name ||
+    lead?.decisionMaker?.name ||
+    lead?.contactName ||
+    '';
+  const role =
+    lead?.decisionMakerContact?.role ||
+    lead?.decisionMaker?.role ||
+    lead?.contactRole ||
+    'Executive';
+  const requirement = lead?.requirement || lead?.whyNow || '';
+  const detailedPain = lead?.detailedPain || lead?.whyNow || '';
+  const value = lead?.estimatedValue || '';
+  const industry = lead?.industry || 'Business Services';
+  const techStack = Array.isArray(lead?.technologies) ? lead.technologies.join(', ') : '';
+
+  return {
+    Need: {
+      dimension: 'Need',
+      label: 'Business Need',
+      status: requirement ? 'discovering' : 'unknown',
+      detail: requirement || `Evaluate autonomous sales intelligence & voice workflows for ${companyName}`
+    },
+    'Pain Point': {
+      dimension: 'Pain Point',
+      label: 'Operational Pain',
+      status: detailedPain ? 'discovering' : 'unknown',
+      detail: detailedPain || `Manual outbound follow-up overhead and SDR qualification latency in ${industry}`
+    },
+    Timeline: {
+      dimension: 'Timeline',
+      label: 'Decision Timeline',
+      status: 'unknown',
+      detail: 'Not discussed yet'
+    },
+    Budget: {
+      dimension: 'Budget',
+      label: 'Budget Authority',
+      status: value ? 'discovering' : 'unknown',
+      detail: value ? `Target pipeline allocation: ${value}` : 'Not discussed yet'
+    },
+    'Decision Maker': {
+      dimension: 'Decision Maker',
+      label: 'Stakeholders',
+      status: contactName ? 'discovering' : 'unknown',
+      detail: contactName ? `${contactName} (${role}) identified` : 'Key decision maker not verified'
+    },
+    'Current Solution': {
+      dimension: 'Current Solution',
+      label: 'Current Tech Stack',
+      status: techStack ? 'discovering' : 'unknown',
+      detail: techStack ? `Current stack: ${techStack}` : 'Not discussed yet'
+    },
+    'Implementation Readiness': {
+      dimension: 'Implementation Readiness',
+      label: 'Integration Feasibility',
+      status: 'unknown',
+      detail: 'Not discussed yet'
+    }
+  };
+}
+
+export const INITIAL_QUALIFICATION_DIMENSIONS: Record<string, QualificationDimension> = buildCustomQualificationForLead();
 
 export const ACME_CALL_SCRIPT_STEPS: ScriptProgressionStep[] = [
   // 1. Opening Hook
@@ -697,6 +718,6 @@ export function createMockCallSession(
     },
     transcript: [],
     intelligenceEvents: [],
-    qualification: JSON.parse(JSON.stringify(INITIAL_QUALIFICATION_DIMENSIONS))
+    qualification: buildCustomQualificationForLead(lead)
   };
 }
