@@ -10,8 +10,8 @@ export const mockOpportunities: SalesOpportunity[] = [
     location: 'Bangalore, KA',
     contactName: 'Rahul Sharma',
     contactRole: 'VP of Engineering',
-    contactPhone: '+91 98765 43210',
-    contactEmail: 'rahul.sharma@acmetech.com',
+    contactPhone: '+918320441189',
+    contactEmail: 'meghrana2007@gmail.com',
     phoneAvailable: true,
 
     intentScore: 94,

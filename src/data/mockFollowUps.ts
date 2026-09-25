@@ -19,7 +19,7 @@ export const mockFollowUpDataset: ExtendedFollowUpItem[] = [
     companyName: 'Acme Logistics',
     contactName: 'Rahul Shah',
     contactRole: 'VP of Fleet Operations',
-    phone: '+91 98765 43210',
+    phone: '+918320441189',
     companyDomain: 'acmelogistics.in',
     industry: 'Logistics & Supply Chain',
     intentScore: 94,

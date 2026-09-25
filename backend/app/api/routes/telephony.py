@@ -29,6 +29,7 @@ from app.schemas.call import CallResponse
 from app.services.telephony_service import TelephonyService
 from app.services.twilio_service import TwilioService
 from app.services.call_service import CallService
+from app.services.calendly_service import CalendlyService
 from app.services.telephony_audio import (
     synthesize_speech_to_wav,
     get_audio_bytes,
@@ -42,6 +43,12 @@ router = APIRouter(prefix="/telephony", tags=["Telephony"])
 
 # Active brain instances per call session for conversational memory
 _CALL_BRAINS: Dict[str, AIBrain] = {}
+
+
+def is_human_transfer_requested(text: str) -> bool:
+    """Detects if lead requests to speak with a human agent, team member, or Calendly booking link."""
+    from app.services.calendly_service import is_human_transfer_requested as _detect_transfer
+    return _detect_transfer(text)
 
 
 def get_or_create_brain(call: Optional[Call], language: str = "en") -> AIBrain:
@@ -411,35 +418,63 @@ async def twilio_gather_webhook(
         )
         return Response(content=twiml, media_type="application/xml")
 
-    # 1. Feed user speech into YOUR internal LLM (AIBrain)
-    brain = get_or_create_brain(call, language=lang)
-    meta = call.carrier_metadata or {} if call else {}
-    pitch = meta.get("opening_pitch")
-    if pitch and not any(t.role == "agent" for t in brain.memory.turns):
-        brain.memory.add_turn("agent", pitch, lang)
-        brain._prev_language = lang
-    logger.info(f"[Twilio Gather] Prospect: '{speech_result}'. Generating LLM response with internal brain...")
-
-    try:
-        sentences = list(brain.think(speech_result, detected_language=lang))
-        ai_reply = " ".join(sentences).strip()
-    except Exception as e:
-        logger.error(f"[Twilio Gather] Brain thinking error ({e}). Using conversational fallback.")
-        ai_reply = "Thank you for sharing. Our autonomous AI voice agent integrates with your CRM in under 5 minutes. Would you have 15 minutes for a technical demo this Thursday?"
-
-    # 2. Detect call outcome / completion signals
-    text_lower = speech_result.lower()
-    should_hangup = False
-    outcome = None
-
-    if any(k in text_lower for k in ["not interested", "dont call", "don't call", "stop", "remove"]):
+    # 1. Check for human agent request (Calendly Link Dispatch)
+    if is_human_transfer_requested(speech_result):
+        logger.info(f"[Twilio Gather] Human transfer requested by prospect: '{speech_result}'. Dispatching Calendly link SMS.")
         should_hangup = True
-        outcome = "not_interested"
-    elif any(k in text_lower for k in ["busy", "call back", "later", "driving", "meeting"]):
-        should_hangup = True
-        outcome = "callback_requested"
-    elif any(k in text_lower for k in ["demo", "yes", "sure", "book", "schedule", "pricing", "interested"]):
-        outcome = "meeting_booked"
+        outcome = "human_transfer_requested"
+
+        if lang.lower() == "hi":
+            ai_reply = "मैं बिल्कुल समझता हूँ! मैंने अभी आपके फ़ोन पर एसएमएस और ईमेल द्वारा हमारी टीम का सीधा कैलेंडर लिंक भेज दिया है, ताकि आप अपनी पसंद का समय चुन सकें। धन्यवाद!"
+        elif lang.lower() == "gu":
+            ai_reply = "હું બિલકુલ સમજું છું! મેં તમારા ફોન પર SMS અને ઇમેઇલ દ્વારા અમારી ટીમની કેલેન્ડર લિંક મોકલી આપી છે, જેથી તમે તમારી અનુકૂળતા મુજબ સમય પસંદ કરી શકો. આભાર!"
+        elif lang.lower() == "mr":
+            ai_reply = "मला पूर्णपणे समजते! मी तुमच्या फोनवर एसएमएस आणि ईमेलद्वारे आमच्या टीमची थेट कॅलेंडर लिंक पाठवली आहे, जेणेकरून आपण सोयीनुसार वेळ निवडू शकाल. धन्यवाद!"
+        else:
+            ai_reply = "I completely understand! I've just sent a text message to your phone and an email with our team's direct calendar booking link so you can pick whatever time works best for you. Talk soon!"
+
+        if call and call.lead_id:
+            try:
+                CalendlyService.dispatch_calendly_sms_and_track(
+                    db=db,
+                    lead_id=call.lead_id,
+                    call_id=call.id,
+                    language=lang,
+                    server_base_url=base_url,
+                    followup_hours=24.0,
+                )
+            except Exception as ex:
+                logger.error(f"[Twilio Gather] Error dispatching Calendly SMS: {ex}")
+    else:
+        # Feed user speech into YOUR internal LLM (AIBrain)
+        brain = get_or_create_brain(call, language=lang)
+        meta = call.carrier_metadata or {} if call else {}
+        pitch = meta.get("opening_pitch")
+        if pitch and not any(t.role == "agent" for t in brain.memory.turns):
+            brain.memory.add_turn("agent", pitch, lang)
+            brain._prev_language = lang
+        logger.info(f"[Twilio Gather] Prospect: '{speech_result}'. Generating LLM response with internal brain...")
+
+        try:
+            sentences = list(brain.think(speech_result, detected_language=lang))
+            ai_reply = " ".join(sentences).strip()
+        except Exception as e:
+            logger.error(f"[Twilio Gather] Brain thinking error ({e}). Using conversational fallback.")
+            ai_reply = "Thank you for sharing. Our autonomous AI voice agent integrates with your CRM in under 5 minutes. Would you have 15 minutes for a technical demo this Thursday?"
+
+        # 2. Detect call outcome / completion signals
+        text_lower = speech_result.lower()
+        should_hangup = False
+        outcome = None
+
+        if any(k in text_lower for k in ["not interested", "dont call", "don't call", "stop", "remove"]):
+            should_hangup = True
+            outcome = "not_interested"
+        elif any(k in text_lower for k in ["busy", "call back", "later", "driving", "meeting"]):
+            should_hangup = True
+            outcome = "callback_requested"
+        elif any(k in text_lower for k in ["demo", "yes", "sure", "book", "schedule", "pricing", "interested"]):
+            outcome = "meeting_booked"
 
     # 3. Synthesize response using YOUR internal TTSEngine (Sarvam Bulbul v3 / Edge-TTS)
     audio_id, _ = synthesize_speech_to_wav(ai_reply, language=lang)

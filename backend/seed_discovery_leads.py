@@ -118,8 +118,8 @@ def parse_and_seed_discovery_leads():
                     business_id=demo_business.id,
                     company_name=company_name,
                     contact_name=contact_name,
-                    contact_email=f"contact@{domain}",
-                    contact_phone="+91 98765 43210",
+                    contact_email="meghrana2007@gmail.com",
+                    contact_phone="+918320441189",
                     requirement=requirement,
                     industry=industry,
                     location=location,
@@ -135,6 +135,8 @@ def parse_and_seed_discovery_leads():
                 db.add(lead)
                 seeded_count += 1
             else:
+                existing.contact_phone = os.getenv("DEFAULT_DESTINATION_PHONE", "+918320441189")
+                existing.contact_email = os.getenv("DEFAULT_DESTINATION_EMAIL", "meghrana2007@gmail.com")
                 # Update enrichment columns if missing
                 if not existing.job_title:
                     existing.job_title = job_title

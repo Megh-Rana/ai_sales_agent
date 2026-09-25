@@ -18,8 +18,9 @@ api_router.include_router(analytics.router)
 api_router.include_router(discovery.router)
 api_router.include_router(segments.router)
 api_router.include_router(crm.router)
-from app.api.routes import telephony
+from app.api.routes import telephony, calendly
 api_router.include_router(telephony.router)
+api_router.include_router(calendly.router)
 
 
 

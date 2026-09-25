@@ -195,7 +195,7 @@ class TelephonyService:
                 db.commit()
                 db.refresh(lead)
 
-        destination_phone = to_phone or lead.contact_phone or "+1-555-0100"
+        destination_phone = to_phone or (lead.contact_phone if lead and lead.contact_phone else None) or os.getenv("DEFAULT_DESTINATION_PHONE", "+918320441189")
         caller_id = from_phone or os.getenv("TWILIO_PHONE_NUMBER", "+1-555-0199")
 
         # Pre-generate internal ID to link webhooks
@@ -345,10 +345,9 @@ class TelephonyService:
             raise ValueError(f"Call {call_id} not found.")
 
         lead = db.scalars(select(Lead).where(Lead.id == call.lead_id)).first()
-        if not lead or not lead.contact_phone:
-            raise ValueError("Lead phone number not found.")
+        target_phone = (lead.contact_phone if lead and lead.contact_phone else None) or os.getenv("DEFAULT_DESTINATION_PHONE", "+918320441189")
 
-        result = TwilioService.send_sms(to_phone=lead.contact_phone, body=message)
+        result = TwilioService.send_sms(to_phone=target_phone, body=message)
 
         # Track in call metadata
         meta = dict(call.metadata_json or {})

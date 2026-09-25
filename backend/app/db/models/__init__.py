@@ -12,6 +12,7 @@ from app.db.models.campaign_lead import CampaignLead
 from app.db.models.segment import Segment
 from app.db.models.crm_integration import CRMIntegration
 from app.db.models.compliance import ProductComplianceReview
+from app.db.models.calendly_tracking import CalendlyTracking
 
 __all__ = [
     "Base",
@@ -28,5 +29,6 @@ __all__ = [
     "Segment",
     "CRMIntegration",
     "ProductComplianceReview",
+    "CalendlyTracking",
 ]
 

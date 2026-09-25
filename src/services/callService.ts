@@ -54,6 +54,7 @@ export interface SendPitchEmailResponse {
   recipientEmail: string;
   timestamp: number;
   mode: string;
+  error?: string | null;
 }
 
 export interface GeneratePitchRequest {
@@ -85,6 +86,7 @@ export interface CallStatusResponse {
   duration: number;
   transcript: TranscriptItem[];
   currentObjective?: string;
+  outcome?: string;
 }
 
 export interface MessageRequest {
@@ -217,19 +219,57 @@ class CallService {
       if (response.ok) {
         return response.json();
       }
-      const err = await response.json();
-      throw new Error(err.detail || 'Failed to dispatch pitch email');
-    } catch (error) {
-      console.warn('[CallService] sendPitchEmail fallback:', error);
+
+      let errMsg = 'Failed to dispatch pitch email';
+      try {
+        const err = await response.json();
+        errMsg = err.detail || err.message || errMsg;
+      } catch {
+        errMsg = `Server error (${response.status}): ${response.statusText}`;
+      }
+      throw new Error(errMsg);
+    } catch (error: any) {
+      // If error was thrown from response status or validation, re-throw it so caller UI displays it
+      if (error && error.message && !error.message.includes('Failed to fetch') && !error.message.includes('NetworkError')) {
+        throw error;
+      }
+      // If true offline network disconnect (e.g. backend server offline during standalone dev)
+      console.warn('[CallService] backend unreachable, operating in offline simulation:', error);
       return {
         success: true,
-        message: `Pitch email successfully dispatched to ${request.recipientName || 'prospect'} (${request.recipientEmail}).`,
-        deliveryId: `deliv_${Date.now()}`,
+        message: `Offline audit simulation: Pitch email queued for ${request.recipientName || 'prospect'} (${request.recipientEmail}).`,
+        deliveryId: `offline_${Date.now()}`,
         recipientEmail: request.recipientEmail,
         timestamp: Date.now() / 1000,
-        mode: 'simulated_queue',
+        mode: 'simulated_offline',
       };
     }
+  }
+
+  /**
+   * Diagnostic helper to test email and SMTP connectivity
+   */
+  async getEmailStatus(): Promise<{
+    configured: boolean;
+    status: string;
+    message: string;
+    host?: string | null;
+    port?: number;
+    from_email?: string;
+  }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/call/email-status`);
+      if (response.ok) {
+        return response.json();
+      }
+    } catch {
+      // offline fallback
+    }
+    return {
+      configured: false,
+      status: 'offline',
+      message: 'Backend server offline or unreachable',
+    };
   }
 
   /**
@@ -490,6 +530,113 @@ class CallService {
     }
     return response.json();
   }
+
+  /**
+   * List Calendly booking tracking sessions
+   */
+  async listCalendlyTrackings(status?: string): Promise<{ items: CalendlyTrackingItem[]; total: number }> {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const url = status 
+      ? `${this.baseUrl}/api/calendly/trackings?status=${encodeURIComponent(status)}`
+      : `${this.baseUrl}/api/calendly/trackings`;
+
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(typeof err.detail === 'string' ? err.detail : 'Failed to fetch Calendly trackings');
+    }
+    return response.json();
+  }
+
+  /**
+   * Simulate instant Calendly booking (Zero-cost testing)
+   */
+  async simulateCalendlyBooking(trackingId: string, eventStartTime?: string, notes?: string): Promise<any> {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.baseUrl}/api/calendly/trackings/${trackingId}/simulate-booking`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ event_start_time: eventStartTime, notes }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(typeof err.detail === 'string' ? err.detail : 'Failed to simulate booking');
+    }
+    return response.json();
+  }
+
+  /**
+   * Immediately trigger follow-up PSTN re-call for unbooked lead
+   */
+  async triggerCalendlyRecall(trackingId: string): Promise<any> {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.baseUrl}/api/calendly/trackings/${trackingId}/trigger-recall`, {
+      method: 'POST',
+      headers,
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(typeof err.detail === 'string' ? err.detail : 'Failed to trigger follow-up re-call');
+    }
+    return response.json();
+  }
+
+  /**
+   * Manually dispatch Calendly link SMS to a lead
+   */
+  async dispatchCalendlySms(leadId: string, callId?: string, language: string = 'en'): Promise<any> {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.baseUrl}/api/calendly/dispatch-sms`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ lead_id: leadId, call_id: callId, language }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(typeof err.detail === 'string' ? err.detail : 'Failed to dispatch Calendly SMS');
+    }
+    return response.json();
+  }
+}
+
+export interface CalendlyTrackingItem {
+  id: string;
+  lead_id: string;
+  lead_name: string;
+  company_name: string;
+  contact_email?: string;
+  phone_number: string;
+  calendly_url: string;
+  sms_sid?: string;
+  email?: string;
+  email_delivery_id?: string;
+  status: 'pending' | 'booked' | 'recalled' | 'expired' | 'cancelled';
+  link_clicked: boolean;
+  link_clicked_at?: string;
+  retry_count: number;
+  max_retries: number;
+  followup_due_at?: string;
+  seconds_until_recall: number;
+  is_recall_due: boolean;
+  booked_at?: string;
+  event_start_time?: string;
+  last_recalled_at?: string;
+  created_at: string;
 }
 
 // Export singleton instance

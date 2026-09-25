@@ -70,6 +70,7 @@ class PipelineOrchestrator:
         self._is_speaking = False   # True while TTS audio is playing
         self._turn_count = 0
         self.on_transcript = None   # Optional callback(speaker: str, text: str, language: str)
+        self.on_human_transfer = None  # Optional callback(language: str)
 
     def load_all(self):
         """Load all models into GPU (concurrent mode)."""
@@ -196,6 +197,24 @@ class PipelineOrchestrator:
                 self.on_transcript("prospect", transcript, language)
             except Exception as ex:
                 print(f"[Callback Error] {ex}")
+
+        # Check for human agent request (Calendly Link Dispatch)
+        if self._is_human_transfer_requested(transcript):
+            transfer_reply = self._get_calendly_transfer_reply(language)
+            print(f"\n🤖 Agent (Human transfer requested): {transfer_reply}")
+            if self.on_transcript:
+                try:
+                    self.on_transcript("agent", transfer_reply, language)
+                except Exception as ex:
+                    print(f"[Callback Error] {ex}")
+            if self.on_human_transfer and callable(self.on_human_transfer):
+                try:
+                    self.on_human_transfer(language)
+                except Exception as ex:
+                    print(f"[Human Transfer Error] {ex}")
+            self._speak_text(transfer_reply, language)
+            self._running = False
+            return
 
         # Check for exit keywords
         if self._is_exit_phrase(transcript):
@@ -347,6 +366,26 @@ class PipelineOrchestrator:
             "આવજો", "બાય", "ફોન મૂકો",
         ]
         return any(w in lower for w in exit_words)
+
+    def _is_human_transfer_requested(self, transcript: str) -> bool:
+        """Check if prospect requested to speak with a human agent, team member, or Calendly booking link."""
+        try:
+            from app.services.calendly_service import is_human_transfer_requested as _detect_transfer
+            return _detect_transfer(transcript)
+        except Exception:
+            # Fallback if app service is unavailable
+            lower = transcript.lower()
+            return any(w in lower for w in ("human", "person", "representative", "transfer", "calendly", "agent"))
+
+    def _get_calendly_transfer_reply(self, language: str) -> str:
+        """Language-appropriate verbal response when Calendly booking link SMS is dispatched."""
+        replies = {
+            "en": "I completely understand! I've just sent a text message to your phone and an email with our team's direct calendar booking link so you can pick whatever time works best for you. Talk soon!",
+            "hi": "मैं बिल्कुल समझता हूँ! मैंने अभी आपके फ़ोन पर एसएमएस और ईमेल द्वारा हमारी टीम का सीधा कैलेंडर लिंक भेज दिया है, ताकि आप अपनी पसंद का समय चुन सकें। धन्यवाद!",
+            "mr": "मला पूर्णपणे समजते! मी तुमच्या फोनवर एसएमएस आणि ईमेलद्वारे आमच्या टीमची थेट कॅलेंडर लिंक पाठवली आहे, जेणेकरून आपण सोयीनुसार वेळ निवडू शकाल. धन्यवाद!",
+            "gu": "હું બિલકુલ સમજું છું! મેં તમારા ફોન પર SMS અને ઇમેઇલ દ્વારા અમારી ટીમની કેલેન્ડર લિંક મોકલી આપી છે, જેથી તમે તમારી અનુકૂળતા મુજબ સમય પસંદ કરી શકો. આભાર!",
+        }
+        return replies.get(language, replies["en"])
 
     def _get_farewell(self, language: str) -> str:
         """Language-appropriate farewell."""

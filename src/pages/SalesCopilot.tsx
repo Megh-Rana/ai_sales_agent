@@ -31,8 +31,8 @@ function getCopilotContextForLead(targetLeadId: string): SalesConversationContex
     location: lead.location,
     contactName: lead.decisionMakerContact?.name || lead.decisionMaker?.name || 'Rahul Sharma',
     contactRole: lead.decisionMakerContact?.role || lead.decisionMaker?.role || 'Decision Maker',
-    contactPhone: lead.decisionMaker?.phone || '+91 98765 43210',
-    contactEmail: lead.decisionMaker?.email || 'contact@domain.com',
+    contactPhone: lead.decisionMaker?.phone || '+918320441189',
+    contactEmail: lead.decisionMaker?.email || 'meghrana2007@gmail.com',
     phoneAvailable: lead.decisionMakerContact?.phoneAvailable ?? true,
 
     intentScore: lead.intentScore,

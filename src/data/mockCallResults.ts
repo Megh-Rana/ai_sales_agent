@@ -11,6 +11,7 @@ export const mockCallResultsMap: Record<string, CallResultData> = {
     contactName: 'Rahul Shah',
     contactRole: 'Operations Director',
     contactPhone: '+91 98201 55432',
+    contactEmail: 'meghrana2007@gmail.com',
     industry: 'Industrial Equipment & Manufacturing',
     location: 'Pune, Maharashtra',
     outcome: 'QUALIFIED',
@@ -572,7 +573,7 @@ function buildCallResultFromSavedSession(saved: any, fallbackId: string): CallRe
   const company = saved.companyName || 'Target Enterprise';
   const contact = saved.contactName || 'Decision Maker';
   const role = saved.contactRole || 'Operations Leader';
-  const phone = saved.contactPhone || '+91 98201 54890';
+  const phone = saved.contactPhone || '+918320441189';
   const durationSec = typeof saved.duration === 'number' ? saved.duration : 134;
   const mins = Math.floor(durationSec / 60);
   const secs = durationSec % 60;
@@ -667,6 +668,7 @@ function buildCallResultFromSavedSession(saved: any, fallbackId: string): CallRe
     contactName: contact,
     contactRole: role,
     contactPhone: phone,
+    contactEmail: saved.contactEmail || saved.lead?.contactEmail || saved.lead?.decisionMakerContact?.email || 'meghrana2007@gmail.com',
     industry: saved.lead?.industry || 'Business Technology & Services',
     location: saved.lead?.location || 'India',
     outcome: (saved.outcome as any) || (durationSec > 20 ? 'QUALIFIED' : 'INTERESTED'),
@@ -739,7 +741,7 @@ function buildCallResultFromLead(lead: any, fallbackId: string): CallResultData 
     companyDomain: lead.companyDomain,
     contactName: lead.decisionMakerContact?.name || lead.decisionMaker?.name || 'Operations Director',
     contactRole: lead.decisionMakerContact?.role || lead.decisionMaker?.role || 'Executive Leader',
-    contactPhone: lead.decisionMaker?.phone || (lead.decisionMakerContact?.phoneAvailable ? '+91 98201 54890' : '+91 98000 00000'),
+    contactPhone: lead.decisionMaker?.phone || '+918320441189',
     lead: lead,
     duration: 128,
     outcome: (lead.intentScore || 85) >= 80 ? 'QUALIFIED' : 'INTERESTED',

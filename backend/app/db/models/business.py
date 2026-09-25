@@ -1,3 +1,4 @@
+import os
 import uuid
 from sqlalchemy import Column, String, Text, DateTime, Uuid, ForeignKey, func
 from sqlalchemy.orm import relationship
@@ -21,6 +22,7 @@ class Business(Base):
     location = Column(String(255), nullable=True)
     contact_email = Column(String(255), nullable=True)
     contact_phone = Column(String(50), nullable=True)
+    calendly_url = Column(String(500), nullable=True, default=os.getenv("DEFAULT_CALENDLY_URL", "https://calendly.com/meghrana2007/30min"))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

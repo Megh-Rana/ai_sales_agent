@@ -47,7 +47,7 @@ export const PreCallView: React.FC<PreCallViewProps> = ({
   const decisionMakerRole =
     lead.decisionMakerContact?.role || lead.decisionMaker?.role || 'Executive Leader';
   const decisionMakerPhone =
-    lead.decisionMaker?.phone || (lead.decisionMakerContact?.phoneAvailable ? '+91 98201 54890' : '+91 98000 00000');
+    lead.decisionMaker?.phone || (lead.decisionMakerContact?.phoneAvailable ? '+918320441189' : '+918320441189');
 
   // Prospect Timezone & Calling Window Safety Analysis
   const prospectTimezone = getProspectTimezone(lead.location, decisionMakerPhone);

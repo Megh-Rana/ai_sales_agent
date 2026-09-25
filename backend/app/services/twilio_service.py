@@ -340,7 +340,12 @@ class TwilioService:
                     }
                 except TwilioRestException as e:
                     logger.error(f"[Twilio] Outbound call API error: {e.msg} (Code: {e.code})")
-                    raise ValueError(f"Twilio dialing failed: {e.msg}")
+                    # Trial accounts only permit dialing pre-verified recipient numbers.
+                    # Fall back to simulated call for local dev/testing if unverified.
+                    if e.code in (21211, 21608, 573002, 572002, 21614):
+                        logger.warning(f"[Twilio] Trial/unverified number restriction (Code: {e.code}). Falling back to simulated session for dev/testing.")
+                    else:
+                        raise ValueError(f"Twilio dialing failed: {e.msg}")
                 except Exception as e:
                     logger.error(f"[Twilio] Unexpected error during call dispatch: {e}")
                     raise ValueError(f"Call dispatch error: {str(e)}")
@@ -549,7 +554,8 @@ class TwilioService:
         Sends an SMS message to a prospect (e.g. calendar booking link or pitch recap).
         """
         creds = cls.get_credentials()
-        caller_id = from_phone or creds.get("phone_number") or "+1-555-0199"
+        sms_from = os.getenv("TWILIO_SMS_NUMBER", "").strip()
+        caller_id = from_phone or sms_from or creds.get("phone_number") or "+18777804236"
         clean_to = cls.normalize_phone_number(to_phone)
         clean_from = cls.normalize_phone_number(caller_id)
 

@@ -8,6 +8,7 @@ import { FollowUpSkeleton } from '../components/followUps/FollowUpSkeleton';
 import { FollowUpEmptyState } from '../components/followUps/FollowUpEmptyState';
 import { FollowUpErrorState } from '../components/followUps/FollowUpErrorState';
 import { FollowUpSchedulerModal } from '../components/sales/workflow/FollowUpSchedulerModal';
+import { CalendlyFollowUpsSection } from '../components/followUps/CalendlyFollowUpsSection';
 import { FollowUpItem } from '../types/followUp';
 import { CalendarCheck, Filter, Zap, Clock, ShieldCheck } from 'lucide-react';
 import { useI18n } from '../i18n/i18nContext';
@@ -123,6 +124,9 @@ export const FollowUps: React.FC = () => {
       {/* VIEW STATE 4: NORMAL WORKSPACE */}
       {viewState === 'normal' && (
         <main className="space-y-6 animate-fade-in">
+          {/* CALENDLY HUMAN TRANSFER & AUTOMATED RE-CALL SECTION */}
+          <CalendlyFollowUpsSection />
+
           {/* TAB FILTER CONTROLS */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-3">
             <div className="flex flex-wrap items-center gap-2">

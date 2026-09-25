@@ -62,11 +62,13 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
 }) => {
   const [overrideRestricted, setOverrideRestricted] = useState(false);
   const [callMode, setCallMode] = useState<'browser' | 'twilio_pstn'>('twilio_pstn');
-  const [targetPhone, setTargetPhone] = useState(phone || '+91 98201 54890');
+  const [targetPhone, setTargetPhone] = useState(phone || '+918320441189');
 
   useEffect(() => {
     if (phone) {
       setTargetPhone(phone);
+    } else {
+      setTargetPhone('+918320441189');
     }
   }, [phone]);
 
@@ -220,7 +222,7 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
                 {callMode === 'twilio_pstn' && <Check className="w-3.5 h-3.5 text-primary stroke-[2.5]" />}
               </div>
               <p className="text-[11px] text-foreground-tertiary">
-                Dials <span className="font-mono text-foreground-secondary font-medium">{phone || '+91 98201 54890'}</span> via Twilio carrier trunk with live Answering Machine Detection (AMD).
+                Dials <span className="font-mono text-foreground-secondary font-medium">{targetPhone || phone || '+918320441189'}</span> via Twilio carrier trunk with live Answering Machine Detection (AMD).
               </p>
               <div className="pt-2 text-[10px] font-mono text-primary flex items-center gap-1">
                 <span>⚡ Voice & AI: Internal Sarvam Bulbul + Ollama</span>
@@ -267,7 +269,7 @@ export const CallConfirmationModal: React.FC<CallConfirmationModalProps> = ({
                 type="tel"
                 value={targetPhone}
                 onChange={(e) => setTargetPhone(e.target.value)}
-                placeholder="+919876543210 or +15551234567"
+                placeholder="+918320441189"
                 className="w-full bg-surface border border-border-subtle rounded-md px-3 py-1.5 text-xs font-mono text-foreground placeholder:text-foreground-tertiary focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
               <p className="text-[10px] text-foreground-tertiary">

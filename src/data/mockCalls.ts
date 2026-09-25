@@ -666,7 +666,7 @@ export function createMockCallSession(
 
   const decisionMaker = lead.decisionMakerContact?.name || (lead as any).decisionMaker?.name || 'Leadership Contact';
   const role = lead.decisionMakerContact?.role || (lead as any).decisionMaker?.role || 'Executive';
-  const phone = (lead as any).decisionMaker?.phone || (lead.decisionMakerContact?.phoneAvailable ? '+91 98201 54890' : '+91 98000 00000');
+  const phone = (lead as any).decisionMaker?.phone || '+918320441189';
 
   return {
     callId,

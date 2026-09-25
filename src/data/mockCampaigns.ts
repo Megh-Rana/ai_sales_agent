@@ -22,7 +22,7 @@ export const mockCampaignsData: SalesCampaign[] = [
         companyName: 'Acme Logistics',
         contactName: 'Rajesh Sharma',
         contactRole: 'VP of Operations',
-        phone: '+91 98765 43210',
+        phone: '+918320441189',
         intentScore: 92,
         industry: 'Manufacturing & Logistics',
         customOpeningHook:

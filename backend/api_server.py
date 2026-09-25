@@ -115,20 +115,25 @@ async def on_startup():
     except Exception as e:
         print(f"Database initialization warning: {e}")
 
-    # Pre-warm filler audio cache so there's no synthesis delay on the first call.
-    # Runs in the background — server is ready immediately, fillers synthesise quietly.
-    async def _prewarm_fillers():
-        try:
-            from app.api.routes.telephony import get_filler_audio, FILLER_RETRIES
-            for lang in ["en", "hi", "gu", "mr"]:
-                await get_filler_audio(lang, "first")
-                for i in range(len(FILLER_RETRIES.get(lang, []))):
-                    await get_filler_audio(lang, str(i))
-            print("Filler audio pre-warm complete.")
-        except Exception as e:
-            print(f"Filler pre-warm notice: {e}")
 
-    asyncio.ensure_future(_prewarm_fillers())
+    # Automated 24-hour Calendly follow-up re-call background worker
+    async def _calendly_recall_background_worker():
+        while True:
+            try:
+                await asyncio.sleep(60)  # Check every 60 seconds
+                from app.db.database import SessionLocal
+                from app.services.calendly_service import CalendlyService
+                db_worker = SessionLocal()
+                try:
+                    CalendlyService.check_and_process_due_recalls(db_worker)
+                finally:
+                    db_worker.close()
+            except asyncio.CancelledError:
+                break
+            except Exception as worker_err:
+                print(f"[Calendly Worker Notice] {worker_err}")
+
+    asyncio.ensure_future(_calendly_recall_background_worker())
 
 # Request/Response Models
 class CallStartRequest(BaseModel):
@@ -136,7 +141,8 @@ class CallStartRequest(BaseModel):
     companyName: str
     contactName: str
     contactRole: Optional[str] = "Decision Maker"
-    contactPhone: Optional[str] = "+91 98765 43210"
+    contactPhone: Optional[str] = "+918320441189"
+    contactEmail: Optional[str] = "meghrana2007@gmail.com"
     language: str = "en"
     companyInfo: Optional[str] = None
     services: Optional[str] = None
@@ -170,7 +176,7 @@ class GeneratePitchResponse(BaseModel):
     language: str
 
 class SendPitchEmailRequest(BaseModel):
-    recipientEmail: str
+    recipientEmail: Optional[str] = "meghrana2007@gmail.com"
     recipientName: Optional[str] = "Decision Maker"
     companyName: str
     subject: str
@@ -186,6 +192,7 @@ class SendPitchEmailResponse(BaseModel):
     recipientEmail: str
     timestamp: float
     mode: str
+    error: Optional[str] = None
 
 # ─── Health Check ──────────────────────────────────────────────────
 @app.get("/")
@@ -268,57 +275,54 @@ async def generate_pitch_endpoint(req: GeneratePitchRequest):
         raise HTTPException(status_code=500, detail=f"Failed to generate dynamic pitch: {str(e)}")
 
 @app.post("/api/call/send-pitch-email", response_model=SendPitchEmailResponse)
+@app.post("/api/call/pitch-email", response_model=SendPitchEmailResponse)
 async def send_pitch_email_endpoint(req: SendPitchEmailRequest):
     """
     Send the dynamic AI-generated sales pitch email to the customer.
-    Supports live SMTP dispatch if SMTP_* env vars are present, or enterprise
-    simulated delivery with activity auditing.
+    Supports live SMTP dispatch (SSL/STARTTLS), executive HTML rendering,
+    database activity audit logging, and fallback simulation.
     """
-    delivery_id = f"email_{uuid.uuid4().hex[:12]}"
-    now = time.time()
-    
-    # Validate recipient email format
-    if "@" not in req.recipientEmail or "." not in req.recipientEmail:
-        raise HTTPException(status_code=400, detail="Invalid recipient email address.")
-    
-    smtp_host = os.environ.get("SMTP_HOST")
-    smtp_user = os.environ.get("SMTP_USER")
-    smtp_pass = os.environ.get("SMTP_PASS")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    
-    mode = "simulated_logged"
-    if smtp_host and smtp_user and smtp_pass:
-        try:
-            import smtplib
-            from email.mime.text import MIMEText
-            from email.mime.multipart import MIMEMultipart
-            
-            msg = MIMEMultipart()
-            msg["From"] = smtp_user
-            msg["To"] = req.recipientEmail
-            msg["Subject"] = req.subject
-            msg.attach(MIMEText(req.body, "plain", "utf-8"))
-            
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
-            mode = "smtp_dispatched"
-            print(f"[EMAIL] Live email successfully sent to {req.recipientEmail} via {smtp_host}")
-        except Exception as e:
-            print(f"[WARN] SMTP delivery failed ({e}), falling back to audit queue.")
-            mode = "fallback_logged"
-    else:
-        print(f"[EMAIL] Pitch email queued & delivered: To: {req.recipientEmail} | Subject: {req.subject} | ID: {delivery_id}")
+    try:
+        from app.services.email_service import email_service
+        target_email = req.recipientEmail or os.getenv("DEFAULT_DESTINATION_EMAIL", "meghrana2007@gmail.com")
+        res = email_service.send_pitch_email(
+            recipient_email=target_email,
+            company_name=req.companyName,
+            subject=req.subject,
+            body=req.body,
+            recipient_name=req.recipientName,
+            pitch_snippet=req.pitchSnippet,
+            language=req.language or "en",
+            lead_id=req.leadId,
+        )
+        
+        # If explicitly marked failed (e.g. invalid email format or strict live requirement)
+        if not res.success and res.mode == "failed":
+            raise HTTPException(status_code=400, detail=res.error or res.message)
 
-    return SendPitchEmailResponse(
-        success=True,
-        message=f"Pitch email successfully sent to {req.recipientName} ({req.recipientEmail}).",
-        deliveryId=delivery_id,
-        recipientEmail=req.recipientEmail,
-        timestamp=now,
-        mode=mode,
-    )
+        return SendPitchEmailResponse(
+            success=res.success,
+            message=res.message,
+            deliveryId=res.delivery_id,
+            recipientEmail=res.recipient_email,
+            timestamp=res.timestamp,
+            mode=res.mode,
+            error=res.error,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to dispatch email: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to dispatch email: {str(e)}")
+
+@app.get("/api/call/email-status")
+@app.get("/api/email/status")
+async def email_status_endpoint():
+    """
+    Diagnostic endpoint to check SMTP server connection and email configuration status.
+    """
+    from app.services.email_service import email_service
+    return email_service.test_smtp_connection()
 
 @app.post("/api/call/start", response_model=CallStartResponse)
 async def start_call(request: CallStartRequest, background_tasks: BackgroundTasks):
@@ -373,7 +377,8 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
             "companyName": request.companyName,
             "contactName": request.contactName,
             "contactRole": request.contactRole,
-            "contactPhone": request.contactPhone,
+            "contactPhone": request.contactPhone or os.getenv("DEFAULT_DESTINATION_PHONE", "+918320441189"),
+            "contactEmail": request.contactEmail or os.getenv("DEFAULT_DESTINATION_EMAIL", "meghrana2007@gmail.com"),
             "language": request.language,
             "timezone": request.timezone,
             "bypassTimezoneCheck": request.bypassTimezoneCheck,
@@ -393,6 +398,37 @@ async def start_call(request: CallStartRequest, background_tasks: BackgroundTask
             pipeline.ai.memory.add_turn("agent", opening_pitch, request.language)
         pipeline.ai._prev_language = request.language
         pipeline.language = request.language
+
+        # Attach human transfer intent callback for in-call Calendly link dispatch
+        def handle_in_call_transfer(lang: str):
+            session_ref = active_sessions.get(session_id)
+            if session_ref:
+                session_ref["outcome"] = "human_transfer_requested"
+                lead_id_val = session_ref.get("leadId")
+                phone_val = session_ref.get("contactPhone") or os.getenv("DEFAULT_DESTINATION_PHONE", "+918320441189")
+                email_val = session_ref.get("contactEmail") or os.getenv("DEFAULT_DESTINATION_EMAIL", "meghrana2007@gmail.com")
+                name_val = session_ref.get("contactName") or "Megh Rana"
+                try:
+                    from app.db.database import SessionLocal
+                    from app.services.calendly_service import CalendlyService
+                    db_transfer = SessionLocal()
+                    try:
+                        CalendlyService.dispatch_calendly_sms_and_track(
+                            db=db_transfer,
+                            lead_id=lead_id_val,
+                            call_id=None,
+                            language=lang,
+                            followup_hours=24.0,
+                            contact_phone=phone_val,
+                            contact_email=email_val,
+                            contact_name=name_val,
+                        )
+                    finally:
+                        db_transfer.close()
+                except Exception as err:
+                    print(f"[In-Call Calendly Dispatch Error] {err}")
+
+        pipeline.on_human_transfer = handle_in_call_transfer
         
         return CallStartResponse(
             sessionId=session_id,

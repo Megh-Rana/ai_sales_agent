@@ -99,6 +99,7 @@ export interface CallResultData {
   contactName: string;
   contactRole: string;
   contactPhone: string;
+  contactEmail?: string;
   industry: string;
   location: string;
   outcome: CallOutcomeType;

@@ -96,6 +96,28 @@ def init_db():
                 conn.commit()
             except Exception:
                 pass
+
+            # Safe migration for businesses.calendly_url
+            try:
+                if is_sqlite:
+                    conn.execute(text("ALTER TABLE businesses ADD COLUMN calendly_url VARCHAR(500) DEFAULT 'https://calendly.com/vidur-sales/30min';"))
+                else:
+                    conn.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS calendly_url VARCHAR(500) DEFAULT 'https://calendly.com/vidur-sales/30min';"))
+                conn.commit()
+            except Exception:
+                pass
+
+            # Safe migration for calendly_trackings.email and email_delivery_id
+            try:
+                if is_sqlite:
+                    conn.execute(text("ALTER TABLE calendly_trackings ADD COLUMN email VARCHAR(255);"))
+                    conn.execute(text("ALTER TABLE calendly_trackings ADD COLUMN email_delivery_id VARCHAR(100);"))
+                else:
+                    conn.execute(text("ALTER TABLE calendly_trackings ADD COLUMN IF NOT EXISTS email VARCHAR(255);"))
+                    conn.execute(text("ALTER TABLE calendly_trackings ADD COLUMN IF NOT EXISTS email_delivery_id VARCHAR(100);"))
+                conn.commit()
+            except Exception:
+                pass
     except Exception as e:
         logger.warning(f"Database column enrichment migration check: {e}")
 

@@ -348,10 +348,16 @@ export const AICalling: React.FC = () => {
         if (status.status === 'completed') {
           if (statusPollingRef.current) clearInterval(statusPollingRef.current);
           if (wsRef.current) wsRef.current.close();
+          if (status.outcome === 'human_transfer_requested') {
+            toast.info('Calendly Link Dispatched via SMS', {
+              description: 'Lead requested human transfer. Direct booking link sent & 24h follow-up re-call queue is active.',
+            });
+          }
           setSession((prev) => ({
             ...prev,
             status: 'COMPLETED',
-            audioStatus: 'idle'
+            audioStatus: 'idle',
+            primaryOutcome: status.outcome === 'human_transfer_requested' ? 'Human Transfer Requested (Calendly Sent)' : prev.primaryOutcome
           }));
         }
 
@@ -1068,6 +1074,7 @@ export const AICalling: React.FC = () => {
         companyName={session.companyName}
         contactName={session.contactName}
         contactRole={session.contactRole}
+        contactEmail={(session as any).contactEmail || (lead as any)?.decisionMakerContact?.email || 'meghrana2007@gmail.com'}
         pitch={dynamicPitch}
         language={session.language}
         requirement={lead?.requirement || session.currentObjective.goal}

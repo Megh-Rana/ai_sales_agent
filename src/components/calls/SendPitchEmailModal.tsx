@@ -10,7 +10,9 @@ import {
   Building2, 
   User, 
   Clock, 
-  Globe 
+  Globe,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { callService, SendPitchEmailRequest } from '../../services/callService';
 import { CallingWindowStatus } from '../../utils/timezoneUtils';
@@ -50,14 +52,16 @@ export const SendPitchEmailModal: React.FC<SendPitchEmailModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sentSuccess, setSentSuccess] = useState(false);
-  const [deliveryResult, setDeliveryResult] = useState<{ id: string; msg: string } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [deliveryResult, setDeliveryResult] = useState<{ id: string; msg: string; mode?: string } | null>(null);
+  const [smtpStatus, setSmtpStatus] = useState<{ configured: boolean; message: string } | null>(null);
 
   // Initialize draft when modal opens or pitch changes
   useEffect(() => {
     if (!isOpen) return;
 
     const firstName = contactName ? contactName.split(' ')[0] : 'there';
-    const fallbackEmail = contactEmail || `${firstName.toLowerCase()}@${companyName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'company'}.com`;
+    const fallbackEmail = contactEmail || 'meghrana2007@gmail.com';
     setRecipientEmail(fallbackEmail);
 
     const emailSubject = `Introduction & Quick Idea regarding ${companyName}'s ${requirement || 'Automation'}`;
@@ -84,7 +88,14 @@ support@vidur.in | https://vidur.in`;
 
     setBody(emailDraft);
     setSentSuccess(false);
+    setErrorMessage(null);
     setDeliveryResult(null);
+
+    callService.getEmailStatus().then((status) => {
+      setSmtpStatus(status);
+    }).catch(() => {
+      setSmtpStatus({ configured: false, message: 'Simulated audit mode active' });
+    });
   }, [isOpen, companyName, contactName, contactEmail, pitch, requirement]);
 
   useEffect(() => {
@@ -108,15 +119,18 @@ support@vidur.in | https://vidur.in`;
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientEmail || !recipientEmail.includes('@')) {
-      alert('Please enter a valid recipient email address.');
+    setErrorMessage(null);
+
+    const emailTrimmed = recipientEmail.trim();
+    if (!emailTrimmed || !emailTrimmed.includes('@') || !emailTrimmed.includes('.')) {
+      setErrorMessage('Please enter a valid recipient email address (e.g. prospect@company.com).');
       return;
     }
 
     setIsSending(true);
     try {
       const payload: SendPitchEmailRequest = {
-        recipientEmail,
+        recipientEmail: emailTrimmed,
         recipientName: contactName,
         companyName,
         subject,
@@ -127,18 +141,23 @@ support@vidur.in | https://vidur.in`;
       };
 
       const res = await callService.sendPitchEmail(payload);
+      if (!res.success && res.error) {
+        throw new Error(res.error);
+      }
+
       setSentSuccess(true);
-      setDeliveryResult({ id: res.deliveryId, msg: res.message });
+      setDeliveryResult({ id: res.deliveryId, msg: res.message, mode: res.mode });
       if (onSuccess) {
-        onSuccess(`Pitch email dispatched to ${recipientEmail}`);
+        onSuccess(`Pitch email dispatched to ${emailTrimmed}`);
       }
       setTimeout(() => {
         setIsSending(false);
         onClose();
-      }, 2000);
+      }, 2200);
     } catch (err: any) {
       console.error('Failed to send email:', err);
-      alert(err.message || 'Failed to dispatch email. Please try again.');
+      const msg = err.message || 'Failed to dispatch email. Please check your recipient email or network connection.';
+      setErrorMessage(msg);
       setIsSending(false);
     }
   };
@@ -168,6 +187,15 @@ support@vidur.in | https://vidur.in`;
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 font-semibold uppercase">
                   Ollama Assisted
                 </span>
+                {smtpStatus && (
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border font-semibold ${
+                    smtpStatus.configured 
+                      ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' 
+                      : 'bg-blue-500/15 border-blue-500/30 text-blue-400'
+                  }`}>
+                    {smtpStatus.configured ? 'Live SMTP' : 'Audit Queue'}
+                  </span>
+                )}
               </h3>
               <p className="text-xs text-slate-400">
                 Dispatches your AI-generated opening pitch directly to {companyName}
@@ -211,12 +239,19 @@ support@vidur.in | https://vidur.in`;
             </p>
             {deliveryResult && (
               <span className="inline-block text-[11px] font-mono text-slate-400 bg-slate-900/80 px-3 py-1 rounded border border-slate-800">
-                Delivery Tracking: {deliveryResult.id}
+                Delivery Tracking: {deliveryResult.id} {deliveryResult.mode ? `(${deliveryResult.mode})` : ''}
               </span>
             )}
           </div>
         ) : (
           <form onSubmit={handleSend} className="p-6 space-y-4">
+            {/* Error Message Banner */}
+            {errorMessage && (
+              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
             {/* Recipient & Contact Details */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -254,7 +289,7 @@ support@vidur.in | https://vidur.in`;
                 required
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
-                placeholder="name@company.com"
+                placeholder="meghrana2007@gmail.com"
                 className="w-full bg-[#0D1017] border border-[#263143] rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-primary transition-colors"
               />
             </div>
@@ -326,8 +361,17 @@ support@vidur.in | https://vidur.in`;
                   disabled={isSending}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover active:bg-blue-700 text-white text-xs font-semibold shadow transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  <Send className={`w-3.5 h-3.5 ${isSending ? 'animate-pulse' : ''}`} />
-                  <span>{isSending ? 'Transmitting...' : 'Send Pitch Email'}</span>
+                  {isSending ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Transmitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Send Pitch Email</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
