@@ -154,7 +154,7 @@ ai_sales_agent/
     │   └── vad.py                   # Silero VAD neural speech endpointing (512-sample chunks)
     │
     ├── tts/                         # TEXT-TO-SPEECH SUBSYSTEM
-    │   └── engine.py                # Sarvam Bulbul v3 multilingual voice synthesis (REST & streaming)
+    │   └── engine.py                # Sarvam Bulbul v4 multilingual voice synthesis (REST & streaming)
     │
     ├── ai/                          # REASONING & SALES INTELLIGENCE LAYER
     │   ├── brain.py                 # Conversational agent brain (Ollama gemma3:4b / Param-1-7B)
@@ -539,7 +539,7 @@ STTEngine (Sarvam saaras:v3 cloud API | fallback: faster-whisper float16 greedy 
 AIBrain (Ollama gemma3:4b streaming sentences / Param-1-7B)
        │
        ▼
-TTSEngine (Sarvam Bulbul v3 multilingual voice synthesis)
+TTSEngine (Sarvam Bulbul v4 multilingual voice synthesis)
        │
        ▼
 Gapless Player (sounddevice OutputStream @ 24kHz float32)
@@ -587,7 +587,7 @@ Speakers (AI responds) -> AudioIO resumes mic
 1. **Backend Environment Variables (`backend/app/core/config.py`, `backend/config.py`):**
    - `ENVIRONMENT`: `development` | `production`.
    - `DATABASE_URL`: Defaults to `sqlite:///sales_platform.db`. Supports PostgreSQL.
-   - `SARVAM_API_KEY`: Required for Sarvam STT & Bulbul v3 TTS.
+   - `SARVAM_API_KEY`: Required for Sarvam STT & Bulbul v4 TTS.
    - `OLLAMA_HOST`: Defaults to `http://localhost:11434`.
    - `OLLAMA_MODEL`: `gemma3:4b`.
    - `STT_PROVIDER`: `sarvam` | `whisper`.
@@ -652,7 +652,7 @@ flowchart TD
         VAD["VADEngine (Silero VAD neural endpointing)"]
         STT["STTEngine (Sarvam saaras:v3 / faster-whisper)"]
         BRAIN["AIBrain (Session Memory & Prompt Assembly)"]
-        TTS["TTSEngine (Sarvam Bulbul v3 Multilingual)"]
+        TTS["TTSEngine (Sarvam Bulbul v4 Multilingual)"]
         PLAYER["Gapless Stream Player (sounddevice output @ 24kHz)"]
     end
 
@@ -739,7 +739,7 @@ FEATURE 1: Real-Time Interactive AI Voice Calling Hub
 - Backend Implementation: backend/api_server.py (routes /api/call/* and WebSocket /ws/call/{session_id}), backend/pipeline/orchestrator.py, backend/pipeline/audio_io.py.
 - Database Interaction: Reads lead details; writes completed call records to `calls` table with duration, transcript, and outcome.
 - APIs Involved: POST /api/call/start, POST /api/call/{id}/launch, GET /api/call/{id}/status, POST /api/call/{id}/end, WS /ws/call/{id}.
-- AI/ML Involvement: Silero VAD (speech detection), Sarvam saaras:v3 / faster-whisper (STT), Ollama gemma3:4b (conversational logic), Sarvam Bulbul v3 (TTS).
+- AI/ML Involvement: Silero VAD (speech detection), Sarvam saaras:v3 / faster-whisper (STT), Ollama gemma3:4b (conversational logic), Sarvam Bulbul v4 (TTS).
 - External Services: Sarvam AI Cloud API, local Ollama daemon.
 - Input: Raw microphone PCM16 audio chunks at 16kHz.
 - Processing: VAD chunk analysis -> STT transcription -> streaming LLM token generation -> sentence synthesis -> gapless audio output.
@@ -829,7 +829,7 @@ FEATURE 6: Multilingual Code-Switching (EN, HI, GU, MR)
 - Backend Implementation: backend/stt/engine.py, backend/tts/engine.py, backend/ai/brain.py, backend/ai/prompts.py.
 - Database Interaction: Stored in `calls.language` column.
 - APIs Involved: GET /api/config, POST /api/call/start.
-- AI/ML Involvement: Sarvam saaras:v3 auto-detects language; Sarvam Bulbul v3 synthesizes native regional accents; Gemma 3 4B responds in detected language.
+- AI/ML Involvement: Sarvam saaras:v3 auto-detects language; Sarvam Bulbul v4 synthesizes native regional accents; Gemma 3 4B responds in detected language.
 - External Services: Sarvam AI API.
 - Input: Spoken voice or UI selection.
 - Processing: Auto-detects dialect; selects corresponding localized system prompt without interrupting conversational flow.
@@ -917,7 +917,7 @@ FEATURE 10: Telephony Webhook Processing Pipeline
 ### USP 1: Real-Time Multilingual Indian Voice Code-Switching (AI & Product USP)
 - **What It Is:** The voice engine auto-detects and transitions across English, Hindi, Gujarati, and Marathi mid-conversation without dropping the call or requiring manual reconfiguration.
 - **Why It Matters:** Over 85% of commercial B2B interactions in India involve regional code-switching (e.g., Hinglish or Gujarati-English). Generic US-centric voice bots fail immediately when Indian prospects transition between languages.
-- **Technical Implementation:** Combines Sarvam saaras:v3 STT for Indian language recognition, Ollama Gemma 3 4B for multilingual reasoning, and Sarvam Bulbul v3 with regional speakers (`ishita`, `kabir`, `shubh`, `priya`).
+- **Technical Implementation:** Combines Sarvam saaras:v3 STT for Indian language recognition, Ollama Gemma 3 4B for multilingual reasoning, and Sarvam Bulbul v4 with regional speakers (`ishita`, `kabir`, `shubh`, `priya`).
 - **What Makes It Different:** Existing platforms require selecting a single fixed language before starting a call. Vidur supports dynamic language switching mid-call.
 - **Evidence From Code:** `backend/config.py` lines 48–56, `backend/ai/brain.py` lines 144–172 (`_language_switch_hint`), `backend/tts/engine.py` lines 63–68.
 
@@ -954,7 +954,7 @@ FEATURE 10: Telephony Webhook Processing Pipeline
 # PHASE 5 — MVP BREAKDOWN
 
 ### MVP — Implemented (Operational Today)
-1. **Real-time Voice Calling Engine:** Microphone capture, Silero VAD speech detection, Sarvam saaras:v3 STT, streaming Ollama Gemma 3 4B reasoning, Sarvam Bulbul v3 TTS synthesis, and speaker output (`backend/api_server.py`, `backend/pipeline/orchestrator.py`).
+1. **Real-time Voice Calling Engine:** Microphone capture, Silero VAD speech detection, Sarvam saaras:v3 STT, streaming Ollama Gemma 3 4B reasoning, Sarvam Bulbul v4 TTS synthesis, and speaker output (`backend/api_server.py`, `backend/pipeline/orchestrator.py`).
 2. **WebSocket Live Transcript Stream:** Real-time push of speech turns to connected web clients (`/ws/call/{session_id}`).
 3. **Deterministic Lead Scoring Engine:** 0–100 weighted Python scoring engine (`backend/ai/services/lead_scoring.py`).
 4. **Prompt Registry & Structured Output Validator:** Versioned prompts with JSON extraction and Pydantic validation (`backend/ai/core/`).
@@ -1014,7 +1014,7 @@ FEATURE 10: Telephony Webhook Processing Pipeline
     ↓
 12. STT output sent over WebSocket /ws/call/{sessionId} -> UI updates LiveTranscript in real time
     ↓
-13. Gemma 3 4B generates response -> Sarvam Bulbul v3 synthesizes audio -> Plays through speakers
+13. Gemma 3 4B generates response -> Sarvam Bulbul v4 synthesizes audio -> Plays through speakers
     ↓
 14. Conversation continues through 4-8 turns; prospect states requirements and confirms demo interest
     ↓
@@ -1080,7 +1080,7 @@ flowchart TD
         VAD_ENGINE["VADEngine (Silero VAD Endpointing)"]
         STT_ENGINE["STTEngine (Sarvam saaras:v3 / Whisper)"]
         BRAIN_ENGINE["AIBrain (Memory & Context Assembly)"]
-        TTS_ENGINE["TTSEngine (Sarvam Bulbul v3)"]
+        TTS_ENGINE["TTSEngine (Sarvam Bulbul v4)"]
         AUDIO_OUT["Gapless Audio Player (sounddevice @ 24kHz)"]
     end
 
@@ -1314,7 +1314,7 @@ flowchart LR
     end
 
     subgraph CLOUD_SERVICES["External Cloud Infrastructure"]
-        SARVAM["Sarvam AI Cloud (saaras:v3 STT & Bulbul v3 TTS)"]
+        SARVAM["Sarvam AI Cloud (saaras:v3 STT & Bulbul v4 TTS)"]
         SUPABASE_PG["Supabase PostgreSQL (Optional Production Database)"]
     end
 

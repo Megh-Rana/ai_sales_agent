@@ -36,7 +36,7 @@
 ├──────────────────────────┬─────────────────────────────┬────────────────────────────┬───────────────────────────────────┤
 │    DISCOVERY SUBSYSTEM   │        CALLING & VOICE      │       CRM & DATA SYNC      │         DATABASE STORAGE          │
 │ • DuckDuckGo RFP Dorking │ • Ollama Gemma 3 LLM (Local)│ • HubSpot / Salesforce     │ • Production: PostgreSQL 16+      │
-│ • Arbeitnow Job Feeds    │ • Sarvam Bulbul v3 TTS      │ • Bidirectional Sync       │ • Dev Fallback: SQLite 3          │
+│ • Arbeitnow Job Feeds    │ • Sarvam Bulbul v4 TTS      │ • Bidirectional Sync       │ • Dev Fallback: SQLite 3          │
 │ • Hiring Signal Inference│ • Twilio STT Speech Engine  │ • Deduplication Engine     │ • Dual Dialect Compatibility Layer│
 │ • Website RFP Crawler    │ • Mid-Call Lang Switching   │ • Auto Activity Logging    │ • UUID & JSONB Type Aliases       │
 │ • De-duplication Engine  │ • Calendly SMS/Email Worker │ • Conflict Resolution      │ • Idempotent Migration Runner     │
@@ -64,7 +64,7 @@
 | **Database (Prod)** | PostgreSQL | `16+` | Enterprise multi-tenant ACID relational store (native UUID & JSONB) |
 | **Database (Dev)** | SQLite 3 | `3.40+` | Zero-config embedded local development database |
 | **Local LLM Inference** | Ollama (Gemma 3:4b) | `0.5+` | Zero-cost, low-latency conversational pitch & response synthesis |
-| **Indic AI & TTS** | Sarvam AI API | `v1` | Bulbul v3 Indian-accented neural TTS (`ishita`, `arvind`) & STT |
+| **Indic AI & TTS** | Sarvam AI API | `v1` | Bulbul v4 Indian-accented neural TTS (`ishita`, `arvind`) & STT |
 | **Telephony Carrier** | Twilio Voice & SMS REST API | `9.11+` | Outbound PSTN calling, TwiML `<Gather>`, `<Play>`, SMS booking |
 | **Public Gateway** | Cloudflare Tunnel / localhost.run | `2024+` | Secure HTTPS webhook tunneling without firewall port forwarding |
 | **Email Service** | Python `smtplib` + SSL | Native | Automated meeting confirmation and Calendly invite emails |
@@ -245,7 +245,7 @@ Vidur implements a sub-second conversational voice pipeline designed for natural
             ▼
 [Turn 0: Dynamic Pitch Generation]
   • Ollama Gemma 3 synthesizes personalized opening from Lead Requirement
-  • Sarvam Bulbul v3 neural TTS generates MP3 in 1.2s
+  • Sarvam Bulbul v4 neural TTS generates MP3 in 1.2s
   • Pre-synthesized MP3 cached at /audio/{filename}
             │
             ▼
@@ -275,7 +275,7 @@ Vidur implements a sub-second conversational voice pipeline designed for natural
 #### A. Turn 0: Zero-Latency Pitch Pre-Synthesis
 Rather than generating the opening pitch *after* the callee answers (which would cause an awkward 3-second silence):
 1. Vidur generates the opening hook using **Ollama Gemma 3** before dialing.
-2. The pitch is synthesized to high-fidelity MP3 via **Sarvam Bulbul v3** (`ishita` voice, 8kHz telephony sampling).
+2. The pitch is synthesized to high-fidelity MP3 via **Sarvam Bulbul v4** (`ishita` voice, 8kHz telephony sampling).
 3. The MP3 is stored in `backend/audio_cache/` and served over HTTP with `Accept-Ranges: bytes` and `HEAD` method support.
 4. When the call connects, Twilio begins streaming audio **instantly** (0ms latency to first syllable).
 
@@ -374,7 +374,7 @@ sequenceDiagram
     SalesRep->>UI: Click "Launch AI Voice Call"
     UI->>API: POST /api/telephony/call/start
     API->>LLM: Generate Opening Pitch Hook
-    API->>LLM: Pre-synthesize MP3 via Sarvam Bulbul v3
+    API->>LLM: Pre-synthesize MP3 via Sarvam Bulbul v4
     API->>Twilio: client.calls.create(to=Prospect Phone, url=Webhook)
     Twilio->>Prospect: Ring PSTN Mobile Device
 
