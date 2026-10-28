@@ -1,7 +1,7 @@
 """
 Unit & Integration Tests for Twilio Telephony Carrier Layer
 Verifies Twilio carrier trunking powered exclusively by YOUR internal AI infrastructure:
-- TTS: Sarvam Bulbul v3 / Edge-TTS (backend/tts/engine.py)
+- TTS: Sarvam Bulbul v4 / Edge-TTS (backend/tts/engine.py)
 - LLM: Local Ollama Gemma 3 4B / Sarvam (backend/ai/brain.py)
 - STT: Sarvam Saaras v3 / Faster-Whisper (backend/stt/engine.py)
 - PSTN: Twilio carrier trunking, TwiML <Play> audio delivery, AMD, and SMS

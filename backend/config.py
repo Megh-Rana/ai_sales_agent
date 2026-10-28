@@ -47,15 +47,16 @@ STT_LANGUAGE = None  # Auto-detect by default
 STT_BEAM_SIZE = 3    # Beam search size for better accuracy
 STT_VAD_FILTER = True  # Enable VAD filtering to remove silence
 
-# ─── TTS Config (Exclusively Sarvam Bulbul v3) ──────────────────────
+# ─── TTS Config (Exclusively Sarvam Bulbul v4) ──────────────────────
 # Text-to-Speech strictly uses Sarvam Cloud API
 TTS_PROVIDER = "sarvam"
+SARVAM_TTS_MODEL = os.getenv("SARVAM_TTS_MODEL", "bulbul:v4")
 SARVAM_WS_URL = "wss://api.sarvam.ai/text-to-speech/ws"
 
 TTS_DEFAULT_LANGUAGE = "en"
 
 # Speaker voice — pick one from the 30+ Sarvam voices (e.g. ishita, kabir, shubh, priya).
-TTS_SPEAKER = "ishita"
+TTS_SPEAKER = os.getenv("TTS_SPEAKER", "ishita")
 
 # Sarvam language codes — maps our internal codes to BCP-47
 SARVAM_LANG_MAP = {

@@ -1,6 +1,6 @@
 """
 Telephony Audio Engine for Vidur AI Sales Agent.
-Bridges Twilio carrier trunking with your own internal TTS Engine (Sarvam Bulbul v3 / Edge-TTS).
+Bridges Twilio carrier trunking with your own internal TTS Engine (Sarvam Bulbul v4 / Edge-TTS).
 Synthesizes speech on your infrastructure, stores audio in an in-memory cache,
 and serves broadcast-quality WAV audio streams to Twilio via <Play>.
 """
@@ -103,7 +103,7 @@ def synthesize_speech_to_wav(
     sample_rate: int = config.TTS_SAMPLE_RATE,
 ) -> Tuple[str, bytes]:
     """
-    Synthesizes speech text using YOUR internal TTSEngine (Sarvam Bulbul v3 / Edge-TTS),
+    Synthesizes speech text using YOUR internal TTSEngine (Sarvam Bulbul v4 / Edge-TTS),
     converts it to a standard PCM 16-bit WAV file, stores it in the audio cache,
     and returns (audio_id, wav_bytes).
     """

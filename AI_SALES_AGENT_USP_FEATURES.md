@@ -130,12 +130,12 @@ Below are the key differentiating features and Unique Selling Propositions (USPs
 ## 7. Full Native Support for English, Hindi, Gujarati, and Marathi
 
 - **Files in Codebase**:
-  - Indian Regional TTS Engine: [`telephony_audio.py`](file:///home/megh/working/ai_sales_agent/backend/app/services/telephony_audio.py) (Sarvam AI Bulbul v3)
+  - Indian Regional TTS Engine: [`telephony_audio.py`](file:///home/megh/working/ai_sales_agent/backend/app/services/telephony_audio.py) (Sarvam AI Bulbul v4)
   - Conversational Filler Audio: [`orchestrator.py`](file:///home/megh/working/ai_sales_agent/backend/pipeline/orchestrator.py)
   - UI Localization: [`src/i18n/locales/`](file:///home/megh/working/ai_sales_agent/src/i18n/locales) (`en.ts`, `hi.ts`, `gu.ts`, `mr.ts`)
 
 ### What Makes It a USP:
-- **Indian Regional Voice Synthesis (Sarvam AI Bulbul v3)**:
+- **Indian Regional Voice Synthesis (Sarvam AI Bulbul v4)**:
   - High-fidelity natural Indian accents (e.g. `ishita`, `arvind`) calibrated specifically for English (India), Hindi, Gujarati, and Marathi.
   - Natural speech rhythm and pronunciation tailored to Indian enterprise and SMB business discussions.
 - **Conversational Filler Audio Injection (Zero Dead-Air Latency)**:
